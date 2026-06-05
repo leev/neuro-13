@@ -1,0 +1,21 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Generated deploy output. Rebuilt with `make pages`.
+public/
+
+# Local caches and downloaded datasets.
+.wrangler/
+data/
+node_modules/
+
+# Local agent/editor state.
+.claude/
+.omc/
+.omx/
+
+# Secrets and env files.
+.env
+.env.*
+!.env.example

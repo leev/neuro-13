@@ -1,0 +1,12 @@
+name = "neuro-13"
+compatibility_date = "2026-05-28"
+# Disable the default *.workers.dev hostname — site is only reachable via the custom domain.
+workers_dev = false
+
+[assets]
+directory = "./public"
+not_found_handling = "404-page"
+
+[[routes]]
+pattern = "neuro-13.leev.net"
+custom_domain = true
