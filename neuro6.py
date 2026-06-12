@@ -1,49 +1,57 @@
 import numpy as np
 
-# Step 6: animal classifier. This is the snack picker idea with a
-# more interesting dataset: guess an animal from visible traits.
+# Step 6: meal guesser. This is the snack picker idea with a more
+# interesting dataset: guess a meal from menu-style clues.
 #
 # New concept: categorical features become one-hot inputs.
-#   size = small / medium / large
+#   course = main / snack / dessert
 # becomes three input columns:
-#   size_small, size_medium, size_large
+#   course_main, course_snack, course_dessert
 #
-# The traits below are intentionally shared by several animals. That
-# makes the network combine clues instead of relying on one giveaway
-# clue like "has trunk".
+# The traits below are intentionally shared by several meals, so the
+# network has to combine clues instead of relying on one giveaway.
+# Three pairs differ by exactly ONE trait (near-miss pairs):
+#   cottage pie vs baked potato  -> only diet differs
+#   spaghetti   vs mac & cheese  -> only diet differs
+#   ice cream   vs fruit salad   -> only base differs
+# ("spaghetti" here is spaghetti bolognese — that's where the meat is.)
 #
 # Inputs:
-#   size_small, size_medium, size_large,
-#   place_home, place_farm, place_wild,
-#   food_meat, food_plants, food_both,
-#   feet_paws, feet_hooves,
-#   color_brown, color_orange, color_black_white, color_pink
+#   course_main, course_snack, course_dessert,
+#   temp_hot, temp_cold,
+#   taste_sweet, taste_savory,
+#   diet_veg, diet_meat,
+#   base_pastry, base_potato, base_pasta, base_dairy, base_fruit
 #
 # Outputs:
-#   dog, cat, rabbit, pig, horse, cow, lion, tiger
+#   apple pie, sausage roll, cottage pie, baked potato,
+#   spaghetti, mac & cheese, ice cream, fruit salad
 
-ANIMALS = ["dog", "cat", "rabbit", "pig", "horse", "cow", "lion", "tiger"]
+MEALS = [
+    "apple pie", "sausage roll", "cottage pie", "baked potato",
+    "spaghetti", "mac & cheese", "ice cream", "fruit salad",
+]
 FEATURES = [
-    "size_small", "size_medium", "size_large",
-    "place_home", "place_farm", "place_wild",
-    "food_meat", "food_plants", "food_both",
-    "feet_paws", "feet_hooves",
-    "color_brown", "color_orange", "color_black_white", "color_pink",
+    "course_main", "course_snack", "course_dessert",
+    "temp_hot", "temp_cold",
+    "taste_sweet", "taste_savory",
+    "diet_veg", "diet_meat",
+    "base_pastry", "base_potato", "base_pasta", "base_dairy", "base_fruit",
 ]
 
 x = np.array([
-    # sm med lg  home farm wild  meat plants both  paws hooves  brown orange b/w pink
-    [0, 1, 0,   1,   0,    0,   0,    0,     1,    1,   0,     1,    0,     0,  0],  # dog
-    [1, 0, 0,   1,   0,    0,   1,    0,     0,    1,   0,     0,    1,     0,  0],  # cat
-    [1, 0, 0,   1,   0,    0,   0,    1,     0,    1,   0,     1,    0,     0,  0],  # rabbit
-    [0, 1, 0,   0,   1,    0,   0,    0,     1,    0,   1,     0,    0,     0,  1],  # pig
-    [0, 0, 1,   0,   1,    0,   0,    1,     0,    0,   1,     1,    0,     0,  0],  # horse
-    [0, 0, 1,   0,   1,    0,   0,    1,     0,    0,   1,     0,    0,     1,  0],  # cow
-    [0, 0, 1,   0,   0,    1,   1,    0,     0,    1,   0,     1,    0,     0,  0],  # lion
-    [0, 0, 1,   0,   0,    1,   1,    0,     0,    1,   0,     0,    1,     0,  0],  # tiger
+    # main snk des  hot cold  swt sav  veg meat  pastry pot pasta dairy fruit
+    [0,   0,  1,   1,  0,    1,  0,   1,  0,    1,     0,  0,    0,    0],  # apple pie
+    [0,   1,  0,   1,  0,    0,  1,   0,  1,    1,     0,  0,    0,    0],  # sausage roll
+    [1,   0,  0,   1,  0,    0,  1,   0,  1,    0,     1,  0,    0,    0],  # cottage pie
+    [1,   0,  0,   1,  0,    0,  1,   1,  0,    0,     1,  0,    0,    0],  # baked potato
+    [1,   0,  0,   1,  0,    0,  1,   0,  1,    0,     0,  1,    0,    0],  # spaghetti
+    [1,   0,  0,   1,  0,    0,  1,   1,  0,    0,     0,  1,    0,    0],  # mac & cheese
+    [0,   0,  1,   0,  1,    1,  0,   1,  0,    0,     0,  0,    1,    0],  # ice cream
+    [0,   0,  1,   0,  1,    1,  0,   1,  0,    0,     0,  0,    0,    1],  # fruit salad
 ], dtype=float)
 
-y = np.eye(len(ANIMALS))
+y = np.eye(len(MEALS))
 
 # Silence cosmetic Accelerate/NumPy warnings seen on some macOS builds
 # during tiny matrix multiplies. The values remain finite and training
@@ -64,8 +72,8 @@ def softmax(z):
 np.random.seed(2)
 w1 = np.random.randn(len(FEATURES), 10) * np.sqrt(2 / len(FEATURES))
 b1 = np.zeros((1, 10))
-w2 = np.random.randn(10, len(ANIMALS)) * np.sqrt(2 / 10)
-b2 = np.zeros((1, len(ANIMALS)))
+w2 = np.random.randn(10, len(MEALS)) * np.sqrt(2 / 10)
+b2 = np.zeros((1, len(MEALS)))
 lr = 0.04
 
 for epoch in range(6000):
@@ -87,16 +95,16 @@ for epoch in range(6000):
         print(f"epoch {epoch}: loss {loss:.4f}  accuracy {acc:.3f}")
 
 print()
-print("Trained animal guesser")
-print(f'  {"animal":>9}  {"prediction":>10}  confidence')
-for animal, probs in zip(ANIMALS, probs):
+print("Trained meal guesser")
+print(f'  {"meal":>12}  {"prediction":>12}  confidence')
+for meal, probs in zip(MEALS, probs):
     best = int(probs.argmax())
-    print(f'  {animal:>9}  {ANIMALS[best]:>10}  {probs[best]:.3f}')
+    print(f'  {meal:>12}  {MEALS[best]:>12}  {probs[best]:.3f}')
 
 print()
-print("Try a mixed-up animal: large + home + meat + hooves + brown")
-weird = np.array([[0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0]], dtype=float)
+print("Try a mixed-up meal: snack + cold + sweet + meat + pastry")
+weird = np.array([[0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0]], dtype=float)
 h = relu(weird @ w1 + b1)
 p = softmax(h @ w2 + b2)[0]
 for idx in p.argsort()[::-1][:4]:
-    print(f"  {ANIMALS[idx]:>9}: {p[idx]:.3f}")
+    print(f"  {MEALS[idx]:>12}: {p[idx]:.3f}")

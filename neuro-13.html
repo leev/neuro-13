@@ -506,13 +506,13 @@
     margin: 4px 0 12px;
   }
 
-  .animal-tool {
+  .guesser-tool {
     display: grid;
     grid-template-columns: minmax(220px, 280px) 1fr;
     gap: 18px;
     align-items: start;
   }
-  .animal-controls h4 {
+  .guesser-controls h4 {
     margin: 14px 0 6px;
     font-size: 13px;
     color: var(--muted);
@@ -534,16 +534,16 @@
     background: white;
     font: inherit;
   }
-  .animal-network {
+  .guesser-network {
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid var(--border);
     margin-top: 12px;
   }
-  .animal-wide {
+  .guesser-wide {
     grid-column: 1 / -1;
   }
-  .animal-prediction h4 {
+  .guesser-prediction h4 {
     margin: 0 0 10px;
     color: var(--accent);
     font-size: 18px;
@@ -594,6 +594,33 @@
     font-size: 11px;
     line-height: 1.55;
     white-space: pre;
+  }
+
+  .model-dump {
+    background: #111827;
+    color: #d1d5db;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 8px 0 0;
+  }
+  .model-dump .chg {
+    color: #fbbf24;
+    font-weight: 700;
+    border-radius: 3px;
+    animation: chgflash 0.9s ease-out;
+  }
+  .model-dump .cmt {
+    color: #6b7280;
+    font-style: italic;
+  }
+  @keyframes chgflash {
+    0% { background: rgba(251, 191, 36, 0.45); }
+    100% { background: transparent; }
   }
 
   .code-editor-wrap {
@@ -689,7 +716,7 @@
     h2 { font-size: 22px; }
     .slider-row label { width: 110px; font-size: 12px; }
     .digit-tool { grid-template-columns: 1fr; }
-    .animal-tool { grid-template-columns: 1fr; }
+    .guesser-tool { grid-template-columns: 1fr; }
     table {
       display: block;
       max-width: 100%;
@@ -742,15 +769,16 @@
       <li><a href="#tables-dots">Tables, dots, and lines</a></li>
       <li><a href="#xor-fail">When one neuron isn't enough</a></li>
       <li><a href="#hidden">Hidden neurons fix it</a></li>
-      <li><a href="#activations">What does "squish" do?</a></li>
       <li><a href="#multi">Picking from a list</a></li>
-      <li><a href="#animals">Animal guesser</a></li>
+      <li><a href="#activations">What does "squish" do?</a></li>
+      <li><a href="#meals">Meal guesser</a></li>
       <li><a href="#descent">How learning actually works</a></li>
       <li><a href="#scale">Scaling this up</a></li>
       <li><a href="#chatgpt">How AI chatbots write</a></li>
       <li><a href="#remember">What to remember so far</a></li>
       <li><a href="#real-data">Deeper: real datasets</a></li>
       <li><a href="#pytorch">Deeper: PyTorch</a></li>
+      <li><a href="#depth">Deeper: why depth</a></li>
       <li><a href="#bigger">Deeper: bigger networks</a></li>
     </ol>
   </div>
@@ -771,6 +799,7 @@
       <tr><td><code>(1, 0)</code></td><td>the same two numbers, drawn as a dot on graph paper</td></tr>
       <tr><td><code>&gt;</code></td><td>"is bigger than?" — the question that turns a number into a yes/no answer</td></tr>
     </table>
+    <p>One more thing before we start: this book keeps coming back to a single running example called the <strong>screen-time rule</strong>. The house rule is: <em>you get screen time if you practiced piano OR finished your homework.</em> In chapter 4 we'll teach a neuron that rule. For now, just notice how one example from it can be written three ways.</p>
     <p>A <strong>table row</strong>, a <strong>graph dot</strong>, and a <strong>line of code</strong> can all describe the same example. For the screen-time rule, this row:</p>
     <pre>piano = 1, homework = 0, answer = YES</pre>
     <p>can also be written as this input and label:</p>
@@ -790,7 +819,8 @@ y = 1</pre>
   <section id="intro">
     <h2>2. The big picture</h2>
     <p>A neural network is a very large pile of tiny math equations. Together they turn an input (like a picture, or a sentence) into an output (like "this is a cat" or the next word in a story).</p>
-    <p>Each tiny equation has some adjustable numbers called <strong>weights</strong>. At the start the weights are random and the network is terrible. You show it lots of examples where you already know the right answer. Each time it gets one wrong, you nudge every weight a tiny bit in the direction that would have made it slightly less wrong. (We don't yet know <em>how</em> the network figures out the right direction. That's what chapter 8 and chapter 12 are for — hold the question.)</p>
+    <p>Why is it called a <em>neural</em> network? The name is borrowed from the brain. Your brain is a web of cells called <strong>neurons</strong> that pass tiny signals to each other, and each one "fires" when the signals arriving at it add up to enough. The math version you're about to meet was loosely inspired by that — <em>loosely</em> is the key word. What's inside ChatGPT is not a simulated brain; it's arithmetic. But the name stuck.</p>
+    <p>Each tiny equation has some adjustable numbers called <strong>weights</strong>. At the start the weights are random and the network is terrible. You show it lots of examples where you already know the right answer. Each time it gets one wrong, you nudge every weight a tiny bit in the direction that would have made it slightly less wrong. (How does it know which direction is "less wrong"? In chapter 4 you'll do one of these nudges yourself, with real numbers — and chapters 8 and 12 explain how the network works the direction out for millions of weights at once.)</p>
     <p>Do this millions or billions of times and the weights end up encoding a surprising amount of knowledge about the world.</p>
     <p>That's the main idea. The rest of the book shows how far that idea can stretch.</p>
     <p style="font-size: 14px; color: var(--muted);">If you like watching things move while you read, the <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown neural networks series</a> on YouTube animates almost every idea in this book. It's the single best companion to what you're reading now.</p>
@@ -835,8 +865,32 @@ y = 1</pre>
     </svg>
 
     <p>That output between 0 and 1 is how strongly the neuron "fires." It's basically how confident the neuron is that the answer is yes. That's one <strong>neuron</strong>. Yes, that's the whole thing.</p>
+
+    <h3>What does sigmoid actually look like?</h3>
+    <p>Sigmoid is just a curve that turns "any number" into "a number between 0 and 1". Feed it a very negative number and out comes nearly 0. Feed it a very positive number and out comes nearly 1. Feed it exactly 0 and out comes exactly <strong>0.5</strong> — the perfectly-unsure middle.</p>
+
+    <svg viewBox="0 0 460 215" xmlns="http://www.w3.org/2000/svg" aria-label="the sigmoid curve: an S shape from 0 up to 1">
+      <line x1="40" y1="170" x2="420" y2="170" stroke="#9ca3af" stroke-width="1.5"/>
+      <line x1="40" y1="30" x2="420" y2="30" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="230" y1="20" x2="230" y2="180" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="40" y1="100" x2="420" y2="100" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <polyline fill="none" stroke="#2563eb" stroke-width="3" points="40,169.7 71.7,169.1 103.3,167.5 135,163.4 166.7,153.3 182.5,144.5 198.3,132.3 214.2,117.1 230,100 245.8,82.9 261.7,67.7 277.5,55.5 293.3,46.7 325,36.6 356.7,32.5 388.3,30.9 420,30.3"/>
+      <circle cx="103.3" cy="167.5" r="5" fill="#dc2626"/>
+      <circle cx="230" cy="100" r="5" fill="#dc2626"/>
+      <circle cx="356.7" cy="32.5" r="5" fill="#dc2626"/>
+      <text x="103" y="190" text-anchor="middle" font-size="12" fill="#374151">−4 → 0.02</text>
+      <text x="244" y="92" font-size="12" fill="#374151">0 → 0.5</text>
+      <text x="356" y="22" text-anchor="middle" font-size="12" fill="#374151">+4 → 0.98</text>
+      <text x="426" y="174" font-size="11" fill="#6b7280">0</text>
+      <text x="426" y="34" font-size="11" fill="#6b7280">1</text>
+      <text x="426" y="104" font-size="11" fill="#ea580c">0.5</text>
+      <text x="230" y="210" text-anchor="middle" font-size="12" fill="#6b7280">what goes in (the weighted total)</text>
+    </svg>
+
+    <p>That middle point clears up something from chapter 1. There, the neuron's question was "is the total bigger than <strong>0</strong>?" In this chapter, the decision is "is the output bigger than <strong>0.5</strong>?" Those are the <em>same question</em>, because sigmoid turns a total of exactly 0 into an output of exactly 0.5 — a total above 0 always lands above 0.5, and a total below 0 always lands below it. Two costumes, one rule.</p>
     <p>For the playground below, we'll use two simple yes/no inputs: <strong>piano done?</strong> and <strong>homework done?</strong> A value of <code>1</code> means yes, and <code>0</code> means no. The neuron is pretending to answer: <em>"should screen time be allowed?"</em> Chapter 4 will teach it that rule for real; here we are just moving the parts by hand so you can see what a neuron does.</p>
     <p>So what does the bias actually <em>do</em>? The weights decide how much each input matters; the bias is the neuron's built-in <em>lean</em> — how eager it is to fire before any input arrives. Picture it as the neuron's mood. A big positive bias is an optimist: it leans YES and needs the inputs to talk it out of firing. A negative bias is a skeptic: it leans NO and needs the inputs to push it over the line. In fact, if every input were 0, the bias is the <em>only</em> thing left, so it alone decides which way the neuron leans. That's why setting the bias to <code>-0.5</code> below turns the neuron into an OR gate: it starts off leaning NO, and it takes a high input to drag it past the 0.5 line.</p>
+    <p>One more thing the sliders below let you do: make a weight <strong>negative</strong>. A positive weight means "this input is evidence <em>for</em> YES." A negative weight means "this input argues <em>against</em> YES" — when that input switches on, it drags the total <em>down</em>, toward NO. The screen-time rule doesn't need any negative weights, but keep the idea in your pocket: it becomes the secret ingredient when we hit the XOR puzzle in chapter 7.</p>
     <p style="font-size: 14px; color: var(--muted);">Why <em>sigmoid</em> and not some other shape? Hold that question — we'll meet sigmoid's modern replacement (ReLU) in a few chapters and show why the choice of "squisher" actually matters. If you want the full zoo right now, Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page lists every common one.</p>
 
     <div class="interactive">
@@ -885,6 +939,62 @@ y = 1</pre>
       <li>Repeat 10,000 times</li>
     </ol>
 
+    <h3>Watch one nudge happen, with real numbers</h3>
+    <p>"Nudge every weight in the right direction" sounds like magic until you watch a single nudge happen. So let's do one, slowly, by hand.</p>
+    <p>Say the neuron just started, with random numbers: weight 1 (piano) = <code>−0.5</code>, weight 2 (homework) = <code>0.2</code>, bias = <code>−0.1</code>. We show it the example <em>piano = 1, homework = 0, right answer = YES</em>:</p>
+    <pre>total      = (−0.5 × 1) + (0.2 × 0) + (−0.1)  =  −0.6
+prediction = sigmoid(−0.6)                    ≈   0.35
+truth      = 1
+error      = 1 − 0.35                         =  +0.65   (too low!)</pre>
+    <p>The prediction is too low, so we want the total to come out <em>bigger</em> next time. Go through the knobs one at a time:</p>
+    <ul>
+      <li><strong>Weight 1 (piano):</strong> piano was ON (1), so this weight took part in the total. Prediction too low → nudge it <strong>UP</strong>. (It was −0.5, dragging the answer down — exactly the wrong job for it. The nudge starts fixing that.)</li>
+      <li><strong>Weight 2 (homework):</strong> homework was OFF (0), so this weight got multiplied by zero — it had <em>no effect at all</em> on this prediction. It gets <strong>no nudge</strong>. You can't blame a weight that wasn't involved.</li>
+      <li><strong>Bias:</strong> the bias is always involved (it gets added every single time, like an input that's stuck at 1). Prediction too low → nudge it <strong>UP</strong>.</li>
+    </ul>
+    <p>And if the prediction had been too <em>high</em>? Same logic, flipped: every weight whose input was on gets nudged <strong>DOWN</strong>. That's the whole secret. The recipe for one weight is just:</p>
+    <pre>nudge = small step × error × that weight's input</pre>
+    <p>The <strong>error</strong> sets the direction (too low → up, too high → down). The <strong>input</strong> decides who participates (an input of 0 wipes its weight's nudge out). And the <strong>small step</strong> keeps each change tiny, so no single example can yank the network around. The real scripts in this book multiply in one extra factor — how "squishy" sigmoid is at the current value, which chapter 12 explains — but the direction logic is exactly what you just did.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ try it</div>
+      <h3>Do one nudge yourself</h3>
+      <p>This is the same neuron, starting with the same numbers as above. Pick a training example, read the error, then press "nudge" and watch each weight move — or refuse to move — for exactly the reasons listed. Keep nudging (and switch examples between nudges, which is what real training does) and watch all four predictions crawl toward the truth. Keep an eye on the dark panel below the buttons too: that's the model itself — the actual data structure the computer stores — being rewritten live.</p>
+      <div class="toggle-row" id="nd-picker" style="font-size: 13px;">
+        <div class="toggle" data-ex="0">piano=0, homework=0 → NO</div>
+        <div class="toggle on" data-ex="1">piano=1, homework=0 → YES</div>
+        <div class="toggle" data-ex="2">piano=0, homework=1 → YES</div>
+        <div class="toggle" data-ex="3">piano=1, homework=1 → YES</div>
+      </div>
+      <div class="math-panel">
+        <h4>What the neuron says right now</h4>
+        <div id="nd-math" class="prediction-line"></div>
+      </div>
+      <div class="math-panel">
+        <h4>The nudge this example asks for</h4>
+        <div id="nd-weights" class="prediction-line"></div>
+      </div>
+      <div style="margin-top: 12px;">
+        <button id="nd-nudge">nudge the weights</button>
+        <button id="nd-cycle">nudge once on each example</button>
+        <button class="secondary" id="nd-reset">start over</button>
+      </div>
+      <div class="math-panel">
+        <h4>The model itself, as the computer stores it</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">This is the <em>entire</em> model — three numbers in a data structure. Every nudge rewrites it in place; freshly changed numbers light up. When someone says "I downloaded a model," they mean a file holding a much, much longer list like this.</p>
+        <pre class="model-dump" id="nd-model"></pre>
+      </div>
+      <div class="prediction-line" id="nd-preds" style="margin-top: 14px;"></div>
+      <div class="stat-row">
+        <span>nudges so far: <strong id="nd-count">0</strong></span>
+        <span>w1: <strong id="nd-w1">-0.50</strong></span>
+        <span>w2: <strong id="nd-w2">0.20</strong></span>
+        <span>bias: <strong id="nd-b">-0.10</strong></span>
+      </div>
+    </div>
+
+    <p>The trainer below does exactly what you just did — it just applies the nudge for all four examples at once, then repeats thousands of times.</p>
+
     <div class="interactive">
       <div class="interactive-title">▸ try it</div>
       <h3>Train the neuron yourself</h3>
@@ -895,6 +1005,11 @@ y = 1</pre>
         <button class="secondary" id="t-reset">reset weights</button>
       </div>
       <div class="prediction-line" id="t-predictions" style="margin-top: 14px;"></div>
+      <div class="math-panel">
+        <h4>The model being rewritten</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Training never touches the four examples — it only rewrites these three stored numbers, over and over, until they encode the rule.</p>
+        <pre class="model-dump" id="t-model"></pre>
+      </div>
       <div class="stat-row">
         <span>epoch: <strong id="t-epoch">0</strong></span>
         <span>w1: <strong id="t-w1">?</strong></span>
@@ -991,7 +1106,7 @@ for (hi, ho), pred, truth in zip(x, outputs, y):
     <p>Before we make the network harder, it is worth being very clear about what training is allowed to change.</p>
     <p>Training does <strong>not</strong> change the examples. The input table stays the same. The right answers stay the same. If the row says <code>[1, 0] → YES</code>, training is not allowed to rewrite that row.</p>
     <p>Training also does <strong>not</strong> grow new neurons in these tiny programs. If the code says there is one neuron, training has to work with one neuron. If the code says there are 4 hidden neurons, training has to work with those 4. The network does not secretly add a fifth neuron because it gets stuck.</p>
-    <p>The only things training changes are the <strong>weights</strong> and <strong>biases</strong> — the adjustable numbers inside the network.</p>
+    <p>The only things training changes are the <strong>weights</strong> and <strong>biases</strong> — the adjustable numbers inside the network. You can literally watch this: the dark "model" panels under chapter 4's trainers show the stored numbers being rewritten — and nothing else — while training runs.</p>
     <table>
       <tr><th>Thing</th><th>Who changes it?</th></tr>
       <tr><td>Input examples, like <code>[1, 0]</code></td><td>The human writing the dataset</td></tr>
@@ -1123,6 +1238,11 @@ for (hi, ho), pred, truth in zip(x, outputs, y):
         <button class="secondary" id="x-reset">reset weights</button>
       </div>
       <div class="prediction-line" id="x-predictions" style="margin-top: 14px;"></div>
+      <div class="math-panel">
+        <h4>The model that can't win</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Same three stored numbers as the screen-time model. Watch them wander and then sink toward zero — that's the neuron giving up and settling for "answer 0.5 to everything." No values of these three numbers can solve XOR.</p>
+        <pre class="model-dump" id="x-model"></pre>
+      </div>
       <div class="stat-row">
         <span>epoch: <strong id="x-epoch">0</strong></span>
         <span>avg error: <strong id="x-err">?</strong></span>
@@ -1144,7 +1264,7 @@ for (hi, ho), pred, truth in zip(x, outputs, y):
     <div class="interactive">
       <div class="interactive-title">▸ run real python</div>
       <h3>Watch a real single-layer perceptron give up</h3>
-      <p>This is <code>neuro2.py</code>. Same code as neuro1.py, just XOR data. The output will plateau at MSE ≈ 0.25 and every prediction ends up ≈ 0.5.</p>
+      <p>This is <code>neuro2.py</code>. Same code as neuro1.py, just XOR data. The output will plateau at MSE ≈ 0.25 and every prediction ends up ≈ 0.5. (MSE is <strong>mean squared error</strong>: square each example's error, then average them. It's the script's single score for "how wrong am I overall?" Training is supposed to shrink it — and here it refuses to shrink.)</p>
       <div class="code-editor-wrap">
         <div class="code-header">
           <span class="code-filename">neuro2.py</span>
@@ -1227,6 +1347,29 @@ print("  layers. See neuro3.py for the fix.")
     <p>The fix turned out to be: use MORE neurons, in <strong>layers</strong>.</p>
     <p>Imagine you have a few neurons sitting in the middle of the network. Each one draws its own line on the graph paper. Now an output neuron looks at what those middle neurons said and combines their answers. Two lines, combined cleverly, can carve out the diagonal pattern.</p>
 
+    <p>Here is the trick on the same graph paper as before. One line couldn't split the XOR corners — but <strong>two lines together</strong> can fence off exactly the diagonal stripe where the YES dots live. Each hidden neuron draws one of the lines:</p>
+
+    <svg viewBox="0 0 460 320" xmlns="http://www.w3.org/2000/svg" aria-label="two lines together carve out the diagonal XOR stripe">
+      <polygon points="74,118 164,38 326,182 236,262" fill="#dbeafe" opacity="0.5"/>
+      <line x1="70" y1="260" x2="390" y2="260" stroke="#374151" stroke-width="2"/>
+      <line x1="70" y1="260" x2="70" y2="20" stroke="#374151" stroke-width="2"/>
+      <line x1="74" y1="118" x2="236" y2="262" stroke="#2563eb" stroke-width="3" stroke-dasharray="7 5"/>
+      <line x1="164" y1="38" x2="326" y2="182" stroke="#16a34a" stroke-width="3" stroke-dasharray="7 5"/>
+      <circle cx="110" cy="230" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="110" y="235" text-anchor="middle" font-size="12" fill="#dc2626">NO</text>
+      <circle cx="290" cy="230" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="290" y="235" text-anchor="middle" font-size="12" fill="#2563eb">YES</text>
+      <circle cx="110" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="110" y="75" text-anchor="middle" font-size="12" fill="#2563eb">YES</text>
+      <circle cx="290" cy="70" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="290" y="75" text-anchor="middle" font-size="12" fill="#dc2626">NO</text>
+      <text x="248" y="280" font-size="12" fill="#2563eb">hidden 1's line: "at least one button?"</text>
+      <text x="226" y="32" font-size="12" fill="#16a34a">hidden 2's line: "not both buttons?"</text>
+      <text x="196" y="158" text-anchor="middle" font-size="12" fill="#1d4ed8" font-weight="700" transform="rotate(42 196 158)">YES stripe — between the lines</text>
+      <text x="100" y="278" font-size="11" fill="#374151">left=0</text>
+      <text x="280" y="278" font-size="11" fill="#374151">left=1</text>
+      <text x="20" y="234" font-size="11" fill="#374151">right=0</text>
+      <text x="20" y="74" font-size="11" fill="#374151">right=1</text>
+    </svg>
+
+    <p>Hidden neuron 1 asks "<em>is at least one button pressed?</em>" — everything above the blue line. Hidden neuron 2 asks "<em>is it NOT both buttons?</em>" — everything below the green line. The output neuron then asks the easiest question of all: "<em>did BOTH hidden neurons say yes?</em>" The only dots that pass both tests are the two YES corners, sitting in the stripe between the lines. Three easy straight-line questions, chained together, make a shape that no single line could ever make.</p>
+
     <svg viewBox="0 0 460 220" xmlns="http://www.w3.org/2000/svg">
       <circle cx="40" cy="60" r="20" fill="#fff" stroke="#374151" stroke-width="2"/>
       <text x="25" y="65" font-size="12" fill="#374151">in 1</text>
@@ -1262,7 +1405,7 @@ print("  layers. See neuro3.py for the fix.")
       <li>Hidden neuron 2 learned to mean "<em>right button AND NOT left button</em>"</li>
       <li>The output neuron learned: "<em>fire if either hidden neuron fires</em>"</li>
     </ul>
-    <p>Nobody told the network those rules. It discovered them by being a tiny bit less wrong over and over.</p>
+    <p>Nobody told the network those rules. It discovered them by being a tiny bit less wrong over and over. (Notice that's a <em>different</em> two-line solution from the stripe picture above — there, the lines fenced off the middle; here, each hidden neuron fenced off one YES corner and the output ORs them together. There are several ways to carve out those corners, and training can land on any of them.)</p>
 
     <div class="interactive">
       <div class="interactive-title">▸ try it</div>
@@ -1274,6 +1417,11 @@ print("  layers. See neuro3.py for the fix.")
         <button class="secondary" id="h-reset">reset weights</button>
       </div>
       <div class="prediction-line" id="h-predictions" style="margin-top: 14px;"></div>
+      <div class="math-panel">
+        <h4>The bigger model</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Solving XOR costs <strong>17 stored numbers</strong> instead of 3: 8 input→hidden weights, 4 hidden biases, 4 hidden→output weights, 1 output bias. More neurons just means a longer list — it's still nothing but numbers being rewritten.</p>
+        <pre class="model-dump" id="h-model"></pre>
+      </div>
       <div class="stat-row">
         <span>epoch: <strong id="h-epoch">0</strong></span>
       </div>
@@ -1319,7 +1467,7 @@ print("  layers. See neuro3.py for the fix.")
       </div>
 
       <div class="run-note">
-        <strong>How to read it:</strong> blue wires are positive weights and red wires are negative weights. Red does not mean wrong. A hidden neuron can still light up because of its bias and all incoming weights together. Then the right-side wires act like votes: active hidden neurons with blue output wires push the final answer toward YES; active hidden neurons with red output wires push it toward NO. The output is the combined vote from all hidden neurons. (The "YES/NO vote" picture works here because there is one output neuron deciding yes-or-no. When we add more output classes in chapter 10, the votes turn into a list of scores instead.)
+        <strong>How to read it:</strong> blue wires are positive weights and red wires are negative weights. Red does not mean wrong. A hidden neuron can still light up because of its bias and all incoming weights together. Then the right-side wires act like votes: active hidden neurons with blue output wires push the final answer toward YES; active hidden neurons with red output wires push it toward NO. The output is the combined vote from all hidden neurons. (The "YES/NO vote" picture works here because there is one output neuron deciding yes-or-no. When we add more output classes in chapter 9, the votes turn into a list of scores instead.)
       </div>
     </div>
 
@@ -1395,8 +1543,177 @@ for (left, right), pred, truth in zip(x, o, y):
     </div>
   </section>
 
+  <section id="multi">
+    <h2>9. Picking from a list</h2>
+    <p>So far the neuron has just answered yes or no. What if the question is "<strong>which snack should I grab?</strong>" with several options?</p>
+
+    <table>
+      <tr><th>hungry?</th><th>after school?</th><th>weekend?</th><th>snack</th></tr>
+      <tr><td>0</td><td>0</td><td>0</td><td>fruit</td></tr>
+      <tr><td>1</td><td>0</td><td>0</td><td>fruit</td></tr>
+      <tr><td>0</td><td>1</td><td>0</td><td>chips</td></tr>
+      <tr><td>1</td><td>1</td><td>0</td><td>chips</td></tr>
+      <tr><td>0</td><td>0</td><td>1</td><td>cookie</td></tr>
+      <tr><td>1</td><td>0</td><td>1</td><td>cookie</td></tr>
+      <tr><td>0</td><td>1</td><td>1</td><td>cookie</td></tr>
+      <tr><td>1</td><td>1</td><td>1</td><td>cookie</td></tr>
+    </table>
+
+    <p>Three options now: <strong>fruit</strong>, <strong>chips</strong>, <strong>cookie</strong>. The fix is small: have <strong>one output neuron per option</strong>. Each outputs a score for its option. A function called <strong>softmax</strong> turns the scores into probabilities that always add up to 1.</p>
+
+    <p>The math is small enough you could do it on paper. For three scores <code>z₁, z₂, z₃</code>, softmax is:</p>
+
+    <pre>softmax_i = e^(z_i) / (e^(z_1) + e^(z_2) + e^(z_3))</pre>
+
+    <p>(Haven't met <code>e</code> yet? It's just a famous fixed number, about <strong>2.718</strong> — math's favorite constant after π. And <code>e^z</code> means "e raised to the power z": <code>e^2 = e × e ≈ 7.4</code>, <code>e^0 = 1</code>, and e to a negative power is a small positive fraction. Only two things matter here: <code>e^z</code> is <em>always positive</em>, and it <em>grows fast</em> as z grows.)</p>
+    <p>The <code>e^</code> part makes everything positive and exaggerates the differences (a bigger score becomes <em>way</em> more likely than a slightly smaller one). The dividing makes them add up to 1, so they're proper probabilities. Quick example:</p>
+
+    <pre>softmax([2.0, 1.0, 0.1])  →  [0.66, 0.24, 0.10]</pre>
+
+    <p>The model might output <code>[0.10, 0.85, 0.05]</code> meaning "10% chance fruit, 85% chance chips, 5% chance cookie". You pick the highest one (chips).</p>
+    <p>The labels we feed in for training look like <code>[1,0,0]</code> for fruit, <code>[0,1,0]</code> for chips, <code>[0,0,1]</code> for cookie. Exactly one slot is 1 (the right answer) and the rest are 0. That's called <strong>one-hot encoding</strong> — we'll meet it again in chapter 11's meal guesser and use the name more often.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ try it</div>
+      <h3>The trained snack picker</h3>
+      <p>This network was actually trained for you when this page loaded. Toggle the inputs and watch the probabilities update.</p>
+      <div class="toggle-row">
+        <div class="toggle" id="s-hungry">hungry</div>
+        <div class="toggle" id="s-school">after school</div>
+        <div class="toggle" id="s-weekend">weekend</div>
+      </div>
+      <div class="bar-container"><span class="label">🍎 fruit</span><div class="bar-track"><div class="bar" id="s-fruit-bar" style="background:#22c55e; width:80%"></div></div><span class="pct" id="s-fruit-pct">0.80</span></div>
+      <div class="bar-container"><span class="label">🥔 chips</span><div class="bar-track"><div class="bar" id="s-chips-bar" style="background:#eab308; width:15%"></div></div><span class="pct" id="s-chips-pct">0.15</span></div>
+      <div class="bar-container"><span class="label">🍪 cookie</span><div class="bar-track"><div class="bar" id="s-cookie-bar" style="background:#ec4899; width:5%"></div></div><span class="pct" id="s-cookie-pct">0.05</span></div>
+      <div class="stat-row">
+        <span>recommended: <strong id="s-pick">fruit</strong></span>
+      </div>
+    </div>
+
+    <p>This same pattern — output one neuron per class, softmax to get probabilities — is how a network can recognize handwritten digits (10 classes: 0 through 9), pick a song to recommend, or pick the next word in a sentence (about <strong>100,000</strong> possible classes — one per possible word/word-piece). Same idea, just more output neurons. If you want the deeper "why" of softmax (where it comes from in statistics), Wikipedia's <a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener">softmax function</a> page is a solid first stop.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ run real python</div>
+      <h3>Run the real multi-class snack picker</h3>
+      <p>This is <code>neuro4.py</code>. 3 inputs, 6 hidden neurons, 3 output classes with softmax. Trains in a couple of seconds and prints a table with the right snack for each combination.</p>
+      <div class="code-editor-wrap">
+        <div class="code-header">
+          <span class="code-filename">neuro4.py</span>
+          <span class="code-status" id="py-status-4">Python loads on first run</span>
+        </div>
+        <textarea class="code-editor" id="py-code-4" spellcheck="false" rows="28">import numpy as np
+
+# Step 4: multi-class classifier. 3 binary inputs -> 3 mutually
+# exclusive output classes (fruit / chips / cookie).
+# New concepts vs step 3: softmax output, cross-entropy loss,
+# one-hot labels.
+#
+# Rule we're teaching: "Which snack should I grab?"
+#   weekend                 -> cookie  (weekend treat)
+#   after_school (not wknd) -> chips   (after-school energy)
+#   otherwise               -> fruit   (boring-day default)
+#   (the "hungry" input is intentionally noise — the network must
+#    figure out by itself that it doesn't change the decision.)
+#
+# x: shape (8, 3). 8 samples, 3 binary features per sample.
+#   columns = [hungry, after_school, weekend]
+#   rows    = all 8 combinations.
+#
+# y: shape (8, 3). One-hot labels.
+#   columns = [fruit, chips, cookie]   (exactly one column is 1 per row)
+#
+# Row-by-row decoding of (x, y):
+#   [0,0,0] plain weekday         -> [1,0,0] fruit
+#   [1,0,0] hungry weekday        -> [1,0,0] fruit
+#   [0,1,0] after school          -> [0,1,0] chips
+#   [1,1,0] hungry, after school  -> [0,1,0] chips
+#   [0,0,1] weekend               -> [0,0,1] cookie
+#   [1,0,1] hungry weekend        -> [0,0,1] cookie
+#   [0,1,1] weekend + after-school-> [0,0,1] cookie  (weekend wins)
+#   [1,1,1] hungry, both          -> [0,0,1] cookie
+x = np.array([
+    [0,0,0],[1,0,0],
+    [0,1,0],[1,1,0],
+    [0,0,1],[1,0,1],
+    [0,1,1],[1,1,1],
+])
+y = np.array([
+    [1,0,0],[1,0,0],
+    [0,1,0],[0,1,0],
+    [0,0,1],[0,0,1],
+    [0,0,1],[0,0,1],
+])
+
+CLASS_NAMES = ["fruit", "chips", "cookie"]
+
+def sigmoid(x): return 1/(1+np.exp(-x))
+def dsigmoid(x): return x*(1-x)
+
+def softmax(z):
+    z = z - z.max(axis=1, keepdims=True)
+    e = np.exp(z)
+    return e / e.sum(axis=1, keepdims=True)
+
+np.random.seed(1)
+w1 = 2*np.random.random((3,6)) - 1   # 3 inputs -> 6 hidden
+b1 = np.zeros((1,6))
+w2 = 2*np.random.random((6,3)) - 1   # 6 hidden -> 3 classes
+b2 = np.zeros((1,3))
+lr = 0.5
+
+for epoch in range(20000):
+    # forward
+    h = sigmoid(x @ w1 + b1)
+    o = softmax(h @ w2 + b2)
+
+    # backward
+    d_o = (o - y) / x.shape[0]            # softmax + cross-entropy combined gradient
+    d_h = (d_o @ w2.T) * dsigmoid(h)
+
+    # update
+    w2 -= lr * h.T @ d_o
+    b2 -= lr * d_o.sum(axis=0, keepdims=True)
+    w1 -= lr * x.T @ d_h
+    b1 -= lr * d_h.sum(axis=0, keepdims=True)
+
+    if epoch % 2000 == 0:
+        loss = -np.sum(y * np.log(o + 1e-9)) / x.shape[0]
+        print(f"epoch {epoch}: loss {loss:.4f}")
+
+print()
+print('Trained — "Which snack should I grab?"  (fruit / chips / cookie)')
+header = (
+    f'  {"hungry":>6} {"after_school":>13} {"weekend":>8}  '
+    f'{"fruit":>6} {"chips":>6} {"cookie":>7}   '
+    f'{"predicted":>9}   {"truth":>6}'
+)
+print(header)
+for (hu, sc, we), probs, truth in zip(x, o, y):
+    pred_idx  = int(probs.argmax())
+    truth_idx = int(truth.argmax())
+    pred_name  = CLASS_NAMES[pred_idx]
+    truth_name = CLASS_NAMES[truth_idx]
+    print(
+        f'  {hu:>6} {sc:>13} {we:>8}  '
+        f'{probs[0]:>6.2f} {probs[1]:>6.2f} {probs[2]:>7.2f}   '
+        f'{pred_name:>9}   {truth_name:>6}'
+    )
+</textarea>
+      </div>
+      <div style="margin: 10px 0;">
+        <button data-py="4">▶ run</button>
+        <button class="secondary" data-py-reset="4">reset code</button>
+      </div>
+      <div class="terminal" id="py-out-4"><span class="dim">(click "run" to execute)</span></div>
+    </div>
+    <div class="challenge">
+      <strong>Challenge</strong>
+      <p>Add a fourth snack class in your notebook: smoothie. What new output neuron and labels would the network need?</p>
+    </div>
+  </section>
+
   <section id="activations">
-    <h2>9. What does that "squish" actually do?</h2>
+    <h2>10. What does that "squish" actually do?</h2>
     <p>You've been hearing about <strong>sigmoid</strong> — the function that squishes any number into the range 0-1. Time to actually look at what it does, and meet its modern replacement, <strong>ReLU</strong>.</p>
 
     <p>Here's what these functions look like when you plot them on graph paper. The horizontal axis is what goes INTO the neuron (the weighted sum). The vertical axis is what comes OUT.</p>
@@ -1555,220 +1872,55 @@ for (hu, sc, we), probs, truth in zip(x, o, y):
 
     <div class="challenge">
       <strong>Challenge</strong>
-      <p>In the ReLU script, try changing <code>lr = 0.1</code> to <code>0.5</code>. If training gets worse, you have found why learning rate matters.</p>
+      <p>In the ReLU script, try changing <code>lr = 0.1</code> to <code>0.5</code>. (<code>lr</code> is the <strong>learning rate</strong> — the "small step" from chapter 4's nudge recipe. Chapter 12 digs into it properly.) If training gets worse, you have found why the size of that step matters.</p>
     </div>
   </section>
 
-  <section id="multi">
-    <h2>10. Picking from a list</h2>
-    <p>So far the neuron has just answered yes or no. What if the question is "<strong>which snack should I grab?</strong>" with several options?</p>
+  <section id="meals">
+    <h2>11. Meal guesser</h2>
+    <p>The snack picker had three choices. Real classifiers often have more classes and messier inputs. So here is the snack picker's big sibling: a tiny network that guesses <em>what meal you're describing</em> from menu-style clues.</p>
+
+    <p>You met <strong>one-hot encoding</strong> back in chapter 9 (the snack labels). This time we'll do it on the <em>inputs</em> too. A neural network wants numbers, not words. So a word choice like <code>course = dessert</code> becomes a few yes/no inputs:</p>
+
+    <pre>course_main = 0
+course_snack = 0
+course_dessert = 1</pre>
+
+    <p>Same for temperature, taste, diet, and base. The network does not receive the word "pastry"; it receives <code>base_pastry = 1</code> and the other base inputs set to <code>0</code>. None of these clues is enough by itself; the network has to combine them.</p>
 
     <table>
-      <tr><th>hungry?</th><th>after school?</th><th>weekend?</th><th>snack</th></tr>
-      <tr><td>0</td><td>0</td><td>0</td><td>fruit</td></tr>
-      <tr><td>1</td><td>0</td><td>0</td><td>fruit</td></tr>
-      <tr><td>0</td><td>1</td><td>0</td><td>chips</td></tr>
-      <tr><td>1</td><td>1</td><td>0</td><td>chips</td></tr>
-      <tr><td>0</td><td>0</td><td>1</td><td>cookie</td></tr>
-      <tr><td>1</td><td>0</td><td>1</td><td>cookie</td></tr>
-      <tr><td>0</td><td>1</td><td>1</td><td>cookie</td></tr>
-      <tr><td>1</td><td>1</td><td>1</td><td>cookie</td></tr>
+      <tr><th>meal</th><th>course</th><th>temperature</th><th>taste</th><th>diet</th><th>base</th></tr>
+      <tr><td>apple pie</td><td>dessert</td><td>hot</td><td>sweet</td><td>vegetarian</td><td>pastry</td></tr>
+      <tr><td>sausage roll</td><td>snack</td><td>hot</td><td>savory</td><td>meat</td><td>pastry</td></tr>
+      <tr><td>cottage pie</td><td>main</td><td>hot</td><td>savory</td><td>meat</td><td>potato</td></tr>
+      <tr><td>baked potato</td><td>main</td><td>hot</td><td>savory</td><td>vegetarian</td><td>potato</td></tr>
+      <tr><td>spaghetti</td><td>main</td><td>hot</td><td>savory</td><td>meat</td><td>pasta</td></tr>
+      <tr><td>mac &amp; cheese</td><td>main</td><td>hot</td><td>savory</td><td>vegetarian</td><td>pasta</td></tr>
+      <tr><td>ice cream</td><td>dessert</td><td>cold</td><td>sweet</td><td>vegetarian</td><td>dairy</td></tr>
+      <tr><td>fruit salad</td><td>dessert</td><td>cold</td><td>sweet</td><td>vegetarian</td><td>fruit</td></tr>
     </table>
 
-    <p>Three options now: <strong>fruit</strong>, <strong>chips</strong>, <strong>cookie</strong>. The fix is small: have <strong>one output neuron per option</strong>. Each outputs a score for its option. A function called <strong>softmax</strong> turns the scores into probabilities that always add up to 1.</p>
-
-    <p>The math is small enough you could do it on paper. For three scores <code>z₁, z₂, z₃</code>, softmax is:</p>
-
-    <pre>softmax_i = e^(z_i) / (e^(z_1) + e^(z_2) + e^(z_3))</pre>
-
-    <p>The <code>e^</code> part makes everything positive and exaggerates the differences (a bigger score becomes <em>way</em> more likely than a slightly smaller one). The dividing makes them add up to 1, so they're proper probabilities. Quick example:</p>
-
-    <pre>softmax([2.0, 1.0, 0.1])  →  [0.66, 0.24, 0.10]</pre>
-
-    <p>The model might output <code>[0.10, 0.85, 0.05]</code> meaning "10% chance fruit, 85% chance chips, 5% chance cookie". You pick the highest one (chips).</p>
-    <p>The labels we feed in for training look like <code>[1,0,0]</code> for fruit, <code>[0,1,0]</code> for chips, <code>[0,0,1]</code> for cookie. Exactly one slot is 1 (the right answer) and the rest are 0. That's called <strong>one-hot encoding</strong> — we'll meet it again in the next chapter and use the name more often.</p>
+    <p>Look closely at the table before training: it's full of <strong>near-misses</strong>. Cottage pie and baked potato match on everything except diet. Spaghetti and mac &amp; cheese — same thing (the spaghetti is bolognese, that's where the meat is). Ice cream and fruit salad differ only on base. And apple pie and sausage roll share a pastry crust while disagreeing about everything else. No single clue gives the answer away; the network <em>must</em> combine them.</p>
 
     <div class="interactive">
       <div class="interactive-title">▸ try it</div>
-      <h3>The trained snack picker</h3>
-      <p>This network was actually trained for you when this page loaded. Toggle the inputs and watch the probabilities update.</p>
-      <div class="toggle-row">
-        <div class="toggle" id="s-hungry">hungry</div>
-        <div class="toggle" id="s-school">after school</div>
-        <div class="toggle" id="s-weekend">weekend</div>
-      </div>
-      <div class="bar-container"><span class="label">🍎 fruit</span><div class="bar-track"><div class="bar" id="s-fruit-bar" style="background:#22c55e; width:80%"></div></div><span class="pct" id="s-fruit-pct">0.80</span></div>
-      <div class="bar-container"><span class="label">🥔 chips</span><div class="bar-track"><div class="bar" id="s-chips-bar" style="background:#eab308; width:15%"></div></div><span class="pct" id="s-chips-pct">0.15</span></div>
-      <div class="bar-container"><span class="label">🍪 cookie</span><div class="bar-track"><div class="bar" id="s-cookie-bar" style="background:#ec4899; width:5%"></div></div><span class="pct" id="s-cookie-pct">0.05</span></div>
-      <div class="stat-row">
-        <span>recommended: <strong id="s-pick">fruit</strong></span>
-      </div>
-    </div>
+      <h3>Train a meal guesser</h3>
+      <p>Click train, then change the traits. The network will show probability bars for each meal. Try normal combinations, then weird ones like a cold sweet pastry that contains meat.</p>
+      <p style="font-size: 13px; color: var(--muted);">Best trick: set course = main, temperature = hot, taste = savory, base = pasta — and leave diet unknown. Watch spaghetti and mac &amp; cheese split the vote almost 50/50. Then pick a diet and watch the tie break instantly. That's a network weighing evidence.</p>
 
-    <p>This same pattern — output one neuron per class, softmax to get probabilities — is how a network can recognize handwritten digits (10 classes: 0 through 9), pick a song to recommend, or pick the next word in a sentence (about <strong>100,000</strong> possible classes — one per possible word/word-piece). Same idea, just more output neurons. If you want the deeper "why" of softmax (where it comes from in statistics), Wikipedia's <a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener">softmax function</a> page is a solid first stop.</p>
-
-    <div class="interactive">
-      <div class="interactive-title">▸ run real python</div>
-      <h3>Run the real multi-class snack picker</h3>
-      <p>This is <code>neuro4.py</code>. 3 inputs, 6 hidden neurons, 3 output classes with softmax. Trains in a couple of seconds and prints a table with the right snack for each combination.</p>
-      <div class="code-editor-wrap">
-        <div class="code-header">
-          <span class="code-filename">neuro4.py</span>
-          <span class="code-status" id="py-status-4">Python loads on first run</span>
-        </div>
-        <textarea class="code-editor" id="py-code-4" spellcheck="false" rows="28">import numpy as np
-
-# Step 4: multi-class classifier. 3 binary inputs -> 3 mutually
-# exclusive output classes (fruit / chips / cookie).
-# New concepts vs step 3: softmax output, cross-entropy loss,
-# one-hot labels.
-#
-# Rule we're teaching: "Which snack should I grab?"
-#   weekend                 -> cookie  (weekend treat)
-#   after_school (not wknd) -> chips   (after-school energy)
-#   otherwise               -> fruit   (boring-day default)
-#   (the "hungry" input is intentionally noise — the network must
-#    figure out by itself that it doesn't change the decision.)
-#
-# x: shape (8, 3). 8 samples, 3 binary features per sample.
-#   columns = [hungry, after_school, weekend]
-#   rows    = all 8 combinations.
-#
-# y: shape (8, 3). One-hot labels.
-#   columns = [fruit, chips, cookie]   (exactly one column is 1 per row)
-#
-# Row-by-row decoding of (x, y):
-#   [0,0,0] plain weekday         -> [1,0,0] fruit
-#   [1,0,0] hungry weekday        -> [1,0,0] fruit
-#   [0,1,0] after school          -> [0,1,0] chips
-#   [1,1,0] hungry, after school  -> [0,1,0] chips
-#   [0,0,1] weekend               -> [0,0,1] cookie
-#   [1,0,1] hungry weekend        -> [0,0,1] cookie
-#   [0,1,1] weekend + after-school-> [0,0,1] cookie  (weekend wins)
-#   [1,1,1] hungry, both          -> [0,0,1] cookie
-x = np.array([
-    [0,0,0],[1,0,0],
-    [0,1,0],[1,1,0],
-    [0,0,1],[1,0,1],
-    [0,1,1],[1,1,1],
-])
-y = np.array([
-    [1,0,0],[1,0,0],
-    [0,1,0],[0,1,0],
-    [0,0,1],[0,0,1],
-    [0,0,1],[0,0,1],
-])
-
-CLASS_NAMES = ["fruit", "chips", "cookie"]
-
-def sigmoid(x): return 1/(1+np.exp(-x))
-def dsigmoid(x): return x*(1-x)
-
-def softmax(z):
-    z = z - z.max(axis=1, keepdims=True)
-    e = np.exp(z)
-    return e / e.sum(axis=1, keepdims=True)
-
-np.random.seed(1)
-w1 = 2*np.random.random((3,6)) - 1   # 3 inputs -> 6 hidden
-b1 = np.zeros((1,6))
-w2 = 2*np.random.random((6,3)) - 1   # 6 hidden -> 3 classes
-b2 = np.zeros((1,3))
-lr = 0.5
-
-for epoch in range(20000):
-    # forward
-    h = sigmoid(x @ w1 + b1)
-    o = softmax(h @ w2 + b2)
-
-    # backward
-    d_o = (o - y) / x.shape[0]            # softmax + cross-entropy combined gradient
-    d_h = (d_o @ w2.T) * dsigmoid(h)
-
-    # update
-    w2 -= lr * h.T @ d_o
-    b2 -= lr * d_o.sum(axis=0, keepdims=True)
-    w1 -= lr * x.T @ d_h
-    b1 -= lr * d_h.sum(axis=0, keepdims=True)
-
-    if epoch % 2000 == 0:
-        loss = -np.sum(y * np.log(o + 1e-9)) / x.shape[0]
-        print(f"epoch {epoch}: loss {loss:.4f}")
-
-print()
-print('Trained — "Which snack should I grab?"  (fruit / chips / cookie)')
-header = (
-    f'  {"hungry":>6} {"after_school":>13} {"weekend":>8}  '
-    f'{"fruit":>6} {"chips":>6} {"cookie":>7}   '
-    f'{"predicted":>9}   {"truth":>6}'
-)
-print(header)
-for (hu, sc, we), probs, truth in zip(x, o, y):
-    pred_idx  = int(probs.argmax())
-    truth_idx = int(truth.argmax())
-    pred_name  = CLASS_NAMES[pred_idx]
-    truth_name = CLASS_NAMES[truth_idx]
-    print(
-        f'  {hu:>6} {sc:>13} {we:>8}  '
-        f'{probs[0]:>6.2f} {probs[1]:>6.2f} {probs[2]:>7.2f}   '
-        f'{pred_name:>9}   {truth_name:>6}'
-    )
-</textarea>
-      </div>
-      <div style="margin: 10px 0;">
-        <button data-py="4">▶ run</button>
-        <button class="secondary" data-py-reset="4">reset code</button>
-      </div>
-      <div class="terminal" id="py-out-4"><span class="dim">(click "run" to execute)</span></div>
-    </div>
-    <div class="challenge">
-      <strong>Challenge</strong>
-      <p>Add a fourth snack class in your notebook: smoothie. What new output neuron and labels would the network need?</p>
-    </div>
-  </section>
-
-  <section id="animals">
-    <h2>11. Animal guesser</h2>
-    <p>The snack picker had three choices. Real classifiers often have more classes and messier inputs. Let's train a tiny network to guess an animal from clues.</p>
-
-    <p>You met <strong>one-hot encoding</strong> in the previous chapter (the snack labels). This time we'll do it on the <em>inputs</em> too. A neural network wants numbers, not words. So a word choice like <code>size = large</code> becomes a few yes/no inputs:</p>
-
-    <pre>size_small = 0
-size_medium = 0
-size_large = 1</pre>
-
-    <p>Same for place, food, feet, and color. The network does not receive the word "orange"; it receives <code>color_orange = 1</code> and the other color inputs set to <code>0</code>. None of these clues is enough by itself; the network has to combine them.</p>
-
-    <table>
-      <tr><th>animal</th><th>size</th><th>place</th><th>food</th><th>feet</th><th>color</th></tr>
-      <tr><td>dog</td><td>medium</td><td>home</td><td>both</td><td>paws</td><td>brown</td></tr>
-      <tr><td>cat</td><td>small</td><td>home</td><td>meat</td><td>paws</td><td>orange</td></tr>
-      <tr><td>rabbit</td><td>small</td><td>home</td><td>plants</td><td>paws</td><td>brown</td></tr>
-      <tr><td>pig</td><td>medium</td><td>farm</td><td>both</td><td>hooves</td><td>pink</td></tr>
-      <tr><td>horse</td><td>large</td><td>farm</td><td>plants</td><td>hooves</td><td>brown</td></tr>
-      <tr><td>cow</td><td>large</td><td>farm</td><td>plants</td><td>hooves</td><td>black-white</td></tr>
-      <tr><td>lion</td><td>large</td><td>wild</td><td>meat</td><td>paws</td><td>brown</td></tr>
-      <tr><td>tiger</td><td>large</td><td>wild</td><td>meat</td><td>paws</td><td>orange</td></tr>
-    </table>
-
-    <div class="interactive">
-      <div class="interactive-title">▸ try it</div>
-      <h3>Train an animal guesser</h3>
-      <p>Click train, then change the traits. The network will show probability bars for each animal. Try normal combinations, then weird ones like a large home animal that eats meat and has hooves.</p>
-
-      <div class="animal-tool">
-        <div class="animal-controls">
+      <div class="guesser-tool">
+        <div class="guesser-controls">
           <div>
             <button id="a-step">train 1 epoch</button>
             <button id="a-fast">train 1,000</button>
             <button class="secondary" id="a-reset">reset</button>
           </div>
           <h4>Traits</h4>
-          <div class="select-row"><label>size</label><select id="a-size"><option value="" selected>unknown</option><option>small</option><option>large</option><option>medium</option></select></div>
-          <div class="select-row"><label>place</label><select id="a-place"><option value="" selected>unknown</option><option>home</option><option>farm</option><option>wild</option></select></div>
-          <div class="select-row"><label>food</label><select id="a-food"><option value="" selected>unknown</option><option>meat</option><option>plants</option><option>both</option></select></div>
-          <div class="select-row"><label>feet</label><select id="a-feet"><option value="" selected>unknown</option><option>paws</option><option>hooves</option></select></div>
-          <div class="select-row"><label>color</label><select id="a-color"><option value="" selected>unknown</option><option>brown</option><option>orange</option><option>black-white</option><option>pink</option></select></div>
+          <div class="select-row"><label>course</label><select id="a-course"><option value="" selected>unknown</option><option>main</option><option>snack</option><option>dessert</option></select></div>
+          <div class="select-row"><label>temperature</label><select id="a-temp"><option value="" selected>unknown</option><option>hot</option><option>cold</option></select></div>
+          <div class="select-row"><label>taste</label><select id="a-taste"><option value="" selected>unknown</option><option>sweet</option><option>savory</option></select></div>
+          <div class="select-row"><label>diet</label><select id="a-diet"><option value="" selected>unknown</option><option>vegetarian</option><option>meat</option></select></div>
+          <div class="select-row"><label>base</label><select id="a-base"><option value="" selected>unknown</option><option>pastry</option><option>potato</option><option>pasta</option><option>dairy</option><option>fruit</option></select></div>
           <h4>Network shape</h4>
           <div class="select-row"><label>hidden</label><select id="a-hidden-count"><option>2</option><option>4</option><option selected>8</option><option>12</option></select></div>
           <div class="stat-row">
@@ -1776,38 +1928,38 @@ size_large = 1</pre>
             <span>train accuracy: <strong id="a-acc">?</strong></span>
           </div>
         </div>
-        <div class="animal-prediction">
+        <div class="guesser-prediction">
           <h4>Prediction</h4>
           <div id="a-bars"></div>
         </div>
-        <div class="animal-wide">
-          <svg id="animal-net-svg" class="animal-network" viewBox="0 0 620 360" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="guesser-wide">
+          <svg id="meal-net-svg" class="guesser-network" viewBox="0 0 620 360" xmlns="http://www.w3.org/2000/svg"></svg>
           <div class="math-panel">
             <h4>How the clues become numbers</h4>
             <div id="a-features"></div>
           </div>
           <div class="math-panel">
-            <h4>What training saved</h4>
-            <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px;">The trained model is just learned numbers. This preview shows a few weights from the input-to-hidden layer and hidden-to-output layer.</p>
+            <h4>What training saved — the model itself, live</h4>
+            <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px;">The trained model is just learned numbers — and this is <em>all</em> of them: <strong><span id="a-param-count">200</span> numbers</strong> for the current network shape. Press the train buttons and watch them get rewritten; freshly changed numbers light up. The grey <code>// notes</code> aren't part of the model — they're labels so you can find your way around the grid.</p>
             <button class="secondary" id="a-dump-toggle">show learned numbers</button>
-            <pre class="weight-dump" id="a-weight-dump" hidden></pre>
+            <pre class="weight-dump model-dump" id="a-weight-dump" hidden></pre>
           </div>
         </div>
       </div>
     </div>
 
-    <p><strong>Why this is useful:</strong> the network can learn clue-combinations. One hidden neuron might become useful for <em>farm + hooves</em>, another for <em>wild + meat + paws</em>, another for <em>small + home</em>. We did not name those hidden neurons ourselves. Training nudged the weights until useful patterns appeared. (When researchers try to read what hidden neurons learned in <em>real</em> models, the field they're working in is called <a href="https://www.anthropic.com/research#interpretability" target="_blank" rel="noopener">interpretability</a>. It's hard, and it's some of the most interesting research in AI right now.)</p>
+    <p><strong>Why this is useful:</strong> the network can learn clue-combinations. One hidden neuron might become useful for <em>cold + sweet</em>, another for <em>pastry</em>, another for <em>main + pasta</em>. We did not name those hidden neurons ourselves. Training nudged the weights until useful patterns appeared. (When researchers try to read what hidden neurons learned in <em>real</em> models, the field they're working in is called <a href="https://www.anthropic.com/research#interpretability" target="_blank" rel="noopener">interpretability</a>. It's hard, and it's some of the most interesting research in AI right now.)</p>
 
     <div class="callout">
-      <strong>How many hidden neurons?</strong> That number is a choice the builder makes before training. Training changes the weights, biases, and probabilities, but it does not grow new neurons in this tiny model. Try 2, 4, 8, and 12 hidden neurons: too few can run out of pattern space, while more gives the model more room to <em>memorize</em> the 8 training animals exactly instead of learning the rule. That's called <strong>overfitting</strong>, and it's a problem real machine learning has to fight constantly. We'll come back to it when we move to real datasets.
+      <strong>How many hidden neurons?</strong> That number is a choice the builder makes before training. Training changes the weights, biases, and probabilities, but it does not grow new neurons in this tiny model. Try 2, 4, 8, and 12 hidden neurons: too few can run out of pattern space, while more gives the model more room to <em>memorize</em> the 8 training meals exactly instead of learning the rule. That's called <strong>overfitting</strong>, and it's a problem real machine learning has to fight constantly. We'll come back to it when we move to real datasets.
     </div>
 
-    <p>One more thing while you're here: hit the <strong>"show learned numbers"</strong> button further down. The trained model is just a bag of numbers — that button literally prints them out. This is what's saved when someone says "the model weighs 10 GB" or "I downloaded the weights." A model is its weights and nothing else.</p>
+    <p>One more thing while you're here: hit the <strong>"show learned numbers"</strong> button further down. The trained model is just a bag of numbers — that button literally prints them out, the grown-up sibling of the dark "model" panels you've been watching since chapter 4. This is what's saved when someone says "the model weighs 10 GB" or "I downloaded the weights." A model is its weights and nothing else.</p>
 
     <div class="interactive">
       <div class="interactive-title">▸ run real python</div>
-      <h3>Run the animal classifier</h3>
-      <p>This is <code>neuro6.py</code>. It trains the same idea in numpy and prints predictions for the training animals plus one mixed-up custom animal.</p>
+      <h3>Run the meal guesser</h3>
+      <p>This is <code>neuro6.py</code>. It trains the same idea in numpy and prints predictions for the training meals plus one mixed-up custom meal.</p>
       <div class="code-editor-wrap">
         <div class="code-header">
           <span class="code-filename">neuro6.py</span>
@@ -1815,50 +1967,58 @@ size_large = 1</pre>
         </div>
         <textarea class="code-editor" id="py-code-6" spellcheck="false" rows="30">import numpy as np
 
-# Step 6: animal classifier. This is the snack picker idea with a
-# more interesting dataset: guess an animal from visible traits.
+# Step 6: meal guesser. This is the snack picker idea with a more
+# interesting dataset: guess a meal from menu-style clues.
 #
 # New concept: categorical features become one-hot inputs.
-#   size = small / medium / large
+#   course = main / snack / dessert
 # becomes three input columns:
-#   size_small, size_medium, size_large
+#   course_main, course_snack, course_dessert
 #
-# The traits below are intentionally shared by several animals. That
-# makes the network combine clues instead of relying on one giveaway
-# clue like "has trunk".
+# The traits below are intentionally shared by several meals, so the
+# network has to combine clues instead of relying on one giveaway.
+# Three pairs differ by exactly ONE trait (near-miss pairs):
+#   cottage pie vs baked potato  -> only diet differs
+#   spaghetti   vs mac &amp; cheese  -> only diet differs
+#   ice cream   vs fruit salad   -> only base differs
+# ("spaghetti" here is spaghetti bolognese — that's where the meat is.)
 #
 # Inputs:
-#   size_small, size_medium, size_large,
-#   place_home, place_farm, place_wild,
-#   food_meat, food_plants, food_both,
-#   feet_paws, feet_hooves,
-#   color_brown, color_orange, color_black_white, color_pink
+#   course_main, course_snack, course_dessert,
+#   temp_hot, temp_cold,
+#   taste_sweet, taste_savory,
+#   diet_veg, diet_meat,
+#   base_pastry, base_potato, base_pasta, base_dairy, base_fruit
 #
 # Outputs:
-#   dog, cat, rabbit, pig, horse, cow, lion, tiger
+#   apple pie, sausage roll, cottage pie, baked potato,
+#   spaghetti, mac &amp; cheese, ice cream, fruit salad
 
-ANIMALS = ["dog", "cat", "rabbit", "pig", "horse", "cow", "lion", "tiger"]
+MEALS = [
+    "apple pie", "sausage roll", "cottage pie", "baked potato",
+    "spaghetti", "mac &amp; cheese", "ice cream", "fruit salad",
+]
 FEATURES = [
-    "size_small", "size_medium", "size_large",
-    "place_home", "place_farm", "place_wild",
-    "food_meat", "food_plants", "food_both",
-    "feet_paws", "feet_hooves",
-    "color_brown", "color_orange", "color_black_white", "color_pink",
+    "course_main", "course_snack", "course_dessert",
+    "temp_hot", "temp_cold",
+    "taste_sweet", "taste_savory",
+    "diet_veg", "diet_meat",
+    "base_pastry", "base_potato", "base_pasta", "base_dairy", "base_fruit",
 ]
 
 x = np.array([
-    # sm med lg  home farm wild  meat plants both  paws hooves  brown orange b/w pink
-    [0, 1, 0,   1,   0,    0,   0,    0,     1,    1,   0,     1,    0,     0,  0],  # dog
-    [1, 0, 0,   1,   0,    0,   1,    0,     0,    1,   0,     0,    1,     0,  0],  # cat
-    [1, 0, 0,   1,   0,    0,   0,    1,     0,    1,   0,     1,    0,     0,  0],  # rabbit
-    [0, 1, 0,   0,   1,    0,   0,    0,     1,    0,   1,     0,    0,     0,  1],  # pig
-    [0, 0, 1,   0,   1,    0,   0,    1,     0,    0,   1,     1,    0,     0,  0],  # horse
-    [0, 0, 1,   0,   1,    0,   0,    1,     0,    0,   1,     0,    0,     1,  0],  # cow
-    [0, 0, 1,   0,   0,    1,   1,    0,     0,    1,   0,     1,    0,     0,  0],  # lion
-    [0, 0, 1,   0,   0,    1,   1,    0,     0,    1,   0,     0,    1,     0,  0],  # tiger
+    # main snk des  hot cold  swt sav  veg meat  pastry pot pasta dairy fruit
+    [0,   0,  1,   1,  0,    1,  0,   1,  0,    1,     0,  0,    0,    0],  # apple pie
+    [0,   1,  0,   1,  0,    0,  1,   0,  1,    1,     0,  0,    0,    0],  # sausage roll
+    [1,   0,  0,   1,  0,    0,  1,   0,  1,    0,     1,  0,    0,    0],  # cottage pie
+    [1,   0,  0,   1,  0,    0,  1,   1,  0,    0,     1,  0,    0,    0],  # baked potato
+    [1,   0,  0,   1,  0,    0,  1,   0,  1,    0,     0,  1,    0,    0],  # spaghetti
+    [1,   0,  0,   1,  0,    0,  1,   1,  0,    0,     0,  1,    0,    0],  # mac &amp; cheese
+    [0,   0,  1,   0,  1,    1,  0,   1,  0,    0,     0,  0,    1,    0],  # ice cream
+    [0,   0,  1,   0,  1,    1,  0,   1,  0,    0,     0,  0,    0,    1],  # fruit salad
 ], dtype=float)
 
-y = np.eye(len(ANIMALS))
+y = np.eye(len(MEALS))
 
 # Silence cosmetic Accelerate/NumPy warnings seen on some macOS builds
 # during tiny matrix multiplies. The values remain finite and training
@@ -1879,8 +2039,8 @@ def softmax(z):
 np.random.seed(2)
 w1 = np.random.randn(len(FEATURES), 10) * np.sqrt(2 / len(FEATURES))
 b1 = np.zeros((1, 10))
-w2 = np.random.randn(10, len(ANIMALS)) * np.sqrt(2 / 10)
-b2 = np.zeros((1, len(ANIMALS)))
+w2 = np.random.randn(10, len(MEALS)) * np.sqrt(2 / 10)
+b2 = np.zeros((1, len(MEALS)))
 lr = 0.04
 
 for epoch in range(6000):
@@ -1902,19 +2062,19 @@ for epoch in range(6000):
         print(f"epoch {epoch}: loss {loss:.4f}  accuracy {acc:.3f}")
 
 print()
-print("Trained animal guesser")
-print(f'  {"animal":>9}  {"prediction":>10}  confidence')
-for animal, probs in zip(ANIMALS, probs):
+print("Trained meal guesser")
+print(f'  {"meal":>12}  {"prediction":>12}  confidence')
+for meal, probs in zip(MEALS, probs):
     best = int(probs.argmax())
-    print(f'  {animal:>9}  {ANIMALS[best]:>10}  {probs[best]:.3f}')
+    print(f'  {meal:>12}  {MEALS[best]:>12}  {probs[best]:.3f}')
 
 print()
-print("Try a mixed-up animal: large + home + meat + hooves + brown")
-weird = np.array([[0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0]], dtype=float)
+print("Try a mixed-up meal: snack + cold + sweet + meat + pastry")
+weird = np.array([[0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0]], dtype=float)
 h = relu(weird @ w1 + b1)
 p = softmax(h @ w2 + b2)[0]
 for idx in p.argsort()[::-1][:4]:
-    print(f"  {ANIMALS[idx]:>9}: {p[idx]:.3f}")
+    print(f"  {MEALS[idx]:>12}: {p[idx]:.3f}")
 </textarea>
       </div>
       <div style="margin: 10px 0;">
@@ -1926,13 +2086,13 @@ for idx in p.argsort()[::-1][:4]:
 
     <div class="challenge">
       <strong>Challenge</strong>
-      <p>Add sheep in your notebook. Which existing traits would it share with cow and horse? Which new trait, like wool, would make it easier?</p>
+      <p>Add lasagna in your notebook. Write out its traits — they come out <em>identical</em> to spaghetti's row. What happens to a network when two different answers have the exact same clues? What new trait group would fix it?</p>
     </div>
   </section>
 
   <section id="descent">
     <h2>12. How learning actually works</h2>
-    <p>You've been hearing "nudge the weights in the right direction" for eleven chapters. Time to actually pin that down. This is the math that powers every other chapter in this book.</p>
+    <p>You've been hearing "nudge the weights in the right direction" for eleven chapters — and back in chapter 4 you even performed a nudge by hand. Time to pin down the full rule behind it. This is the math that powers every other chapter in this book.</p>
 
     <h3>The loss landscape</h3>
     <p>Imagine every weight in the network is a knob you can turn. A tiny network might have 20 knobs; ChatGPT has hundreds of billions. For each combination of knob positions, you can measure how wrong the network is on your training data. That single number is called the <strong>loss</strong> (sometimes "cost" or "error" — same idea).</p>
@@ -1944,7 +2104,7 @@ for idx in p.argsort()[::-1][:4]:
     <p>For each weight in the network, the gradient says: <em>"if you increase this weight a tiny bit, the loss goes up (or down) by this much."</em> Calculus (specifically, the chain rule we met in chapter 8) is the tool that computes the gradient for every weight at once. The algorithm that does this efficiently for a deep network is — you guessed it — <a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noopener">backpropagation</a>.</p>
     <p>Once you have the gradient, the update rule is comically simple:</p>
     <pre>new_weight = old_weight  −  (learning_rate × gradient)</pre>
-    <p>That's it. Every line of "training" in every script in this book is doing some version of that. The minus sign is what makes it <em>descent</em> — you're moving the weight <em>against</em> the gradient, toward smaller loss.</p>
+    <p>That's it. Every line of "training" in every script in this book is doing some version of that. The minus sign is what makes it <em>descent</em> — you're moving the weight <em>against</em> the gradient, toward smaller loss. And compare it to chapter 4's hand-made recipe, <code>nudge = small step × error × input</code>: that was this exact formula in disguise. The "small step" is the learning rate, and "error × input" <em>is</em> the gradient for a one-neuron network.</p>
 
     <div class="interactive">
       <div class="interactive-title">▸ try it</div>
@@ -1990,7 +2150,7 @@ for idx in p.argsort()[::-1][:4]:
     <table>
       <tr><th>Network</th><th>Year</th><th>Roughly how many weights</th></tr>
       <tr><td>The tiny examples above</td><td>—</td><td>~50</td></tr>
-      <tr><td>Animal guesser (this book, ch 11)</td><td>—</td><td>~200</td></tr>
+      <tr><td>Meal guesser (this book, ch 11)</td><td>—</td><td>~200</td></tr>
       <tr><td>MNIST classifier (this book, the MNIST script)</td><td>—</td><td>~110,000</td></tr>
       <tr><td><a href="http://yann.lecun.com/exdb/lenet/" target="_blank" rel="noopener">LeNet-5</a> (digit recognizer)</td><td>1998</td><td>~60,000</td></tr>
       <tr><td><a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">ResNet-50</a> (image classifier)</td><td>2015</td><td>~25 million</td></tr>
@@ -2003,7 +2163,7 @@ for idx in p.argsort()[::-1][:4]:
     <p>You'll see this for yourself in <code>neuro9.py</code> a few chapters from here — the MNIST classifier is the same shape as the iris classifier in <code>neuro8.py</code>, just with 784 inputs instead of 4 and two hidden layers instead of one.</p>
 
     <h3>What changes when you scale up</h3>
-    <p><strong>More layers.</strong> Toy nets have 2 layers (input → hidden → output). Image models like ResNet-50 have 50. Modern LLMs have <strong>dozens</strong> of layers stacked on top of each other — GPT-2 has between 12 and 48 depending on size, GPT-3 has 96, Llama-2-70B has 80, Llama-3-405B has 126. (GPT-4 and Claude depths aren't public.) Why does depth help? Each layer can build a more sophisticated representation on top of the last. Early layers might learn edges or syllables; middle layers learn shapes or words; late layers learn objects or whole concepts. This is called <strong>compositionality</strong> and it's the whole reason "deep" learning is called "deep."</p>
+    <p><strong>More layers.</strong> Toy nets have 2 layers (input → hidden → output). Image models like ResNet-50 have 50. Modern LLMs have <strong>dozens</strong> of layers stacked on top of each other — GPT-2 has between 12 and 48 depending on size, GPT-3 has 96, Llama-2-70B has 80, Llama-3-405B has 126. (GPT-4 and Claude depths aren't public.) Why does depth help? Each layer can build a more sophisticated representation on top of the last. Early layers might learn edges or syllables; middle layers learn shapes or words; late layers learn objects or whole concepts. This is called <strong>compositionality</strong> and it's the whole reason "deep" learning is called "deep." (The "why depth" chapter near the end of this book lets you watch it happen, on a puzzle that defeats any one-hidden-layer network of similar size.)</p>
     <p><strong>More parameters.</strong> Going from 60,000 weights to 175 billion is a factor of 3 million. That's not a tweak. Each weight is a number stored in memory; each is updated every training step.</p>
     <p><strong>More data.</strong> Iris has 150 rows. MNIST has 60,000 images. ImageNet has 1.2 million images. GPT-3 was trained on roughly <a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">300 billion tokens</a> — about 500 million pages of text. Modern frontier models train on trillions of tokens. The rough empirical rule is: bigger models need proportionally more data to learn well. The <a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener">2020 Kaplan paper</a> and the 2022 <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">"Chinchilla" paper</a> worked out what those proportions are; people call those rules <strong>scaling laws</strong>.</p>
     <p><strong>More compute.</strong> Training GPT-3 took thousands of GPUs running for months and reportedly cost millions of dollars. A GPU (Graphics Processing Unit) is a chip originally built for video games, but it's <em>spectacularly</em> good at doing thousands of multiply-and-add operations in parallel — which is exactly what neural network forward and backward passes are. Specialized AI chips like Google's TPUs and NVIDIA's H100 / B200 take that idea further. The math is unchanged; the hardware that does the math billions of times per second is what changed.</p>
@@ -2030,13 +2190,49 @@ for idx in p.argsort()[::-1][:4]:
     <p>ChatGPT doesn't see letters or words. Before anything happens, your message gets chopped into chunks called <strong>tokens</strong>. A token is usually a piece of a word (sometimes a whole short word, sometimes a single character). The chopping algorithm is called <a href="https://en.wikipedia.org/wiki/Byte_pair_encoding" target="_blank" rel="noopener">byte-pair encoding</a> (BPE) — it learns which letter combinations are common in text and bundles them into single tokens. Common words like "the" become one token; rare words get split into pieces.</p>
     <p>Each token has an ID number from a fixed list. The size of that list varies by model: GPT-2 had about <strong>50,000</strong> tokens; GPT-4's tokenizer has about <strong>100,000</strong>; Llama-3 has <strong>128,000</strong>. So when this chapter says "about 100,000 tokens," picture a frontier-model-sized vocabulary.</p>
 
+    <h3>So… is there a lookup table? (Yes — two.)</h3>
+    <p>The <strong>tokenizer</strong> is, at heart, a giant two-way lookup table plus a chopping rule. Going <em>in</em>: your text gets chopped into chunks the table knows, and each chunk is swapped for its id number. Going <em>out</em>: the model hands back an id number, and the very same table is read in reverse to turn it back into text. This table is built once, before training ever starts, and never changes.</p>
+    <p>The second lookup is the <strong>embedding table</strong> (next heading): the id picks a row, and that row of numbers is what the network actually computes with. So the full input path is <em>text → chunks → ids → rows of numbers</em>, and the output path is the mirror image: <em>a score for every id → pick one → look its text up backwards → glue it onto the story</em>. The model never sees letters at any point. It lives entirely in id-land.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ try it</div>
+      <h3>Tokenize anything — watch text become numbers (and come back)</h3>
+      <p>Type anything. This toy tokenizer has a vocabulary of only <strong><span id="tk-vsize">70</span> chunks</strong> (a real model's has ~100,000), but it works the same way: at every spot it grabs the <em>longest chunk it knows</em>. Common words are a single token; anything unusual gets built out of smaller pieces — try <code>playing</code>, <code>happiest</code>, or <code>pterodactyl</code>.</p>
+      <input id="tk-input" type="text" value="tell me a story about a dragon who likes pizza" autocomplete="off" spellcheck="false" style="width: 100%; padding: 10px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+      <div class="token-row" id="tk-pills" style="margin-top: 12px;"></div>
+      <div class="math-panel">
+        <h4>Lookup #1 — what the model actually receives</h4>
+        <pre class="model-dump" id="tk-ids"></pre>
+      </div>
+      <div class="math-panel">
+        <h4>Lookup #2 — each id grabs its row of the embedding table</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each id is a row number in a giant table of learned numbers. Showing the first 16 numbers of each row as colors: <span style="color: var(--accent); font-weight: 600;">blue</span> = positive, <span style="color: var(--bad); font-weight: 600;">red</span> = negative. (These rows are random in this toy; in a real model they're weights, learned by the same nudging as everything else.)</p>
+        <div id="tk-embeds"></div>
+      </div>
+      <div class="math-panel">
+        <h4>And backwards — output is the same table, read the other way</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">When the model writes, it never outputs letters. It outputs one id, and the tokenizer table turns it back into text. Pretend you're the model — output an id:</p>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px;">id</span>
+          <input id="tk-rev" type="number" min="0" value="11" style="width: 90px; padding: 8px; font: inherit; border: 1px solid var(--border); border-radius: 6px;">
+          <span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px;" id="tk-rev-out"></span>
+        </div>
+        <p style="font-size: 13px; color: #374151; margin: 10px 0 0;" id="tk-roundtrip"></p>
+      </div>
+      <div style="margin-top: 12px;">
+        <button class="secondary" id="tk-vocab-toggle">show the whole lookup table</button>
+      </div>
+      <div id="tk-vocab" hidden style="margin-top: 10px; max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px;"></div>
+      <p style="font-size: 13px; color: var(--muted); margin: 12px 0 0;">Toy shortcuts to know about: we lowercase everything and treat spaces as separators, while real tokenizers bake capital letters and spaces right into the tokens. And a real tokenizer has a byte-level fallback, so nothing is ever truly "not in the table" — type an emoji or a digit here to see what our toy can't handle.</p>
+    </div>
+
     <h3>Each token becomes a long list of numbers</h3>
-    <p>The model looks each token's ID up in a giant table and grabs a vector of numbers — the token's <strong>embedding</strong>. How long that vector is depends on the model: GPT-2 small used <strong>768</strong> numbers per token; GPT-3 (175B) used <strong>12,288</strong>; smaller models use less, frontier models use more. Call it "thousands of numbers per token" and you're in the right ballpark.</p>
+    <p>The model looks each token's ID up in a giant table and grabs a <strong>vector</strong> of numbers — and "vector" is just math-speak for <em>a list of numbers</em>, like <code>[0.2, −1.4, 0.7, …]</code>. That list is the token's <strong>embedding</strong>. How long that vector is depends on the model: GPT-2 small used <strong>768</strong> numbers per token; GPT-3 (175B) used <strong>12,288</strong>; smaller models use less, frontier models use more. Call it "thousands of numbers per token" and you're in the right ballpark.</p>
     <p>Words with similar meanings have similar embeddings, because the model figured that out from reading huge amounts of text. The fingerprint for "dragon" is closer to "monster" than to "broccoli."</p>
-    <p>Here's the connection back to everything you've read so far: <strong>the embedding table is just learned weights.</strong> Same as the weights in chapter 3's neuron. Same as the weights in <code>neuro4.py</code>. It's <em>one giant matrix</em> — rows indexed by token ID, columns are the embedding numbers. During training, the same gradient descent that learns the OR rule also slowly nudges the embedding numbers until "king − man + woman" lands near "queen" and "dragon" lands near "monster." Nothing new in the algorithm; just a much bigger matrix.</p>
+    <p>Here's the connection back to everything you've read so far: <strong>the embedding table is just learned weights.</strong> Same as the weights in chapter 3's neuron. Same as the weights in <code>neuro4.py</code>. It's <em>one giant matrix</em> — and a "matrix" is just a grid of numbers, a list of lists — with one row per token ID, each row holding that token's embedding numbers. During training, the same gradient descent that learns the OR rule also slowly nudges the embedding numbers until "king − man + woman" lands near "queen" and "dragon" lands near "monster." Nothing new in the algorithm; just a much bigger matrix.</p>
 
     <h3>The model's only job (during pre-training): predict the next token</h3>
-    <p>Given the tokens so far, what's the most likely next token? That's literally the entire pre-training task. It's the snack-picker from chapter 10, but with about <strong>100,000 classes</strong> instead of 3 — every possible token is one of the choices.</p>
+    <p>Given the tokens so far, what's the most likely next token? That's literally the entire pre-training task. It's the snack-picker from chapter 9, but with about <strong>100,000 classes</strong> instead of 3 — every possible token is one of the choices.</p>
     <p>(We say "pre-training" because for products like ChatGPT and Claude there's a <em>second</em> training stage after this — covered below — that turns the raw next-token predictor into a polite assistant. The next-token prediction is the foundation everything else is built on, but it's not the whole story.)</p>
 
     <div class="interactive">
@@ -2066,7 +2262,7 @@ for idx in p.argsort()[::-1][:4]:
       <div class="stage-content" id="pipe-stage-3" hidden>
         <h4>Stage 3 — tokens look at each other (attention)</h4>
         <p>In every layer of the model, each token can look at every other token and pull info from the ones that matter. Below is the attention pattern for the LAST token, "<strong>pizza</strong>". The big bars show which earlier tokens "pizza" ends up paying the most attention to — in this case <em>dragon</em> and <em>likes</em>. (The model isn't <em>choosing</em> anything; the bars are a deterministic output of multiplying learned matrices together. But the pattern that pops out really does match what a human would say is relevant — that's the surprising part.)</p>
-        <p style="font-size: 13px; color: var(--muted);">How the bars actually get computed: each token produces three new vectors called <strong>query</strong>, <strong>key</strong>, and <strong>value</strong> (each one is just another <code>x @ W</code> matrix multiply — same machinery as everywhere else in this book). The attention weight of token A looking at token B is essentially the dot product of A's query with B's key, passed through softmax. The model then mixes the value vectors together using those weights. That's it. Dozens of these attention blocks stacked on top of each other is what makes a transformer.</p>
+        <p style="font-size: 13px; color: var(--muted);">How the bars actually get computed: each token produces three new vectors called <strong>query</strong>, <strong>key</strong>, and <strong>value</strong> (each one is just another <code>x @ W</code> matrix multiply — same machinery as everywhere else in this book). The attention weight of token A looking at token B is essentially the <strong>dot product</strong> of A's query with B's key: multiply the matching entries of the two lists, then add it all up — the same multiply-then-add a neuron does with its inputs and weights. A big result means the two lists "agree". Those scores get passed through softmax to make the bars. The model then mixes the value vectors together using those weights. That's it. Dozens of these attention blocks stacked on top of each other is what makes a transformer.</p>
         <div id="pipe-attn"></div>
       </div>
 
@@ -2145,7 +2341,7 @@ for idx in p.argsort()[::-1][:4]:
     <p>The same training idea that solved the screen-time puzzle in chapter 4 is part of what powers ChatGPT. The real systems are much bigger and add specialized architecture and engineering.</p>
 
     <div class="callout">
-      <strong>Don't stop here — there's more.</strong> The next three chapters are the "going deeper" sections. They cover training on real datasets (the iris flowers), using PyTorch (the framework every real ML project uses), and the architectures behind image models and LLMs (CNNs and transformers). They include some of the strongest material in the book. Keep going.
+      <strong>Don't stop here — there's more.</strong> The next four chapters are the "going deeper" sections. They cover training on real datasets (the iris flowers), using PyTorch (the framework every real ML project uses), stacking hidden layers (watch a deep network crack a puzzle a shallow one can't), and the architectures behind image models and LLMs (CNNs and transformers). They include some of the strongest material in the book. Keep going.
     </div>
 
     <div class="challenge">
@@ -2479,6 +2675,54 @@ print(f"final test  accuracy: {test_acc:.3f}")
     </div>
   </section>
 
+  <section id="depth">
+    <h2>Going deeper — stacking hidden layers</h2>
+    <p>Every network in this book so far has had exactly one hidden layer: input → hidden → output. Real networks stack more: <strong>input → hidden → hidden → output</strong>, and the big ones go dozens of layers deep. The wiring rule doesn't change at all — the outputs of hidden layer 1 simply become the <em>inputs</em> of hidden layer 2. Every neuron in layer 2 does the same multiply-add-squish from chapter 3; it just chews on layer 1's answers instead of on the raw input.</p>
+    <p>Why does that help? Chapter 8's network built its shape out of <em>straight lines</em>, because every hidden neuron looks at the raw inputs, and a single neuron's question is always a line. A second hidden layer builds shapes out of <em>those shapes</em>: layer 1 makes lines, layer 2 bends and combines them into curves and pockets. That's the "edges → shapes → objects" idea from chapter 13, shrunk down small enough to watch.</p>
+    <p>Here's a puzzle that makes depth visible: <strong>two spirals</strong>, tangled around each other. Every dot is a training example — its position on the graph paper is the input (just two numbers, x and y), and its color is the right answer. This is chapter 6's dots-on-graph-paper all grown up. XOR needed one hidden layer; the spiral is XOR's final boss.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ try it</div>
+      <h3>One hidden layer vs two — fight</h3>
+      <p>Pick a brain, then train it. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. The shallow brains get as many (or more) neurons as the deep one — watch who actually learns the spiral.</p>
+      <div class="toggle-row" id="dp-arch" style="font-size: 13px;">
+        <div class="toggle" data-arch="8">1 hidden layer × 8</div>
+        <div class="toggle" data-arch="16">1 hidden layer × 16</div>
+        <div class="toggle on" data-arch="8,8">2 hidden layers × 8 + 8</div>
+      </div>
+      <canvas id="dp-canvas" width="280" height="280" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); max-width: 100%;"></canvas>
+      <div style="margin-top: 10px;">
+        <button id="dp-train1">train 500</button>
+        <button id="dp-train2">train 5,000</button>
+        <button class="secondary" id="dp-reset">reset</button>
+      </div>
+      <div class="stat-row">
+        <span>epochs: <strong id="dp-epoch">0</strong></span>
+        <span>accuracy: <strong id="dp-acc">?</strong></span>
+        <span>stored numbers: <strong id="dp-params">?</strong></span>
+      </div>
+      <div class="math-panel">
+        <h4>What each hidden neuron is looking for</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each little map shows where on the graph paper one hidden neuron gets excited (<span style="color: var(--accent); font-weight: 600;">blue</span>) or pushes back (<span style="color: var(--bad); font-weight: 600;">red</span>). After training, layer 1's maps are mostly stripes — straight-line questions. Layer 2's maps are bent: shapes built out of layer 1's stripes.</p>
+        <div id="dp-thumbs"></div>
+      </div>
+      <div class="math-panel">
+        <h4>The model, as stored</h4>
+        <button class="secondary" id="dp-dump-toggle">show the numbers</button>
+        <pre class="weight-dump model-dump" id="dp-model" hidden></pre>
+      </div>
+    </div>
+
+    <p>Train each brain for 5,000 epochs and compare. The shallow brains get stuck near coin-flip accuracy — more neurons in the same single layer barely helps, because one layer of lines, squished once, can't follow a curve that keeps curling. The two-layer brain finds the spiral. Then check the neuron maps: layer 1's stay stripey, while layer 2's are bent — each layer-2 neuron is a combination of layer-1 stripes, and bent stripes are exactly what a spiral is made of.</p>
+    <p>One honesty note: in theory a single hidden layer can fit almost any shape <em>if you make it absurdly wide</em> — a famous result called the universal approximation theorem. But "possible in theory" and "actually findable by training" are very different things. Depth makes good solutions reachable with fewer neurons and less training, and that gap grows as problems get harder. That's the practical reason every serious network is deep.</p>
+    <p style="font-size: 14px; color: var(--muted);">Two footnotes for the curious. First, the hidden squisher here is <strong>tanh</strong> — sigmoid's cousin that outputs −1 to +1 instead of 0 to 1. It trains more smoothly on this kind of puzzle, but it's the same "squish" idea. Second, you already own a real two-hidden-layer network: <code>neuro9.py</code> (784 → 128 → 64 → 10) is this widget's architecture scaled up to read handwritten digits. The spiral is the classic depth demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can build networks up to six layers deep in your browser.</p>
+
+    <div class="challenge">
+      <strong>Challenge</strong>
+      <p>What's the smallest brain that gets above 95% on the spiral? And give the one-layer × 16 brain a truly fair shot: press "train 5,000" four times in a row. Does it ever escape?</p>
+    </div>
+  </section>
+
   <section id="bigger">
     <h2>Going deeper — convnets, transformers, and beyond</h2>
     <p>Same machinery scales up. Two big architectural ideas you'll meet from here:</p>
@@ -2687,6 +2931,57 @@ with torch.no_grad():
 // ---- shared helpers ----
 function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
 
+// Render a model's stored numbers as a JSON-style dump, highlighting any
+// value whose displayed digits changed since the previous update().
+function makeModelDump(elId, opts = {}) {
+  const el = document.getElementById(elId);
+  const dp = opts.decimals === undefined ? 3 : opts.decimals;
+  const rowComments = opts.rowComments || {};   // key -> per-row labels (2-D values)
+  const headComments = opts.headComments || {}; // key -> comment line above the key
+  let prev = null;
+
+  function fmt(v) { return (v >= 0 ? ' ' : '') + v.toFixed(dp); }
+  function num(v, pv) {
+    const s = fmt(v);
+    const changed = pv !== null && pv !== undefined && fmt(pv) !== s;
+    return changed ? '<span class="chg">' + s + '</span>' : s;
+  }
+  function inlineCmt(rcs) {
+    return typeof rcs === 'string' ? ' <span class="cmt">// ' + rcs + '</span>' : '';
+  }
+  function renderVal(v, pv, indent, tail, rcs) {
+    if (typeof v === 'number') return num(v, pv) + tail + inlineCmt(rcs);
+    if (!Array.isArray(v[0])) {
+      return '[' + v.map((x, i) => num(x, pv ? pv[i] : null)).join(', ') + ']' + tail + inlineCmt(rcs);
+    }
+    const lines = v.map((row, i) =>
+      '[' + row.map((x, j) => num(x, pv ? pv[i][j] : null)).join(', ') + ']'
+    );
+    return lines.map((line, i) => {
+      const last = i === lines.length - 1;
+      let s = (i === 0 ? '[' : ' '.repeat(indent + 1)) + line + (last ? ']' + tail : ',');
+      if (rcs && rcs[i] !== undefined) s += ' <span class="cmt">// ' + rcs[i] + '</span>';
+      return s;
+    }).join('\n');
+  }
+  function update(model) {
+    if (!el) return;
+    const keys = Object.keys(model);
+    const w = Math.max(...keys.map(k => k.length));
+    let out = '{\n';
+    keys.forEach((k, i) => {
+      const tail = i < keys.length - 1 ? ',' : '';
+      if (headComments[k]) out += (i ? '\n' : '') + '  <span class="cmt">// ' + headComments[k] + '</span>\n';
+      const head = '  "' + k + '": ' + ' '.repeat(w - k.length);
+      out += head + renderVal(model[k], prev ? prev[k] : null, head.length, tail, rowComments[k]) + '\n';
+    });
+    out += '}';
+    el.innerHTML = out;
+    prev = JSON.parse(JSON.stringify(model));
+  }
+  return { update, reset() { prev = null; } };
+}
+
 // ===== Interactive 1: neuron sandbox =====
 (function() {
   const ids = ['n-x1','n-x2','n-w1','n-w2','n-b'];
@@ -2780,6 +3075,9 @@ function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
 // ===== generic single-neuron trainer =====
 function makeSingleTrainer(opts) {
   const { data, labels, predIds, statIds, btnIds, lr=0.5 } = opts;
+  const dump = makeModelDump(opts.modelId, {
+    rowComments: { w1: labels[0], w2: labels[1], bias: 'the built-in lean' },
+  });
   let w1, w2, b, epoch;
 
   function reset() {
@@ -2787,6 +3085,7 @@ function makeSingleTrainer(opts) {
     w2 = Math.random()*2 - 1;
     b  = Math.random()*2 - 1;
     epoch = 0;
+    dump.reset();
     render();
   }
   function step(n=1) {
@@ -2822,6 +3121,7 @@ function makeSingleTrainer(opts) {
     if (statIds.w2) document.getElementById(statIds.w2).textContent = w2.toFixed(2);
     if (statIds.b)  document.getElementById(statIds.b).textContent  = b.toFixed(2);
     if (statIds.err) document.getElementById(statIds.err).textContent = (total/data.length).toFixed(4);
+    dump.update({ w1: w1, w2: w2, bias: b });
   }
   document.getElementById(btnIds.step).addEventListener('click', () => step(1));
   document.getElementById(btnIds.fast).addEventListener('click', () => step(1000));
@@ -2836,6 +3136,7 @@ makeSingleTrainer({
   predIds: 't-predictions',
   statIds: { epoch: 't-epoch', w1: 't-w1', w2: 't-w2', b: 't-b' },
   btnIds: { step: 't-step', fast: 't-fast', reset: 't-reset' },
+  modelId: 't-model',
 });
 
 // Interactive 3: XOR fail
@@ -2845,13 +3146,146 @@ makeSingleTrainer({
   predIds: 'x-predictions',
   statIds: { epoch: 'x-epoch', err: 'x-err' },
   btnIds: { step: 'x-step', fast: 'x-fast', reset: 'x-reset' },
+  modelId: 'x-model',
 });
+
+// ===== Interactive: one nudge by hand (chapter 4) =====
+(function() {
+  const data = [
+    { x: [0,0], y: 0 },
+    { x: [1,0], y: 1 },
+    { x: [0,1], y: 1 },
+    { x: [1,1], y: 1 },
+  ];
+  const START = { w1: -0.5, w2: 0.2, b: -0.1 };
+  const STEP = 0.35;
+  const dump = makeModelDump('nd-model', {
+    rowComments: {
+      w1: 'how much "piano done" matters',
+      w2: 'how much "homework done" matters',
+      bias: 'the built-in lean',
+    },
+  });
+  let w1, w2, b, count, ex;
+
+  function predict(x1, x2) { return sigmoid(w1*x1 + w2*x2 + b); }
+
+  function renderMath() {
+    const [x1, x2] = data[ex].x;
+    const y = data[ex].y;
+    const z = w1*x1 + w2*x2 + b;
+    const o = predict(x1, x2);
+    const err = y - o;
+    let verdict;
+    if (Math.abs(err) < 0.15) verdict = '<span class="ok-mark">already close — the nudges are getting tiny</span>';
+    else if (err > 0) verdict = '<span class="bad-mark">too low</span> → push the total UP';
+    else verdict = '<span class="bad-mark">too high</span> → push the total DOWN';
+    document.getElementById('nd-math').innerHTML =
+      `total      = (${w1.toFixed(2)} × ${x1}) + (${w2.toFixed(2)} × ${x2}) + (${b.toFixed(2)}) = <strong>${z.toFixed(2)}</strong><br>` +
+      `prediction = sigmoid(${z.toFixed(2)}) = <strong>${o.toFixed(2)}</strong><br>` +
+      `truth      = <strong>${y}</strong><br>` +
+      `error      = ${y} − ${o.toFixed(2)} = <strong>${err >= 0 ? '+' : ''}${err.toFixed(2)}</strong>   (${verdict})`;
+  }
+
+  function renderNudge() {
+    const [x1, x2] = data[ex].x;
+    const y = data[ex].y;
+    const err = y - predict(x1, x2);
+    const rows = [
+      { name: 'weight 1 (piano)   ', cur: w1, x: x1, who: 'piano' },
+      { name: 'weight 2 (homework)', cur: w2, x: x2, who: 'homework' },
+      { name: 'bias               ', cur: b,  x: 1,  isBias: true },
+    ];
+    let html = '';
+    for (const r of rows) {
+      const d = STEP * err * r.x;
+      const next = r.cur + d;
+      let why;
+      if (!r.isBias && r.x === 0) {
+        why = r.who + ' was 0, took no part → <strong>no nudge</strong>';
+      } else if (Math.abs(d) < 0.01) {
+        why = 'error is almost 0 → barely moves';
+      } else if (d > 0) {
+        why = (r.isBias ? 'always takes part' : r.who + ' was ON') + ', prediction too low → <span class="ok-mark">UP</span>';
+      } else {
+        why = (r.isBias ? 'always takes part' : r.who + ' was ON') + ', prediction too high → <span class="bad-mark">DOWN</span>';
+      }
+      const arrow = (!r.isBias && r.x === 0) ? '=' : '→';
+      html += `${r.name}  ${r.cur.toFixed(2)} ${arrow} <strong>${next.toFixed(2)}</strong>   (${why})<br>`;
+    }
+    document.getElementById('nd-weights').innerHTML = html;
+  }
+
+  function renderPreds() {
+    let html = '<strong>all four examples right now:</strong><br>';
+    for (const { x: [x1, x2], y } of data) {
+      const o = predict(x1, x2);
+      const ok = (o > 0.5) === (y > 0.5);
+      const mark = ok ? '<span class="ok-mark">✓</span>' : '<span class="bad-mark">✗</span>';
+      html += `piano=${x1}, homework=${x2}  →  predicted <strong>${o.toFixed(3)}</strong>  (truth ${y})  ${mark}<br>`;
+    }
+    document.getElementById('nd-preds').innerHTML = html;
+  }
+
+  function render() {
+    renderMath();
+    renderNudge();
+    renderPreds();
+    dump.update({ w1: w1, w2: w2, bias: b });
+    document.getElementById('nd-count').textContent = count;
+    document.getElementById('nd-w1').textContent = w1.toFixed(2);
+    document.getElementById('nd-w2').textContent = w2.toFixed(2);
+    document.getElementById('nd-b').textContent  = b.toFixed(2);
+  }
+
+  function nudgeOnce(i) {
+    const [x1, x2] = data[i].x;
+    const err = data[i].y - predict(x1, x2);
+    w1 += STEP * err * x1;
+    w2 += STEP * err * x2;
+    b  += STEP * err;
+    count++;
+  }
+
+  function reset() {
+    w1 = START.w1; w2 = START.w2; b = START.b;
+    count = 0;
+    dump.reset();
+    render();
+  }
+
+  document.querySelectorAll('#nd-picker .toggle').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#nd-picker .toggle').forEach(o => o.classList.remove('on'));
+      t.classList.add('on');
+      ex = Number(t.dataset.ex);
+      render();
+    });
+  });
+
+  document.getElementById('nd-nudge').addEventListener('click', () => { nudgeOnce(ex); render(); });
+  document.getElementById('nd-cycle').addEventListener('click', () => { for (let i = 0; i < data.length; i++) nudgeOnce(i); render(); });
+  document.getElementById('nd-reset').addEventListener('click', reset);
+
+  ex = 1;
+  reset();
+})();
 
 // ===== Interactive 4: XOR with hidden layer =====
 (function() {
   const data = [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],0]];
   const H = 4;
   const lr = 0.5;
+  const dump = makeModelDump('h-model', {
+    decimals: 2,
+    headComments: {
+      w1: 'weights: inputs → hidden (rows = left, right; columns = 4 hidden neurons)',
+      b1: 'biases: one per hidden neuron',
+      w2: 'weights: hidden → output (one per hidden neuron)',
+      b2: 'bias: the output neuron',
+    },
+    rowComments: { w1: ['left button', 'right button'] },
+  });
   let W1, b1, W2, b2, epoch;
 
   function reset() {
@@ -2862,6 +3296,7 @@ makeSingleTrainer({
     for (let j=0;j<H;j++) W2.push(Math.random()*2-1);
     b2 = 0;
     epoch = 0;
+    dump.reset();
     render();
   }
 
@@ -2916,6 +3351,7 @@ makeSingleTrainer({
     }
     document.getElementById('h-predictions').innerHTML = html;
     document.getElementById('h-epoch').textContent = epoch;
+    dump.update({ w1: W1, b1: b1, w2: W2, b2: b2 });
   }
 
   document.getElementById('h-step').addEventListener('click', () => step(1));
@@ -3027,33 +3463,34 @@ makeSingleTrainer({
   update();
 })();
 
-// ===== Interactive 6: animal classifier =====
+// ===== Interactive 6: meal guesser =====
 (function() {
-  const svg = document.getElementById('animal-net-svg');
+  const svg = document.getElementById('meal-net-svg');
   if (!svg) return;
 
-  const animals = ['dog','cat','rabbit','pig','horse','cow','lion','tiger'];
+  const meals = ['apple pie','sausage roll','cottage pie','baked potato','spaghetti','mac & cheese','ice cream','fruit salad'];
   const featureNames = [
-    'small','medium','large',
-    'home','farm','wild',
-    'meat','plants','both',
-    'paws','hooves',
-    'brown','orange','black-white','pink',
+    'main','snack','dessert',
+    'hot','cold',
+    'sweet','savory',
+    'veg','meat',
+    'pastry','potato','pasta','dairy','fruit',
   ];
   const rows = [
-    {x:[0,1,0, 1,0,0, 0,0,1, 1,0, 1,0,0,0], y:0},
-    {x:[1,0,0, 1,0,0, 1,0,0, 1,0, 0,1,0,0], y:1},
-    {x:[1,0,0, 1,0,0, 0,1,0, 1,0, 1,0,0,0], y:2},
-    {x:[0,1,0, 0,1,0, 0,0,1, 0,1, 0,0,0,1], y:3},
-    {x:[0,0,1, 0,1,0, 0,1,0, 0,1, 1,0,0,0], y:4},
-    {x:[0,0,1, 0,1,0, 0,1,0, 0,1, 0,0,1,0], y:5},
-    {x:[0,0,1, 0,0,1, 1,0,0, 1,0, 1,0,0,0], y:6},
-    {x:[0,0,1, 0,0,1, 1,0,0, 1,0, 0,1,0,0], y:7},
+    // main snack dessert  hot cold  sweet savory  veg meat  pastry potato pasta dairy fruit
+    {x:[0,0,1, 1,0, 1,0, 1,0, 1,0,0,0,0], y:0},   // apple pie
+    {x:[0,1,0, 1,0, 0,1, 0,1, 1,0,0,0,0], y:1},   // sausage roll
+    {x:[1,0,0, 1,0, 0,1, 0,1, 0,1,0,0,0], y:2},   // cottage pie
+    {x:[1,0,0, 1,0, 0,1, 1,0, 0,1,0,0,0], y:3},   // baked potato
+    {x:[1,0,0, 1,0, 0,1, 0,1, 0,0,1,0,0], y:4},   // spaghetti (bolognese)
+    {x:[1,0,0, 1,0, 0,1, 1,0, 0,0,1,0,0], y:5},   // mac & cheese
+    {x:[0,0,1, 0,1, 1,0, 1,0, 0,0,0,1,0], y:6},   // ice cream
+    {x:[0,0,1, 0,1, 1,0, 1,0, 0,0,0,0,1], y:7},   // fruit salad
   ];
-  const D = featureNames.length, C = animals.length;
+  const D = featureNames.length, C = meals.length;
   const lr = 0.04;
-  let H = 8, W1, b1, W2, b2, epoch;
-  const state = { size: '', place: '', food: '', feet: '', color: '' };
+  let H = 8, W1, b1, W2, b2, epoch, dump;
+  const state = { course: '', temp: '', taste: '', diet: '', base: '' };
 
   function randn() {
     let u = 0, v = 0;
@@ -3076,26 +3513,38 @@ makeSingleTrainer({
     W2 = Array.from({length: H}, () => Array.from({length: C}, () => randn() * Math.sqrt(2 / H)));
     b2 = Array(C).fill(0);
     epoch = 0;
+    dump = makeModelDump('a-weight-dump', {
+      decimals: 2,
+      rowComments: {
+        w1: featureNames,
+        w2: Array.from({length: H}, (_, j) => 'hidden ' + (j + 1)),
+      },
+      headComments: {
+        w1: 'weights: clues → hidden (rows = clues, columns = the ' + H + ' hidden neurons)',
+        b1: 'biases: one per hidden neuron',
+        w2: 'weights: hidden → meals (columns = ' + meals.join(', ') + ')',
+        b2: 'biases: one per meal (same order)',
+      },
+    });
     render();
   }
 
   function vectorFromState() {
     return [
-      state.size === 'small' ? 1 : 0,
-      state.size === 'medium' ? 1 : 0,
-      state.size === 'large' ? 1 : 0,
-      state.place === 'home' ? 1 : 0,
-      state.place === 'farm' ? 1 : 0,
-      state.place === 'wild' ? 1 : 0,
-      state.food === 'meat' ? 1 : 0,
-      state.food === 'plants' ? 1 : 0,
-      state.food === 'both' ? 1 : 0,
-      state.feet === 'paws' ? 1 : 0,
-      state.feet === 'hooves' ? 1 : 0,
-      state.color === 'brown' ? 1 : 0,
-      state.color === 'orange' ? 1 : 0,
-      state.color === 'black-white' ? 1 : 0,
-      state.color === 'pink' ? 1 : 0,
+      state.course === 'main' ? 1 : 0,
+      state.course === 'snack' ? 1 : 0,
+      state.course === 'dessert' ? 1 : 0,
+      state.temp === 'hot' ? 1 : 0,
+      state.temp === 'cold' ? 1 : 0,
+      state.taste === 'sweet' ? 1 : 0,
+      state.taste === 'savory' ? 1 : 0,
+      state.diet === 'vegetarian' ? 1 : 0,
+      state.diet === 'meat' ? 1 : 0,
+      state.base === 'pastry' ? 1 : 0,
+      state.base === 'potato' ? 1 : 0,
+      state.base === 'pasta' ? 1 : 0,
+      state.base === 'dairy' ? 1 : 0,
+      state.base === 'fruit' ? 1 : 0,
     ];
   }
 
@@ -3210,40 +3659,23 @@ makeSingleTrainer({
     }
     for (let oi = 0; oi < top.length; oi++) {
       const [k, prob] = top[oi];
-      html += `<circle cx="${outX}" cy="${outY[oi]}" r="28" fill="#dbeafe" stroke="#1f2937" stroke-width="2"/><text x="${outX}" y="${outY[oi]-2}" text-anchor="middle" font-size="11" fill="#1f2937" font-weight="700">${animals[k]}</text><text x="${outX}" y="${outY[oi]+12}" text-anchor="middle" font-size="10" fill="#2563eb">${prob.toFixed(2)}</text>`;
+      const nameSize = meals[k].length > 9 ? 9 : 11;
+      html += `<circle cx="${outX}" cy="${outY[oi]}" r="28" fill="#dbeafe" stroke="#1f2937" stroke-width="2"/><text x="${outX}" y="${outY[oi]-2}" text-anchor="middle" font-size="${nameSize}" fill="#1f2937" font-weight="700">${meals[k]}</text><text x="${outX}" y="${outY[oi]+12}" text-anchor="middle" font-size="10" fill="#2563eb">${prob.toFixed(2)}</text>`;
     }
     html += `<text x="${inputX}" y="342" text-anchor="middle" font-size="11" fill="#6b7280">active clues</text><text x="${hiddenX}" y="342" text-anchor="middle" font-size="11" fill="#6b7280">hidden patterns</text><text x="${outX}" y="342" text-anchor="middle" font-size="11" fill="#6b7280">top guesses</text>`;
     svg.innerHTML = html;
   }
 
   function renderWeightDump() {
-    const dump = document.getElementById('a-weight-dump');
-    const inputRows = featureNames.slice(0, 10).map((name, i) => {
-      const vals = W1[i].slice(0, 5).map(v => v.toFixed(2).padStart(6)).join('');
-      return `${name.padEnd(13)} -> hidden ${vals}`;
-    });
-    const outputRows = W2.slice(0, 5).map((row, j) => {
-      const vals = row.slice(0, 5).map((v, k) => `${animals[k]}:${v.toFixed(2)}`).join('  ');
-      return `hidden ${String(j + 1).padEnd(6)} -> ${vals}`;
-    });
-    dump.textContent = [
-      `epoch: ${epoch}`,
-      '',
-      'input -> hidden weights (preview)',
-      ...inputRows,
-      '',
-      'hidden -> output weights (preview)',
-      ...outputRows,
-      '',
-      `This tiny model has ${D * H + H + H * C + C} learned numbers including biases.`,
-      'A huge AI model has billions of numbers like these.',
-    ].join('\n');
+    dump.update({ w1: W1, b1: b1, w2: W2, b2: b2 });
+    const countEl = document.getElementById('a-param-count');
+    if (countEl) countEl.textContent = D * H + H + H * C + C;
   }
 
   function render() {
     const x = vectorFromState();
     const {h, p} = forward(x);
-    const sorted = p.map((v,i) => [animals[i], v]).sort((a,b) => b[1] - a[1]);
+    const sorted = p.map((v,i) => [meals[i], v]).sort((a,b) => b[1] - a[1]);
     document.getElementById('a-bars').innerHTML = sorted.map(([name, prob]) => (
       `<div class="bar-container"><span class="label">${name}</span><div class="bar-track"><div class="bar" style="width:${prob*100}%;"></div></div><span class="pct">${prob.toFixed(2)}</span></div>`
     )).join('');
@@ -3258,11 +3690,11 @@ makeSingleTrainer({
     renderWeightDump();
   }
 
-  document.getElementById('a-size').addEventListener('change', e => { state.size = e.target.value; render(); });
-  document.getElementById('a-place').addEventListener('change', e => { state.place = e.target.value; render(); });
-  document.getElementById('a-food').addEventListener('change', e => { state.food = e.target.value; render(); });
-  document.getElementById('a-feet').addEventListener('change', e => { state.feet = e.target.value; render(); });
-  document.getElementById('a-color').addEventListener('change', e => { state.color = e.target.value; render(); });
+  document.getElementById('a-course').addEventListener('change', e => { state.course = e.target.value; render(); });
+  document.getElementById('a-temp').addEventListener('change', e => { state.temp = e.target.value; render(); });
+  document.getElementById('a-taste').addEventListener('change', e => { state.taste = e.target.value; render(); });
+  document.getElementById('a-diet').addEventListener('change', e => { state.diet = e.target.value; render(); });
+  document.getElementById('a-base').addEventListener('change', e => { state.base = e.target.value; render(); });
   document.getElementById('a-hidden-count').addEventListener('change', reset);
   document.getElementById('a-step').addEventListener('click', () => train(1));
   document.getElementById('a-fast').addEventListener('click', () => train(1000));
@@ -4245,6 +4677,374 @@ makeSeparator('sep-xor',
   });
 })();
 
+// ===== Interactive: depth playground — two tangled spirals =====
+(function() {
+  const canvas = document.getElementById('dp-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const SIZE = 280, RANGE = 1.3, LR = 1.5;
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // two tangled spirals, deterministic so the lesson always reproduces
+  const data = (function() {
+    const rnd = mulberry32(7), pts = [], N = 120;
+    for (let c = 0; c < 2; c++) {
+      for (let i = 0; i < N; i++) {
+        const r = (i + 1) / N;
+        const t = 1.75 * (i / N) * 2 * Math.PI + c * Math.PI;
+        pts.push({
+          x: [r * Math.sin(t) + (rnd() - 0.5) * 0.12, r * Math.cos(t) + (rnd() - 0.5) * 0.12],
+          y: c,
+        });
+      }
+    }
+    return pts;
+  })();
+
+  let net, epoch, dump, thumbs;
+
+  function makeNet(sizes) {
+    const rnd = mulberry32(42);
+    const Ws = [], Bs = [];
+    for (let l = 0; l < sizes.length - 1; l++) {
+      const fan = sizes[l];
+      Ws.push(Array.from({length: fan}, () =>
+        Array.from({length: sizes[l + 1]}, () => (rnd() * 2 - 1) * Math.sqrt(1 / fan))));
+      Bs.push(Array(sizes[l + 1]).fill(0));
+    }
+    return { sizes, Ws, Bs };
+  }
+
+  function forward(x) {
+    const acts = [x];
+    for (let l = 0; l < net.Ws.length; l++) {
+      const inp = acts[l], W = net.Ws[l], B = net.Bs[l], out = [];
+      const last = l === net.Ws.length - 1;
+      for (let j = 0; j < B.length; j++) {
+        let z = B[j];
+        for (let i = 0; i < inp.length; i++) z += inp[i] * W[i][j];
+        out.push(last ? sigmoid(z) : Math.tanh(z));
+      }
+      acts.push(out);
+    }
+    return acts;
+  }
+
+  function trainEpochs(n) {
+    for (let e = 0; e < n; e++) {
+      const gW = net.Ws.map(W => W.map(r => r.map(() => 0)));
+      const gB = net.Bs.map(B => B.map(() => 0));
+      for (const {x, y} of data) {
+        const acts = forward(x);
+        let delta = [acts[acts.length - 1][0] - y];   // sigmoid + cross-entropy
+        for (let l = net.Ws.length - 1; l >= 0; l--) {
+          const inp = acts[l];
+          for (let j = 0; j < delta.length; j++) {
+            gB[l][j] += delta[j];
+            for (let i = 0; i < inp.length; i++) gW[l][i][j] += inp[i] * delta[j];
+          }
+          if (l > 0) {
+            const nd = [];
+            for (let i = 0; i < inp.length; i++) {
+              let s = 0;
+              for (let j = 0; j < delta.length; j++) s += delta[j] * net.Ws[l][i][j];
+              nd.push(s * (1 - inp[i] * inp[i]));     // tanh derivative
+            }
+            delta = nd;
+          }
+        }
+      }
+      const m = data.length;
+      for (let l = 0; l < net.Ws.length; l++) {
+        for (let j = 0; j < net.Bs[l].length; j++) {
+          net.Bs[l][j] -= LR * gB[l][j] / m;
+          for (let i = 0; i < net.Ws[l].length; i++) net.Ws[l][i][j] -= LR * gW[l][i][j] / m;
+        }
+      }
+      epoch++;
+    }
+    render();
+  }
+
+  function accuracy() {
+    let ok = 0;
+    for (const {x, y} of data) {
+      const o = forward(x)[net.sizes.length - 1][0];
+      if ((o > 0.5) === (y === 1)) ok++;
+    }
+    return ok / data.length;
+  }
+
+  function paramCount() {
+    let n = 0;
+    for (let l = 0; l < net.sizes.length - 1; l++) n += net.sizes[l] * net.sizes[l + 1] + net.sizes[l + 1];
+    return n;
+  }
+
+  function buildThumbs() {
+    const wrap = document.getElementById('dp-thumbs');
+    wrap.innerHTML = '';
+    thumbs = [];
+    for (let hl = 1; hl <= net.sizes.length - 2; hl++) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:6px 0;';
+      const lab = document.createElement('span');
+      lab.style.cssText = 'font-size:12px;color:#6b7280;width:104px;flex:0 0 auto;';
+      lab.textContent = 'hidden layer ' + hl;
+      row.appendChild(lab);
+      for (let j = 0; j < net.sizes[hl]; j++) {
+        const c = document.createElement('canvas');
+        c.width = 56; c.height = 56;
+        c.style.cssText = 'border:1px solid #e5e7eb;border-radius:4px;';
+        row.appendChild(c);
+        thumbs.push({ hl, j, tctx: c.getContext('2d') });
+      }
+      wrap.appendChild(row);
+    }
+  }
+
+  function renderThumbs() {
+    const cell = 4, n = 56 / cell;
+    const grid = [];
+    for (let gy = 0; gy < n; gy++) {
+      for (let gx = 0; gx < n; gx++) {
+        const wx = ((gx + 0.5) / n) * 2 * RANGE - RANGE;
+        const wy = ((gy + 0.5) / n) * 2 * RANGE - RANGE;
+        grid.push(forward([wx, wy]));
+      }
+    }
+    for (const t of thumbs) {
+      t.tctx.clearRect(0, 0, 56, 56);
+      for (let gy = 0; gy < n; gy++) {
+        for (let gx = 0; gx < n; gx++) {
+          const a = grid[gy * n + gx][t.hl][t.j];
+          t.tctx.fillStyle = a >= 0
+            ? 'rgba(37, 99, 235, ' + Math.min(1, a).toFixed(2) + ')'
+            : 'rgba(220, 38, 38, ' + Math.min(1, -a).toFixed(2) + ')';
+          t.tctx.fillRect(gx * cell, gy * cell, cell, cell);
+        }
+      }
+    }
+  }
+
+  function makeDumpForArch() {
+    const deep = net.sizes.length === 4;
+    const head = {
+      w1: 'weights: input (x, y) → hidden layer 1',
+      b1: 'biases: hidden layer 1',
+      w2: deep ? 'weights: hidden layer 1 → hidden layer 2' : 'weights: hidden layer 1 → output (one per neuron)',
+      b2: deep ? 'biases: hidden layer 2' : 'bias: the output neuron',
+    };
+    if (deep) {
+      head.w3 = 'weights: hidden layer 2 → output (one per neuron)';
+      head.b3 = 'bias: the output neuron';
+    }
+    dump = makeModelDump('dp-model', {
+      decimals: 2,
+      headComments: head,
+      rowComments: { w1: ['x', 'y'] },
+    });
+  }
+
+  function renderDump() {
+    const m = {};
+    net.Ws.forEach((W, l) => {
+      const lastLayer = l === net.Ws.length - 1;
+      m['w' + (l + 1)] = lastLayer ? W.map(r => r[0]) : W;   // flatten the 1-wide output column
+      m['b' + (l + 1)] = net.Bs[l];
+    });
+    dump.update(m);
+  }
+
+  function toWorld(px) { return (px / SIZE) * 2 * RANGE - RANGE; }
+  function toPx(v) { return ((v + RANGE) / (2 * RANGE)) * SIZE; }
+
+  function render() {
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    const cell = 5;
+    for (let gy = 0; gy < SIZE; gy += cell) {
+      for (let gx = 0; gx < SIZE; gx += cell) {
+        const o = forward([toWorld(gx + cell / 2), toWorld(gy + cell / 2)])[net.sizes.length - 1][0];
+        const conf = Math.abs(o - 0.5) * 2;
+        ctx.fillStyle = o > 0.5
+          ? 'rgba(234, 88, 12, ' + (0.06 + conf * 0.30).toFixed(2) + ')'
+          : 'rgba(37, 99, 235, ' + (0.06 + conf * 0.30).toFixed(2) + ')';
+        ctx.fillRect(gx, gy, cell, cell);
+      }
+    }
+    for (const {x, y} of data) {
+      ctx.beginPath();
+      ctx.arc(toPx(x[0]), toPx(x[1]), 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = y === 1 ? '#ea580c' : '#2563eb';
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    renderThumbs();
+    renderDump();
+    document.getElementById('dp-epoch').textContent = epoch;
+    document.getElementById('dp-acc').textContent = (accuracy() * 100).toFixed(0) + '%';
+    document.getElementById('dp-params').textContent = paramCount();
+  }
+
+  function reset() {
+    const archStr = document.querySelector('#dp-arch .toggle.on').dataset.arch;
+    const arch = archStr.split(',').map(Number);
+    net = makeNet([2].concat(arch, [1]));
+    epoch = 0;
+    buildThumbs();
+    makeDumpForArch();
+    render();
+  }
+
+  document.querySelectorAll('#dp-arch .toggle').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#dp-arch .toggle').forEach(o => o.classList.remove('on'));
+      t.classList.add('on');
+      reset();
+    });
+  });
+  document.getElementById('dp-train1').addEventListener('click', () => trainEpochs(500));
+  document.getElementById('dp-train2').addEventListener('click', () => trainEpochs(5000));
+  document.getElementById('dp-reset').addEventListener('click', reset);
+  document.getElementById('dp-dump-toggle').addEventListener('click', () => {
+    const el = document.getElementById('dp-model');
+    el.hidden = !el.hidden;
+    document.getElementById('dp-dump-toggle').textContent = el.hidden ? 'show the numbers' : 'hide the numbers';
+  });
+  reset();
+})();
+
+// ===== Interactive: toy tokenizer (chapter 14) =====
+(function() {
+  const input = document.getElementById('tk-input');
+  if (!input) return;
+
+  const WORDS = ['the','a','an','and','me','my','you','is','tell','story','about','dragon','pizza','who','like','cat','dog','robot','school','play','time','big','small','happy','eat','fly'];
+  const CHUNKS = ['ing','ed','er','est','ly','un','re','th','sh','ch','oo','ee','ea','ou'];
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const PUNCT = ['.',',','!','?',"'"];
+  const VOCAB = [];
+  const ID = {};
+  WORDS.concat(CHUNKS, LETTERS, PUNCT).forEach(t => {
+    if (ID[t] === undefined) { ID[t] = VOCAB.length; VOCAB.push(t); }
+  });
+  const MAXLEN = Math.max.apply(null, VOCAB.map(t => t.length));
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // random-but-fixed toy embeddings (a real model LEARNS these)
+  const EMB = VOCAB.map((_, i) => {
+    const r = mulberry32(777 + i * 13);
+    return Array.from({length: 16}, () => r() * 2 - 1);
+  });
+
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function tokenize(text) {
+    const out = [];
+    const parts = text.toLowerCase().match(/[a-z]+|[^a-z\s]/gu) || [];
+    for (const part of parts) {
+      const glue = PUNCT.includes(part);   // punctuation sticks to the word before it
+      let i = 0, first = true;
+      while (i < part.length) {
+        let tok = null;
+        for (let L = Math.min(MAXLEN, part.length - i); L >= 1; L--) {
+          const s = part.slice(i, i + L);
+          if (ID[s] !== undefined) { tok = s; break; }
+        }
+        if (tok === null) {
+          const cp = String.fromCodePoint(part.codePointAt(i));  // keep emoji etc. whole
+          out.push({ text: cp, id: null, newWord: first && !glue });
+          i += cp.length;
+        } else {
+          out.push({ text: tok, id: ID[tok], newWord: first && !glue });
+          i += tok.length;
+        }
+        first = false;
+      }
+    }
+    return out;
+  }
+
+  function detokenize(toks) {
+    return toks.map((t, i) => (t.newWord && i > 0 ? ' ' : '') + t.text).join('');
+  }
+
+  function render() {
+    const text = input.value;
+    const toks = tokenize(text);
+
+    document.getElementById('tk-pills').innerHTML = toks.length
+      ? toks.map(t => t.id === null
+          ? '<span class="token-pill" style="border-color: var(--bad); color: var(--bad); background: #fee2e2;">' + esc(t.text) + '<span class="token-id">no id!</span></span>'
+          : '<span class="token-pill">' + esc(t.text) + '<span class="token-id">id ' + t.id + '</span></span>'
+        ).join('')
+      : '<span style="font-size: 13px; color: var(--muted);">(type something above)</span>';
+
+    document.getElementById('tk-ids').innerHTML =
+      '<span class="cmt">// ' + toks.length + ' token' + (toks.length === 1 ? '' : 's') + ' from ' + text.length + ' characters</span>\n' +
+      'input_ids = [' + toks.map(t => t.id === null ? '<span style="color:#fca5a5;">??</span>' : t.id).join(', ') + ']';
+
+    const known = toks.filter(t => t.id !== null).slice(0, 10);
+    document.getElementById('tk-embeds').innerHTML = known.map(t => {
+      const squares = EMB[t.id].map(v => {
+        const col = v >= 0
+          ? 'rgba(37, 99, 235, ' + Math.abs(v).toFixed(2) + ')'
+          : 'rgba(220, 38, 38, ' + Math.abs(v).toFixed(2) + ')';
+        return '<div class="embed-square" style="background:' + col + '"></div>';
+      }).join('');
+      return '<div class="embed-block"><span class="name">' + esc(t.text) + ' (' + t.id + ')</span><div class="row"><div class="embed-row">' + squares + '</div></div></div>';
+    }).join('') + (toks.filter(t => t.id !== null).length > 10
+      ? '<p style="font-size: 12px; color: var(--muted); margin: 6px 0 0;">(showing the first 10 rows)</p>' : '');
+
+    document.getElementById('tk-roundtrip').innerHTML =
+      'Round trip — reading the ids back through the table: <strong>"' + esc(detokenize(toks)) + '"</strong>';
+  }
+
+  function renderRev() {
+    const v = parseInt(document.getElementById('tk-rev').value, 10);
+    const out = document.getElementById('tk-rev-out');
+    if (isNaN(v)) out.innerHTML = '→ type a number';
+    else if (v >= 0 && v < VOCAB.length) out.innerHTML = '→ "<strong>' + esc(VOCAB[v]) + '</strong>"';
+    else out.innerHTML = '→ no row ' + v + ' — this toy table only goes 0–' + (VOCAB.length - 1);
+  }
+
+  document.getElementById('tk-vsize').textContent = VOCAB.length;
+  document.getElementById('tk-vocab').innerHTML =
+    '<div class="token-row">' + VOCAB.map((t, i) =>
+      '<span class="token-pill">' + esc(t) + '<span class="token-id">id ' + i + '</span></span>'
+    ).join('') + '</div>';
+
+  input.addEventListener('input', render);
+  document.getElementById('tk-rev').addEventListener('input', renderRev);
+  document.getElementById('tk-vocab-toggle').addEventListener('click', () => {
+    const el = document.getElementById('tk-vocab');
+    el.hidden = !el.hidden;
+    document.getElementById('tk-vocab-toggle').textContent =
+      el.hidden ? 'show the whole lookup table' : 'hide the lookup table';
+  });
+  render();
+  renderRev();
+})();
+
 // ===== chapter-by-chapter navigation =====
 (function() {
   const sections = Array.from(document.querySelectorAll('main section'));
@@ -4338,7 +5138,15 @@ makeSeparator('sep-xor',
     'loss': 'A single number measuring how wrong the network is right now. Training tries to make it small.',
     'overfitting': 'When a model memorizes the training examples instead of learning the general rule.',
     'hidden neuron': 'A neuron in a middle layer — not an input, not the final output. Where the network builds its own features.',
-    'forward pass': 'Running inputs through the network to produce an output. No learning happens yet.'
+    'forward pass': 'Running inputs through the network to produce an output. No learning happens yet.',
+    'linearly separable': 'One straight line can split the YES examples from the NO examples. OR and AND are; XOR is not.',
+    'vector': 'Just a list of numbers, like [0.2, −1.4, 0.7].',
+    'matrix': 'A grid of numbers — a list of lists. One matrix multiply does many weighted sums at once.',
+    'dot product': 'Multiply the matching entries of two lists, then add them all up — the same multiply-and-add a neuron does.',
+    'token': 'A chunk of text (often a word-piece) with its own ID number. LLMs read and write tokens, not letters.',
+    'one-hot encoding': 'Writing a choice as a list with a single 1 and the rest 0s, like [0,1,0] for "chips".',
+    'tokenizer': 'The chopping rules plus a two-way lookup table between text chunks and id numbers. Built before training; never changes.',
+    'embedding': 'The row of learned numbers a token id looks up — the token’s numeric fingerprint.'
   };
 
   // lowercase lookup (so "ReLU"/"relu" both resolve) and a length-sorted alternation
@@ -4381,7 +5189,12 @@ makeSeparator('sep-xor',
 
   function glossarize(root) {
     if (!root) return;
-    if (root.nodeType === 3) { wrapTextNode(root); return; }
+    if (root.nodeType === 3) {
+      const pt = root.parentNode && root.parentNode.tagName;
+      if (pt && SKIP.has(pt.toUpperCase())) return;
+      wrapTextNode(root);
+      return;
+    }
     if (root.nodeType !== 1) return;
     const tag = root.tagName.toUpperCase();
     if (SKIP.has(tag) || (root.classList && root.classList.contains('gloss'))) return;
