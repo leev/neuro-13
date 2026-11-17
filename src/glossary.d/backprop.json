@@ -1,0 +1,8 @@
+{
+  "credit assignment": "Working out how much each weight contributed to a mistake, so that each one can be corrected by the right amount.",
+  "chain rule": "When one thing changes a second and the second changes a third, the overall rate is the two rates multiplied. Backpropagation uses it link by link.",
+  "blame": "This book's nickname for a gradient: how fast the loss goes up when one number goes up a tiny bit.",
+  "backward pass": "The second half of a training round: start at the loss and hand the blame back through the network, layer by layer.",
+  "gradient check": "Testing backpropagation by wiggling one weight a tiny bit, measuring how far the loss really moves, and comparing the two answers.",
+  "vanishing gradient": "When the blame shrinks at every layer on its way back through a deep network, so the earliest layers barely learn."
+}

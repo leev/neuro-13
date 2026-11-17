@@ -5,6 +5,9 @@ function boot(base) {
   return loadPyodide({ indexURL: base }).then(py => {
     py.setStdout({ batched: s => postMessage({ type: 'out', text: s + '\n' }) });
     py.setStderr({ batched: s => postMessage({ type: 'err', text: s + '\n' }) });
+    // Without a terminal attached Python buffers its output in large blocks,
+    // so a training loop's progress would only appear when the script ends.
+    py.runPython('import sys\nsys.stdout.reconfigure(line_buffering=True)\nsys.stderr.reconfigure(line_buffering=True)');
     return py;
   });
 }

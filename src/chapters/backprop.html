@@ -1,0 +1,238 @@
+<p>{{Ch:descent}} boiled all of training down to one line: <code>new_weight = old_weight − (learning_rate × gradient)</code>. Find the slope for every weight, take a small step downhill, repeat. But it skipped the hard part. A network's mistake only shows up at the very end, at the output. So how do you find the slope for a weight buried in the middle?</p>
+<p>The answer is <strong>backpropagation</strong> ("backprop" for short): one sweep from the output back toward the inputs that tells every weight how much of the mistake was its fault. Every network in this book is trained with it. You pressed buttons that ran it in {{ch:hidden}}. Now you're going to run it yourself, one multiplication at a time.</p>
+
+<h3>Nine numbers, one mistake</h3>
+<p>Here is the smallest network that can solve the secret-door puzzle from {{ch:xor-fail}}: two inputs (the left and right buttons), two hidden neurons, one output neuron. It has six wires, each with a weight, and three neurons, each with a bias. Nine adjustable numbers in all.</p>
+<p>Show it one example: left button pressed, right button not. The door should open, so the right answer is 1. Our untrained network says 0.485. Too low.</p>
+<p>Now the awkward question. <em>Which of the nine numbers should change, and by how much?</em> The weights right next to the output are obvious suspects. But the weight on the wire from the left button into the first hidden neuron had a hand in it too, from two steps away. Should it go up or down? A lot or a little?</p>
+<p>Picture a soccer team that loses 3–2. Whose fault was it? The goalkeeper is the obvious suspect, but maybe the real trouble was a sloppy pass in midfield three moves earlier. Everyone on the field touched the result, some of them from a long way off. In machine learning this puzzle is called <strong>credit assignment</strong>: many numbers worked together to produce one answer, and you have to work out each one's share of the credit or the blame.</p>
+<p>There is a slow, obvious way to find out, and you have been doing it with sliders since {{ch:neuron}}: wiggle one number a tiny bit, run the network again, and see whether the answer got better or worse. Put it back. Wiggle the next one. That really does work. Hold on to it: later in this chapter it becomes our lie detector for backprop, and then you'll see why no real network could ever be trained that way.</p>
+
+<h3>The chain rule: multiply along the chain</h3>
+<p>Backprop is built on one idea from math, and you can borrow it from a bicycle.</p>
+<p>Say your bike is in a gear where one full turn of the pedals spins the back wheel 3 times, and each spin of the wheel rolls you 2 meters down the road. How far does one turn of the pedals take you? You don't need a tape measure. It's 3 × 2 = 6 meters.</p>
+<div class="bp-chain" role="img" aria-label="One turn of the pedals, times 3, makes three spins of the wheel, times 2, makes six meters down the road.">
+  <span class="bp-link">1 turn of the pedals</span>
+  <span class="bp-rate">× 3</span>
+  <span class="bp-link">3 spins of the wheel</span>
+  <span class="bp-rate">× 2</span>
+  <span class="bp-link end">6 meters down the road</span>
+</div>
+<p>That's the whole idea. When one thing drives a second, and the second drives a third, the overall rate is the two rates <em>multiplied</em>. Add another link (say a fitness app gives you 5 points per meter) and you keep multiplying: 3 × 2 × 5 = 30 points per turn of the pedals. This is the <strong>chain rule</strong>: to find how strongly the start of a chain affects the end, multiply the rates of all the links in between.</p>
+<p style="font-size: 14px; color: var(--muted);">The bike numbers are made up to keep the arithmetic easy. Real gears have messier ratios.</p>
+<p>A network is a chain too. Here is everything that happens, in order, when you change the weight on the wire from the left button to the first hidden neuron, H1:</p>
+<div class="bp-chain" role="img" aria-label="The weight on left to H1 changes H1's total, which changes H1's output, which changes out's total, which changes the prediction, which changes the loss.">
+  <span class="bp-link">weight on left→H1</span>
+  <span class="bp-rate">× the left input</span>
+  <span class="bp-link">H1's total</span>
+  <span class="bp-rate">× slope of H1's squish</span>
+  <span class="bp-link">H1's output</span>
+  <span class="bp-rate">× weight on H1→out</span>
+  <span class="bp-link">out's total</span>
+  <span class="bp-rate">× slope of out's squish</span>
+  <span class="bp-link">the prediction</span>
+  <span class="bp-rate">× the miss</span>
+  <span class="bp-link end">the loss</span>
+</div>
+<p>Five links, each with its own rate. Multiply the five rates together and you know exactly how fast the loss changes when that one weight changes. In this chapter we call that number the weight's <strong>blame</strong>: how fast the loss goes up as the number goes up. Positive blame means raising the number makes the mistake worse, so it should come down. Negative blame means it should go up.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: "blame" is this book's nickname. The official word is the one from {{ch:descent}}, <em>gradient</em>. Same number.</p>
+<p>Where do the rates come from? There are only three kinds of link.</p>
+<ul>
+  <li><strong>A wire.</strong> A neuron's total is a sum of <em>signal × weight</em>. Nudge the weight, and the total moves by the size of the signal. Nudge the signal, and the total moves by the size of the weight. So a wire's rate is whatever sits on the other side of the multiplication sign.</li>
+  <li><strong>A squish.</strong> Its rate is the slope of the sigmoid curve at that point, the slope you watched in {{ch:activations}}. For sigmoid there is a neat shortcut: slope = output × (1 − output). At an output of 0.5 that is 0.5 × 0.5 = 0.25, the steepest it ever gets.</li>
+  <li><strong>The loss.</strong> We measure the mistake the standard way. The <em>miss</em> is prediction − target, where the target is the right answer. The loss is half of the miss squared. Squaring makes a miss count the same whether it is too high or too low, and makes big misses count for much more than small ones. The "half" keeps the next step tidy: with it, when the prediction changes, the loss changes at a rate of exactly the miss.</li>
+</ul>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: {{ch:training}} measured the error the other way round, truth − prediction, and <em>added</em> its nudges. Here the miss is prediction − target and we <em>subtract</em>. Flip both signs and you land on the same nudge.</p>
+
+<h3>Why the blame travels backwards</h3>
+<p>You could multiply out those five links separately for each of the nine numbers. But look at the right-hand end of the chain: <em>× slope of out's squish × the miss</em>. Every one of the nine numbers has a chain that ends with those same two links, because every path through the network ends at the output.</p>
+<p>So do the shared part once. Start at the loss, multiply back as far as the output neuron, and <em>save the answer</em>. That saved number is the blame at the output. Every wire feeding the output now needs just one more multiplication. Then hand the blame one layer further back, save it again, and every wire feeding the hidden neurons needs just one more multiplication too.</p>
+<p>That is the whole algorithm. The blame moves from the back of the network to the front, one layer at a time, and nothing is ever worked out twice. It's also where the name comes from: the error is <em>propagated back</em>.</p>
+
+<h3>One round, four moves</h3>
+<p>A round of learning on one example starts with two moves you know: a forward pass to get a prediction, then the loss to score it. The third move is the new one. In the <strong>backward pass</strong> you start at the loss and hand the blame back through the network, layer by layer, until every number has its share. The fourth move nudges every number a little, against its blame.</p>
+
+<div class="predict" data-answer="b">
+  <p>The example is left = 1, right = 0. Backprop is about to hand out blame to all nine numbers. Which of them will get exactly zero?</p>
+  <button data-opt="a">None. Every number helped make the prediction.</button>
+  <button data-opt="b">The two wires that leave the right button.</button>
+  <button data-opt="c">The numbers that belong to whichever hidden neuron fired more weakly.</button>
+  <p class="why">A wire's blame gets multiplied by the signal it carried, and the right button sent a 0. Changing those two weights would not have changed the prediction at all, so they are not to blame. Step through below and watch them come out as 0.0000.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Step through one round of learning</h3>
+  <p>A real network with real numbers. Pick an example, then keep pressing <strong>next step</strong> and read the panel under the diagram each time: it shows that step's arithmetic. On the diagram, blue wires have positive weights and red wires have negative ones, as in {{ch:hidden}}. Anything orange is blame. After one full round, press <strong>train 2,000 more rounds</strong> and watch three things at once: the wires, the four answers, and the loss.</p>
+  <div class="toggle-row bp-compact" id="bp-examples">
+    <div class="toggle" role="button" tabindex="0" data-ex="0">left=0, right=0<br>→ target 0</div>
+    <div class="toggle on" role="button" tabindex="0" data-ex="1">left=1, right=0<br>→ target 1</div>
+    <div class="toggle" role="button" tabindex="0" data-ex="2">left=0, right=1<br>→ target 1</div>
+    <div class="toggle" role="button" tabindex="0" data-ex="3">left=1, right=1<br>→ target 0</div>
+  </div>
+  <div class="bp-stages" id="bp-stages">
+    <span class="stage-pill" data-stage="forward"><span>1 · forward pass</span></span>
+    <span class="stage-pill" data-stage="loss"><span>2 · loss</span></span>
+    <span class="stage-pill" data-stage="blame"><span>3 · blame, backwards</span></span>
+    <span class="stage-pill" data-stage="nudge"><span>4 · nudge</span></span>
+  </div>
+  <div class="bp-diagram" id="bp-diagram"></div>
+  <div class="bp-legend">
+    <span><i style="background: #2563eb;"></i>positive weight</span>
+    <span><i style="background: #dc2626;"></i>negative weight</span>
+    <span><span class="tag">blame</span>how fast the loss rises if this number rises</span>
+  </div>
+  <div class="bp-controls">
+    <button class="secondary" id="bp-back">← back</button>
+    <button id="bp-next">next step →</button>
+    <span class="bp-spacer"></span>
+    <button id="bp-train" disabled>train 2,000 more rounds</button>
+    <button class="secondary" id="bp-restart">start over</button>
+  </div>
+  <div class="math-panel bp-panel" id="bp-panel" aria-live="polite"></div>
+  <div class="bp-score">
+    <div class="math-panel">
+      <h4>All four examples right now</h4>
+      <div id="bp-preds"></div>
+    </div>
+    <canvas id="bp-chart" width="380" height="176"></canvas>
+  </div>
+  <div class="stat-row">
+    <span>rounds so far: <strong id="bp-rounds">0</strong></span>
+    <span>average loss: <strong id="bp-loss">?</strong></span>
+    <span>learning rate: <strong>2</strong></span>
+  </div>
+  <p style="font-size: 13px; color: var(--muted); margin: 12px 0 0;">The computer keeps about 16 digits; we show 3 or 4. If you check a line with a calculator, the last digit can be off by one.</p>
+</div>
+
+<h3>What just happened</h3>
+<p>Two rules did all the work, used over and over:</p>
+<ul>
+  <li><strong>Blame for a wire</strong> = blame at the neuron it feeds × the signal it carried. (A bias counts as a wire that always carries 1.)</li>
+  <li><strong>Blame for a neuron</strong> = blame arriving × the weight on the wire it came back along × the slope of the neuron's own squish.</li>
+</ul>
+<p>If you stepped through the first round on left = 1, right = 0, four things were worth catching:</p>
+<ul>
+  <li><strong>The idle wires got nothing.</strong> Both wires leaving the right button came out with a blame of exactly 0. They were carrying a 0, so nothing they could have done would have changed the answer. {{Ch:training}} said you can't blame a weight that wasn't involved. Now you've seen the multiplication that enforces it.</li>
+  <li><strong>The blame shrank on its way back.</strong> At the output it was −0.1286. One layer back it was −0.0151 at H1 and 0.0191 at H2, roughly seven to nine times smaller.</li>
+  <li><strong>One blame flipped sign.</strong> The wire from H2 to the output starts out negative (−0.6), so when H2 fires it pushes the prediction <em>down</em>. The prediction was too low. So the message that reaches H2 is the opposite of the one that reaches H1: fire <em>less</em>.</li>
+  <li><strong>One nudge is a small thing.</strong> The prediction moved from 0.485 to 0.591. Closer to 1, but nowhere near it. Learning is that, thousands of times.</li>
+</ul>
+<p>Then you let it run. For roughly the first 250 rounds the loss sat on a shelf near 0.12, with every row's answer hovering around 0.5. That is the laziest way to be only half wrong about everything. Then, as the two hidden neurons settled into two different jobs, the loss fell off a cliff between roughly round 400 and round 700. After 2,001 rounds the two "door opens" rows come out at about 0.96 and the two "door stays shut" rows at about 0.05.</p>
+<p>Look at the trained numbers on the diagram. H1 ended up with a big positive weight from the left button and a big negative one from the right: it fires for "left but not right". H2 is its mirror image, "right but not left". The output fires if either of them does. That is one of the solutions {{ch:hidden}} described, and nobody typed it in. Training even flipped the sign of the wire from H2 to the output: it started at −0.6 and ended near +7.5.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty notes. (1) This widget nudges after every single example. Real training usually adds up the blame from a mini-batch of examples first, as in {{ch:descent}}, and then nudges once. (2) In a bigger network a hidden neuron feeds several neurons, not one. Blame then arrives along several wires, and the neuron simply adds it up. (3) The nine starting numbers were picked by hand, so that everyone sees the same walk-through and so that training reliably works. Two hidden neurons is the bare minimum for this puzzle, and from an unlucky start the network gets stuck. When we tried 20,000 random starting points (every number somewhere between −1 and 1), about 58% learned all four rows within 2,000 rounds. Nearly all the rest stalled with three rows right.</p>
+
+<h3>Is backprop telling the truth?</h3>
+<p>All that multiplying produced nine confident-looking numbers. How do you know they're right?</p>
+<p>Use the slow, obvious method from the start of the chapter as a referee. If a weight's blame really is "how fast the loss changes when this weight changes", you can measure that directly: change the weight a tiny bit and watch the loss. Programmers who write backprop code by hand use exactly this test. It's called a <strong>gradient check</strong>: wiggle one number, measure how far the loss actually moves, and compare that with what backprop claimed.</p>
+
+<div class="predict" data-answer="a">
+  <p>For the example left = 1, right = 0, backprop says the blame for the wire left→H1 is −0.0151. Suppose you raise that weight by 0.001 and run the network again. What should happen to the loss?</p>
+  <button data-opt="a">It drops by about 0.0000151.</button>
+  <button data-opt="b">It drops by about 0.0151.</button>
+  <button data-opt="c">It goes up, because the weight went up.</button>
+  <p class="why">Blame is a rate: loss change per unit of weight change. Multiply it by the size of the wiggle: −0.0151 × 0.001 = −0.0000151. Negative means the loss goes down. Check it below.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Check it by wiggling</h3>
+  <p>The same network with its nine starting numbers. Choose a number (click it on the diagram or in the row below), press the wiggle button, and compare what the loss really did with what backprop said it would do. Then try a different wiggle size, and a different example.</p>
+  <div class="toggle-row bp-compact" id="wg-examples">
+    <div class="toggle" role="button" tabindex="0" data-ex="0">left=0, right=0<br>→ target 0</div>
+    <div class="toggle on" role="button" tabindex="0" data-ex="1">left=1, right=0<br>→ target 1</div>
+    <div class="toggle" role="button" tabindex="0" data-ex="2">left=0, right=1<br>→ target 1</div>
+    <div class="toggle" role="button" tabindex="0" data-ex="3">left=1, right=1<br>→ target 0</div>
+  </div>
+  <div class="bp-diagram" id="wg-diagram"></div>
+  <div class="toggle-row bp-compact" id="wg-keys"></div>
+  <div class="toggle-row bp-compact" id="wg-sizes">
+    <span class="bp-row-label">wiggle size:</span>
+    <div class="toggle" role="button" tabindex="0" data-size="0.1">0.1</div>
+    <div class="toggle" role="button" tabindex="0" data-size="0.01">0.01</div>
+    <div class="toggle on" role="button" tabindex="0" data-size="0.001">0.001</div>
+    <div class="toggle" role="button" tabindex="0" data-size="0.0001">0.0001</div>
+  </div>
+  <div class="bp-controls">
+    <button id="wg-one">wiggle left→H1 by 0.001</button>
+    <button class="secondary" id="wg-all">wiggle all nine</button>
+  </div>
+  <div class="math-panel" id="wg-panel" aria-live="polite"></div>
+</div>
+
+<p>They match, to about four decimal places. Not because backprop does any wiggling in secret, but because both methods measure the same thing: the slope of the loss, one number at a time. Wiggling finds the slope by trying it. Backprop works it out with the chain rule.</p>
+<p>The small gaps come from the wiggle, not from backprop. A wiggle of 0.001 is small, but the loss still curves a little over that distance. Make the wiggle ten times smaller and the gap gets about ten times smaller with it. Backprop's number is the exact slope the wiggles are closing in on.</p>
+
+<h3>Why wiggling can't train a real network</h3>
+<p>Both methods gave the same nine numbers. So why bother with the chain rule at all? Count the work.</p>
+<p>Wiggling needs one forward pass to get the starting loss, then one more forward pass <em>for every number in the network</em>. Backprop needs one forward pass and one backward pass, and the backward pass is about as much work as the forward one. That's it, however many numbers there are.</p>
+<table>
+  <tr><th>Numbers in the network</th><th>Wiggling: passes for one nudge</th><th>Backprop: passes for one nudge</th></tr>
+  <tr><td>9 (this chapter's network)</td><td>10</td><td>1 forward + 1 backward</td></tr>
+  <tr><td>1,000,000</td><td>1,000,001</td><td>1 forward + 1 backward</td></tr>
+  <tr><td>1,000,000,000</td><td>1,000,000,001</td><td>1 forward + 1 backward</td></tr>
+</table>
+<p>Now put a clock on it. Suppose a single pass through a billion-weight network took one second. Finding every weight's blame by wiggling would take a billion seconds, which is almost 32 years, for <em>one</em> nudge. Backprop would take about two seconds. And training needs many thousands of nudges.</p>
+<p>That is why this one algorithm made deep learning possible. The idea of rolling downhill is old and simple. What was missing was an affordable way to find out which way is downhill for millions of weights at once.</p>
+
+<div class="bigidea">
+  <p>Backpropagation: run the example forward, measure the mistake, pass the blame backwards one layer at a time using the chain rule, and nudge every number in proportion to its share. One forward pass and one backward pass give the blame for every weight at once, whether there are nine of them or nine billion.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the same round in Python</h3>
+  <p>This is <code>backprop.py</code>: the same network, the same nine starting numbers, the same first example. It prints every blame from the walk-through, runs the wiggle check on all nine numbers with the two columns side by side, then trains for 2,000 more rounds. If you step through one round on left=1, right=0 in the widget and then press train once, the widget and this script show the same numbers, digit for digit.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">backprop.py</span>
+      <span class="code-status" id="py-status-backprop">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-backprop" spellcheck="false" rows="30" data-src="backprop.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="backprop">▶ run</button>
+    <button class="secondary" data-py-reset="backprop">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-backprop"><span class="dim">(click "run" to execute)</span></div>
+</div>
+<p>If you ran the script in {{ch:hidden}}, you scrolled past two lines that probably looked like gibberish: <code>d_o = err * dsigmoid(o)</code> and <code>d_h = (d_o @ w2.T) * dsigmoid(h)</code>. Read them again. The first is "blame at the output = miss × slope". The second is "hand it back along the weights, then multiply by the slope". It's the same two moves, written for a whole layer at once. (That script measures its miss as truth − prediction, so it adds its nudges where we subtract.)</p>
+
+<h3>Who thought of it?</h3>
+<p>Not one person. The 1986 paper you met in {{ch:xor-fail}}, by David Rumelhart, Geoffrey Hinton and Ronald Williams, is the one that made backpropagation famous. It showed hidden neurons working out useful jobs for themselves, just like H1 and H2 did above, and its title says what it does: <a href="https://www.nature.com/articles/323533a0" target="_blank" rel="noopener">"Learning representations by back-propagating errors"</a>.</p>
+<p>But the method underneath is older. In 1970 a Finnish student named Seppo Linnainmaa described it in his master's thesis, as a general way to get every slope of a long calculation in one backward sweep. He wasn't writing about neural networks at all. In 1974 Paul Werbos worked out the same backward method in his PhD thesis at Harvard, and in 1982 he showed how to use it on neural networks. Others found pieces of it too. People still argue about who deserves how much of the credit, which is a nice joke for an algorithm about credit assignment. Wikipedia's <a href="https://en.wikipedia.org/wiki/Backpropagation#History" target="_blank" rel="noopener">history of backpropagation</a> has the longer story.</p>
+
+<h3>When the blame fades</h3>
+<p>You watched the blame shrink as it went back one layer. Every hop back multiplies it by a weight and by the slope of a squish, and for sigmoid that slope is never more than 0.25. One hop is no problem. But stack up many sigmoid layers and the blame picks up another small slope at every one of them. By the time it reaches the earliest wires there is almost nothing left, and those wires stop learning. This is the <strong>vanishing gradient</strong> problem from {{ch:activations}}: blame that fades to nearly zero on its way back through a deep network. It's also why that chapter's ReLU matters so much. ReLU's slope is exactly 1 wherever the neuron is switched on, so the blame passes through at full strength.</p>
+
+<h3>Nobody does this by hand</h3>
+<p>You just did backprop by hand for nine numbers. Nobody does that for nine million. But notice something about the two rules: neither one needed to know what the network was <em>for</em>, or how big it was. Each step only looked at its next-door neighbors. That means a program can do the whole backward pass for <em>any</em> network automatically, as long as it keeps notes on what happened on the way forward. In {{ch:pytorch}} you'll build a tiny engine that does exactly that, and then meet the one professionals use.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>In <code>backprop.py</code>, change all nine starting numbers to <code>0.5</code> and run it. One row never comes out right, however long you train. Look at the blame the script prints for H1's wires and for H2's wires. What do you notice, and why does it mean the two hidden neurons can never become different from each other? (This is why real networks always start from random weights.)</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Why does backprop start at the output and work backwards, instead of starting at the inputs?</p>
+    <button data-opt="a">Because the output neuron is the most important neuron in the network.</button>
+    <button data-opt="b">Because every number's chain ends at the loss, so the last links are shared and only need working out once.</button>
+    <button data-opt="c">Because the weights near the inputs are not allowed to change until the others have.</button>
+    <p class="why">Every path through the network finishes at the output and the loss. Work that shared end out first, save it, and each earlier number needs only a multiplication or two more.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A hidden neuron is connected to the output by a wire with a <em>negative</em> weight. The prediction came out too low. What message does backprop send that hidden neuron?</p>
+    <button data-opt="a">"Fire more," because the prediction needs to go up.</button>
+    <button data-opt="b">Nothing. Negative wires don't pass blame back.</button>
+    <button data-opt="c">"Fire less," because through a negative wire, firing less pushes the prediction up.</button>
+    <p class="why">The blame is multiplied by the weight on the wire it travels back along. A negative weight flips its sign, which is exactly right: that neuron's firing was dragging the prediction down.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A network has one million weights. You want every weight's blame for one example. Roughly how much work is that?</p>
+    <button data-opt="a">By wiggling, about a million forward passes. By backprop, one forward pass and one backward pass.</button>
+    <button data-opt="b">About a million passes either way. Backprop is just more accurate.</button>
+    <button data-opt="c">By wiggling, one pass. By backprop, a million, because of all the multiplying.</button>
+    <p class="why">Wiggling has to rerun the whole network once per weight. Backprop reuses the saved blame at each layer, so one sweep back covers every weight.</p>
+  </div>
+</div>
