@@ -1,0 +1,6 @@
+{
+  "architecture": "The shape of a network: how many layers it has and how many neurons are in each one.",
+  "batch size": "How many training examples the network looks at before each nudge of its weights.",
+  "controlled experiment": "A test where you change one thing and keep everything else the same, so you know what caused the difference.",
+  "random seed": "The starting number a computer uses to make its random numbers. The same seed gives the same random numbers again, which lets you repeat an experiment exactly."
+}

@@ -148,7 +148,7 @@
 <p>A <strong>validation set</strong> is a slice of your data held back from training, just like the test set, but one you're allowed to look at as often as you like. A common split is 80% training, 10% validation, 10% test. In real work the rewind button would watch the validation score, and the test set would stay in its envelope until the last day.</p>
 
 <h3>Other ways to discourage memorizing</h3>
-<p>Two more tools, named here so you recognize them later. <strong>Weight decay</strong> shrinks every weight a tiny bit on every step, so the network can only keep the large weights that sharp little islands need if they really earn their keep. <strong>Dropout</strong> switches off a random handful of neurons on each training step, so the network can't count on any single neuron to remember a single example. We won't build either one in this book, but you'll find them in the training recipe of a great many real models.</p>
+<p>Two more tools, named here so you recognize them later. <strong>Weight decay</strong> shrinks every weight a tiny bit on every step, so the network can only keep the large weights that sharp little islands need if they really earn their keep. <strong>Dropout</strong> switches off a random handful of neurons on each training step, so the network can't count on any single neuron to remember a single example. We won't build either one in this chapter, though the lab in {{ch:playground}} has a weight-decay slider you can try. You'll find both in the training recipe of a great many real models.</p>
 
 <h3>So why do giant networks work at all?</h3>
 <p>If 1,185 stored numbers are enough to memorize 80 dots, a chatbot with hundreds of billions of weights ought to be the worst crammer in history. Why isn't it?</p>
