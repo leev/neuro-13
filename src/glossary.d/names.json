@@ -1,0 +1,7 @@
+{
+  "language model": "A model that looks at the text so far and gives a probability to every possible next token. Run in a loop, it writes.",
+  "end marker": "An extra symbol in the dictionary that means the text stops here. When the model samples it, the name is finished.",
+  "held-out names": "Names set aside before training and never trained on, used to test the model on names it has not seen.",
+  "bigram": "A language model that predicts the next symbol from only the one symbol before it, using a table of counts.",
+  "perplexity": "A loss turned into a number of choices by taking e to the power of the loss. A perplexity of 9 means the model is as unsure as if it were picking among 9 equally likely options."
+}

@@ -147,3 +147,17 @@ Then open the page and use every control. A chapter is not finished until its wi
 ## Datasets
 
 - `py/headlines.csv`: 10,000 labelled news stories, a cleaned and balanced sample of the AG News research collection (2004). Rebuild with `tools/make_headlines.py`.
+- `py/digits.bin`: 8,000 training and 2,000 test handwritten digits sampled from MNIST (Yann LeCun, Corinna Cortes, Christopher J.C. Burges; CC BY-SA 3.0). Rebuild with `python3 tools/make_digits.py data/MNIST/raw py/digits.bin` (the raw MNIST files are not in the repo; `py/neuro9.py` or `py/convnet.py` will download them into `data/`).
+- `py/names.txt`: 8,020 first names, the 4,300 most common per sex from the names file in karpathy/makemore (MIT-licensed repo; derived from public-domain US Social Security Administration baby-name records). Rebuild with `tools/make_names.py`.
+- `py/dinosaurs.txt`: 1,389 dinosaur genus names from Wikipedia's "List of dinosaur genera" (CC BY-SA 4.0, fetched 2026-11-17). Also built by `tools/make_names.py`.
+- `py/convnet-weights.json`: both networks used in the convolution chapter, trained on MNIST by `py/convnet.py` (needs PyTorch). The file embeds ten MNIST test digits. If you retrain, update the measured tables in `src/chapters/convolution.html`; `node tools/check_convnet.js` checks the JavaScript forward pass against PyTorch.
+- `py/diffusion-weights.json`: the noise-predicting network used in the diffusion chapter, trained by `py/diffusion.py` on shapes the script draws itself. No outside data.
+
+Figures quoted in the text that come from outside sources are named where they appear (for example Meta's Llama 3.1 model card and the US Energy Information Administration's 2022 household electricity figure in the scale chapter).
+
+## Design assets
+
+- Fonts in `src/assets/fonts/` are self-hosted under the SIL Open Font License (`OFL.txt`): Bricolage Grotesque, Figtree and Atkinson Hyperlegible Mono.
+- `src/assets/og.png` (the link-preview image) is rendered from `tools/og.html` by `tools/make_og.sh`.
+- The five part colors live in `src/book.json` and are mirrored in `src/assets/shell.css`, `src/assets/favicon.svg` and `tools/og.html`. If you change them, update all four and rerun `tools/make_og.sh`.
+- `--accent` (blue) is reserved for widgets so they look the same in every part; `--good` and `--warn` are dark enough to pass AA contrast as text.

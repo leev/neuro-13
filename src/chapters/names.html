@@ -1,0 +1,360 @@
+<p>Here's a game. I'm thinking of a name. It starts with <strong>q</strong>. What's the second letter?</p>
+<p>You said <em>u</em>, and you didn't have to look anything up. You've read enough names, like Quinn and Quentin, to know what tends to come next. Now a harder one. The name so far is <strong>em</strong>. Next letter? It could be <em>m</em> (Emma), <em>i</em> (Emily) or <em>e</em> (Emery). You can't be sure. But you could say which letters are likely and which are silly. Nobody's name starts with <em>emq</em>.</p>
+<p>That skill has a name. A <strong>language model</strong> is anything that looks at the text so far and says how likely each possible next piece is. A chatbot is a language model. So is the thing you are about to build. Yours works on names, one letter at a time, and you will train it yourself, on this page, starting from random weights. By the end it will be inventing names that nobody has ever had.</p>
+
+<h3>Turning a list of names into practice questions</h3>
+<p>Our data is a file called <code>names.txt</code>: 8,020 first names given to babies in the United States, taken from public government records. We set 802 of them aside as <strong>held-out names</strong>, which the model never trains on, so we can test it honestly later (the habit from {{ch:real-data}}). That leaves 7,218 to learn from.</p>
+<p>A network learns from examples: a question, and the right answer. A list of names doesn't look like that. Here is the trick that turns it into one. Slide a little window along each name, and at every stop ask: <em>given these letters, what comes next?</em> The window is three letters wide. In {{ch:tokens}} you met the context window, the most tokens a model can see at one time. Ours is three tokens. That is tiny on purpose, and it will matter later.</p>
+<p>Two details. First, the tokens here are single letters, the simplest of the three ways to chop from {{ch:tokens}}. Second, a name has to stop somewhere, so we add a 27th symbol, the <strong>end marker</strong>, which means "the name ends here". We draw it as a dot. It is a tiny version of the end-of-text token that tells a chatbot it has finished. The dot also fills the window at the start of a name, before there are three letters to look at. So the dictionary has exactly 27 tokens: 26 letters and the dot.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Slice a name into questions</h3>
+  <p>Type any name. Each row is one training example: the three purple boxes are what the model gets to see, and the orange box is the answer it should give. Watch the window slide one letter per row.</p>
+  <input class="nm-text" id="nw-input" type="text" value="emma" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="A name to slice into training examples">
+  <div id="nw-rows"></div>
+  <div class="stat-row">
+    <span>letters: <strong id="nw-letters">4</strong></span>
+    <span>training examples: <strong id="nw-count">5</strong></span>
+  </div>
+</div>
+
+<p>A four-letter name makes five examples: one for each letter, plus one for the ending. All 7,218 training names together make 50,038 examples.</p>
+<p>Notice that nobody had to label anything. The text is its own answer key: cover up the next letter, and the covered letter is the right answer. Every language model gets its training examples this way, chatbots included. They slide along billions of pages instead of a list of names.</p>
+
+<h3>First try: just count</h3>
+<p>Before we use a network, let's try the simplest model that could possibly work. Look at only <em>one</em> letter, and count what came after it in the training names. How often was <em>a</em> followed by <em>n</em>? By <em>r</em>? By the end of the name? There are 27 symbols that can come first and 27 that can come next, so the whole model is a table of 27 × 27 = 729 counts.</p>
+
+<div class="predict" data-answer="c">
+  <p>Before you look at the table: which letter do the most names in the list <em>end</em> with?</p>
+  <button data-opt="a">a, as in Emma and Olivia</button>
+  <button data-opt="b">e, as in Grace and Jake</button>
+  <button data-opt="c">n, as in Mason and Lauren</button>
+  <button data-opt="d">y, as in Lily and Henry</button>
+  <p class="why">It's n. Of the 7,218 training names, 1,633 end in n (Aiden, Logan, Madison, Jordan), ahead of 1,372 that end in a. You can check: in the table below, find the row for n and look at its first square.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>The counting table</h3>
+  <p>Each <strong>row</strong> is the letter you are on. Each <strong>column</strong> is what came next. The darker the square, the more often that happened. The dot row at the top is the start of a name, and the dot column on the left is "the name ended". Move over the squares (or tap them) to read the counts. Look along the <em>q</em> row. Then compare the row for <em>j</em> with the row for <em>n</em>.</p>
+  <p class="nm-axis-note"><span>↓ this letter</span><span>what came next →</span></p>
+  <div class="nm-heat-wrap"><canvas id="nc-heat" width="574" height="574" aria-label="A 27 by 27 grid showing how often each letter follows each other letter"></canvas></div>
+  <p class="nm-readout" id="nc-readout">Loading the names…</p>
+  <div><button id="nc-gen" disabled>invent 10 names from the table</button></div>
+  <div class="nm-chips" id="nc-out"></div>
+  <div class="stat-row">
+    <span>names counted: <strong id="nc-names">?</strong></span>
+    <span>letter pairs counted: <strong id="nc-pairs">?</strong></span>
+  </div>
+</div>
+
+<p>Each row of that table, divided by its total, is a list of 27 probabilities: <em>after this letter, here is how likely each symbol is to come next</em>. After q, the table says u 89% of the time (47 times out of 53). That makes the table a language model already, with no network anywhere. Engineers call it a <strong>bigram</strong> model, because it only ever looks at pairs of letters.</p>
+<p>The button shows how a language model writes. Start on the dot row. Roll a weighted die to pick the next letter, so that likelier letters win more often. Jump to that letter's row and roll again. Stop when the die lands on the dot. Picking at random, with likelier options picked more often, is called <strong>sampling</strong>.</p>
+<p>The names it invents are mostly bad: things like <em>scrnan</em> and <em>amomeelimaraylll</em>. Every <em>pair</em> of neighboring letters is believable, but the table can only see one letter back. It has no idea it just wrote three consonants in a row, or that the name is already sixteen letters long. Even so, this is far from random typing. It starts names with the letters names start with, and it stops them on the letters names stop on.</p>
+
+<h3>Keeping score</h3>
+<p>We need a fair way to say whether one model is better than another. Take the 802 held-out names and walk along them one letter at a time. At each step, look at the probability the model gave to the letter that really came next. That is the same score you used for the snack picker in {{ch:multi}}: the loss is <code>−log</code> of that probability, so a confident right answer costs almost nothing and a surprise costs a lot. Average it over every letter of every held-out name.</p>
+<p>There is a handy way to read a loss. Type it into a calculator and press the <code>e^x</code> button, and it turns into a number of <em>choices</em>. A model that knows nothing gives each of the 27 symbols the same chance, 1 in 27. Its loss is 3.30, and e<sup>3.30</sup> is 27. So a loss of 3.30 means "as unsure as picking among 27 equally likely symbols". A loss of 0.69 means picking between 2, a coin flip. A loss of 0 means 1 choice: total certainty. (Engineers call this number of choices the <strong>perplexity</strong>.)</p>
+<table class="nm-score">
+  <tr><th>model</th><th>held-out loss</th><th>as unsure as picking among</th></tr>
+  <tr><td>knows nothing</td><td>3.30</td><td>27 symbols</td></tr>
+  <tr><td>knows only which letters are common</td><td>2.83</td><td>16.9 symbols</td></tr>
+  <tr><td>the counting table (one letter back)</td><td>2.45</td><td>11.6 symbols</td></tr>
+  <tr><td>the network you are about to train (three letters back)</td><td>?</td><td>?</td></tr>
+</table>
+<p>No model can reach 0 here, and that is not a failure. After <em>em</em>, even a perfect model can't know whether the name is going to be Emma or Emily. Names are only partly predictable.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: when we score the counting table we first add 1 to every count. Otherwise a pair it never happened to see would get a probability of exactly 0, and one such pair in the held-out names would make its loss infinite.</p>
+
+<h3>Why not just count three letters?</h3>
+<p>The counting table is weak because it has one letter of memory. So give it three! The trouble is the size of the table. It would need a row for every possible three-letter window: 27 × 27 × 27 rows of 27 squares, which is 531,441 squares. Our training names put a count in only 10,937 of them, about 2%. The rest stay empty, so for most windows the table has nothing to say. And it can't notice that <em>emm</em> and <em>amm</em> are nearly the same situation. To a table, they are two unrelated rows.</p>
+<p>A network can share what it learns. If two letters behave alike, it can give them similar numbers, and then similar windows lead to similar predictions, including windows it has never seen.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: with a window this short, the giant table is not a bad model. Counted the same simple way, it scores 2.31 on the held-out names, and with more careful handling of its empty squares it can reach 2.13, which is better than the small network you are about to train. Tables lose as the window grows: every extra letter of memory makes the table 27 times bigger, while a network hardly grows at all.</p>
+
+<h3>The network</h3>
+<p>You already own every part of this:</p>
+<ol>
+  <li><strong>Three letters go in</strong>, as ids from 0 to 26.</li>
+  <li><strong>Each id picks its row of the embedding table</strong>, exactly as in {{ch:tokens}}. Our rows are very short: just 2 numbers per symbol.</li>
+  <li><strong>The three rows are laid side by side</strong>, making 6 numbers, and fed to a hidden layer of 64 neurons ({{ch:hidden}}) that squish with tanh ({{ch:depth}}).</li>
+  <li><strong>An output layer gives 27 scores</strong>, one for each symbol, and softmax ({{ch:multi}}) turns them into 27 probabilities.</li>
+</ol>
+
+<svg class="nm-pipeline" viewBox="0 0 680 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three letters each look up a row of two numbers; the six numbers feed 64 hidden neurons, then 27 scores, then softmax gives probabilities">
+  <defs>
+    <marker id="nm-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#9ca3af"/></marker>
+  </defs>
+  <g font-family="ui-monospace, Menlo, monospace" text-anchor="middle">
+    <text x="37" y="16" font-size="11" fill="#6b7280">3 letters</text>
+    <text x="158" y="16" font-size="11" fill="#6b7280">their embedding rows</text>
+    <text x="318" y="16" font-size="11" fill="#6b7280">hidden layer</text>
+    <text x="452" y="16" font-size="11" fill="#6b7280">output layer</text>
+    <text x="598" y="16" font-size="11" fill="#6b7280">27 probabilities</text>
+    <g font-size="17" font-weight="700" fill="#7c3aed">
+      <rect x="20" y="34" width="34" height="34" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="37" y="57">e</text>
+      <rect x="20" y="90" width="34" height="34" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="37" y="113">m</text>
+      <rect x="20" y="146" width="34" height="34" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="37" y="169">m</text>
+    </g>
+    <g stroke="#9ca3af" stroke-width="1.5" marker-end="url(#nm-arr)">
+      <line x1="58" y1="51" x2="104" y2="51"/><line x1="58" y1="107" x2="104" y2="107"/><line x1="58" y1="163" x2="104" y2="163"/>
+      <line x1="210" y1="51" x2="262" y2="92"/><line x1="210" y1="107" x2="262" y2="107"/><line x1="210" y1="163" x2="262" y2="122"/>
+      <line x1="370" y1="107" x2="400" y2="107"/><line x1="504" y1="107" x2="534" y2="107"/>
+    </g>
+    <g font-size="12" fill="#374151">
+      <rect x="110" y="38" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="133" y="55">2.4</text>
+      <rect x="160" y="38" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="183" y="55">−1.5</text>
+      <rect x="110" y="94" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="133" y="111">−1.4</text>
+      <rect x="160" y="94" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="183" y="111">0.0</text>
+      <rect x="110" y="150" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="133" y="167">−1.4</text>
+      <rect x="160" y="150" width="46" height="26" rx="4" fill="#fff" stroke="#c4b5fd"/><text x="183" y="167">0.0</text>
+    </g>
+    <rect x="268" y="34" width="100" height="146" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="318" y="100" font-size="13" font-weight="700" fill="#5b21b6">64 neurons</text>
+    <text x="318" y="120" font-size="12" fill="#5b21b6">tanh</text>
+    <rect x="404" y="34" width="98" height="146" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="453" y="100" font-size="13" font-weight="700" fill="#5b21b6">27 scores</text>
+    <text x="453" y="120" font-size="12" fill="#5b21b6">softmax</text>
+    <g font-size="12" fill="#374151" text-anchor="start">
+      <text x="540" y="52">i</text><rect x="556" y="41" width="68" height="14" rx="3" fill="#ea580c"/><text x="630" y="52">34%</text>
+      <text x="540" y="78">a</text><rect x="556" y="67" width="60" height="14" rx="3" fill="#ea580c"/><text x="622" y="78">30%</text>
+      <text x="540" y="104">e</text><rect x="556" y="93" width="30" height="14" rx="3" fill="#ea580c"/><text x="592" y="104">15%</text>
+      <text x="540" y="130">y</text><rect x="556" y="119" width="16" height="14" rx="3" fill="#2563eb"/><text x="578" y="130">8%</text>
+      <text x="540" y="156">•</text><rect x="556" y="145" width="16" height="14" rx="3" fill="#4b5563"/><text x="578" y="156">8%</text>
+      <text x="540" y="180" fill="#6b7280">… and 22 more</text>
+    </g>
+    <g font-size="11" fill="#6b7280">
+      <text x="158" y="204">27 rows × 2 numbers</text><text x="158" y="220">54 weights</text>
+      <text x="318" y="204">6 × 64 + 64 biases</text><text x="318" y="220">448 weights</text>
+      <text x="453" y="204">64 × 27 + 27 biases</text><text x="453" y="220">1,755 weights</text>
+    </g>
+  </g>
+</svg>
+<p style="font-size: 14px; color: var(--muted);">The numbers in the picture come from one of our own training runs, with the window on <em>emm</em>. Notice that both m's pull out the same row. Yours will come out different.</p>
+
+<p>That is 54 + 448 + 1,755 = <strong>2,257 weights</strong> in all. This design is a famous one. Yoshua Bengio and his colleagues published it in 2003, <a href="https://www.jmlr.org/papers/v3/bengio03a.html" target="_blank" rel="noopener">using words where we use letters</a>, and it is the ancestor of today's language models.</p>
+<p>Training is what you know from {{ch:descent}} and {{ch:backprop}}. All 2,257 weights start out random. One <strong>step</strong> is: grab a mini-batch of 32 random examples, see how surprised the network is by the right answers, pass the blame backwards, and nudge every weight a little. We take 20,000 steps. The learning rate starts at 0.3 and shrinks steadily to 0.01, so the network takes big strides early and careful ones at the end.</p>
+
+<div class="predict" data-answer="b">
+  <p>The network starts with random weights. What will the "names" it writes look like before any training?</p>
+  <button data-opt="a">Short and sensible, because the names are built into the code</button>
+  <button data-opt="b">Long strings of random letters</button>
+  <button data-opt="c">The same letter over and over</button>
+  <p class="why">With random weights, every one of the 27 symbols gets nearly the same chance, and that includes the end marker. So it draws letters at random and only stops when it happens to draw the dot (a 1-in-27 shot each time) or reaches the 24-letter limit we set.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train a name inventor</h3>
+  <p>Press train and watch three things. <strong>The chart:</strong> the loss should dive, and the grey line is the counting table's score, the one to beat. <strong>The ten names:</strong> every so often the network writes ten fresh ones, and early on the page pauses for a blink so you can read them. <strong>The letter map:</strong> every symbol is drawn at the two numbers in its embedding row. They start in a random clump in the middle.</p>
+  <div>
+    <button id="nm-train">train the network</button>
+    <button class="secondary" id="nm-stop" disabled>stop</button>
+    <span class="nm-status" id="nm-status"></span>
+  </div>
+  <div class="stat-row">
+    <span>step: <strong id="nm-step">0</strong> / 20,000</span>
+    <span>training loss: <strong id="nm-loss-train">?</strong></span>
+    <span>held-out loss: <strong id="nm-loss-held">?</strong></span>
+    <span>like picking among <strong id="nm-choices">?</strong> symbols</span>
+  </div>
+  <canvas class="nm-chart" id="nm-chart" width="640" height="210" aria-label="Loss falling as the network trains"></canvas>
+  <div class="nm-split">
+    <div>
+      <h4 class="nm-heading">Ten names it is making up right now</h4>
+      <div class="nm-chips" id="nm-samples"></div>
+      <p class="nm-tally" id="nm-tally"></p>
+    </div>
+    <div>
+      <h4 class="nm-heading">The letter map</h4>
+      <canvas id="nm-map" width="320" height="320" aria-label="Each letter plotted at the two numbers in its embedding row"></canvas>
+      <p class="nm-legend"><span><b style="color:#ea580c;">orange</b> vowels</span><span><b style="color:#2563eb;">blue</b> consonants</span><span><b style="color:#4b5563;">•</b> end marker</span></p>
+    </div>
+  </div>
+  <p class="nm-readout" id="nm-map-readout">A symbol's place on the map <em>is</em> its row of the embedding table: first number across, second number up. Point at a letter to read its row. Click the map to zoom in on the crowded middle, and click again to zoom back out.</p>
+  <div class="math-panel">
+    <h4>How it sounded along the way</h4>
+    <div id="nm-film"></div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p><strong>The loss.</strong> It started at 3.30, the "knows nothing" score: 27 choices. It dropped under the counting table's 2.45 after about 2,000 steps, and finished near 2.25. (We ran this 20 times; the held-out loss always landed between 2.24 and 2.27. Yours will differ a little, because every run starts from different random weights.) Press e<sup>x</sup> on 2.25 and you get about 9.5. Seeing three letters back has taken the model from 11.6 choices to about 9.5.</p>
+<p><strong>The two lines.</strong> The loss on the names it trained on ends near 2.21, and on the held-out names near 2.25. Those are close. This network is not memorizing its homework the way the one in {{ch:overfitting}} did. It is finding habits that hold for names it has never seen.</p>
+<p><strong>The names.</strong> Read the "How it sounded along the way" strip from top to bottom. At step 0 it types letter soup. A hundred steps later the names have a sensible length and a mix of vowels and consonants. By the end, many of them could pass for names on a class list. Some are still monsters, and there is a reason for that, which we will get to.</p>
+<p><strong>The letter map.</strong> Look where the orange letters ended up. Nobody told the network what a vowel is. Its only job was to guess the next letter. But a, e, i, o and u do similar jobs in names (they tend to come after consonants and before them), so training pushed their rows toward the same part of the map. In all 20 of our runs, one straight line could separate the five vowels from all 21 consonants. Now find <em>y</em>. In half of our runs it was the consonant sitting closest to the vowels, which is fair for the letter in Lily and Kyle. This is what {{ch:tokens}} meant by "tokens that get used in similar ways end up with similar rows", and you just watched it happen.</p>
+
+<h3>Ask it, then let it write</h3>
+<p>The network gives you 27 probabilities for whatever window you show it. To write a name, it does what the counting table did: <strong>sample</strong> one symbol, stick it on the end, slide the window along, and ask again. Predict, sample, append, repeat.</p>
+<p>There is one knob on the sampling, called <strong>temperature</strong>. Every score is divided by the temperature before softmax. Below 1, the gaps between scores stretch, so the favorites win even more often. Above 1, the gaps shrink, so long shots get a real chance. At exactly 1, you get the probabilities the network learned.</p>
+
+<div class="predict" data-answer="b">
+  <p>Before you touch the slider: what will the names be like at temperature 0.2?</p>
+  <button data-opt="a">Wilder and stranger</button>
+  <button data-opt="b">Safer, shorter, and more alike</button>
+  <button data-opt="c">The same as at 1.0, because the weights haven't changed</button>
+  <p class="why">The weights really haven't changed, but the dice have. At 0.2 the most likely letter wins almost every time, so the network keeps walking down the same few well-worn paths. In one of our runs, 3,000 names at temperature 0.2 contained fewer than 200 different names.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Ask it</h3>
+  <p>Train the network above first. Then type the start of a name. The bars show the chance the network gives each symbol of coming next. Press <em>sample one letter</em> again and again to watch it write one letter at a time, or let it finish ten names for you. Then move the temperature and watch the bars change shape.</p>
+  <input class="nm-text" id="nm-ask-input" type="text" value="em" maxlength="14" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="The start of a name">
+  <div class="nm-ctx" id="nm-ask-ctx"></div>
+  <canvas id="nm-ask-bars" width="640" height="180" aria-label="The chance the network gives each of the 27 symbols"></canvas>
+  <div class="slider-row"><label for="nm-temp">temperature</label><input type="range" id="nm-temp" min="0.2" max="2" step="0.1" value="1"><span class="value" id="nm-temp-v">1.0</span></div>
+  <div>
+    <button id="nm-ask-next">sample one letter</button>
+    <button id="nm-gen">invent 10 names</button>
+    <button class="secondary" id="nm-ask-clear">clear</button>
+  </div>
+  <p class="nm-tally" id="nm-ask-note"></p>
+  <div class="nm-chips" id="nm-gen-out"></div>
+  <p class="nm-tally" id="nm-gen-tally"></p>
+</div>
+
+<p>Three experiments worth doing:</p>
+<ul>
+  <li><strong>Slide the temperature to 0.2, then to 2.0,</strong> and invent ten names at each. At 0.2 you get the same few safe names again and again. At 2.0 the bars flatten out and the names fall apart into things like <em>dnoer</em> and <em>zey</em>. Chatbots have this same knob, and {{ch:chatbots}} comes back to it.</li>
+  <li><strong>Type a long start, like <em>christoph</em>.</strong> The greyed-out letters are invisible to the network. It sees <em>oph</em> and nothing else. That is why it sometimes writes a monster like <em>janiyaslitee</em>: it can't see how long the name has already become, so it doesn't know it is time to stop.</li>
+  <li><strong>Clear the box and type <em>q</em>.</strong> The counting table knew that u follows q 89% of the time. Your network is probably much less sure. Across 40 runs, ours gave u anywhere from 2% to 68%, and usually less than 30%. Why would a network lose to a table? Because q shows up only 53 times in 50,038 examples, and the network has just two numbers to describe each letter. A flat map doesn't have room to keep 27 symbols apart. Look at yours: there is a crowd of blue consonants in the middle, sitting almost on top of each other, and to the network those letters are nearly the same letter. Now find q. In our runs, the networks that did well on this test were the ones where q had ended up far away from every other letter. Real language models give each token hundreds or thousands of numbers instead of two, and this is one reason why.</li>
+</ul>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: every so often, random letters spell something rude. This page quietly throws those names away and draws another. Everything else you see is exactly what the network sampled.</p>
+
+<h3>Same code, different data</h3>
+<p>Here is the same network again: same 2,257 weights, same 20,000 steps, not one line of code changed. The only thing you can change is the list it learns from. The second list is 1,389 dinosaur names (1,250 to train on). For the third, you bring the words.</p>
+<p style="font-size: 14px; color: var(--muted);">Where the lists come from: the first names are from public records of the United States Social Security Administration, by way of the names file in Andrej Karpathy's <em>makemore</em> project. The dinosaur names are from Wikipedia's "List of dinosaur genera", shared under the Creative Commons Attribution-ShareAlike 4.0 license.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Pick the data</h3>
+  <p>Choose a list and train. Try the dinosaurs first. Then paste in a list of your own: everyone in your class, the teams in your league, towns near you, creature names you made up. Fifty words or more works best.</p>
+  <div class="toggle-row" id="nx-data">
+    <div class="toggle on" data-set="names">first names</div>
+    <div class="toggle" data-set="dinosaurs">dinosaurs</div>
+    <div class="toggle" data-set="own">your own list</div>
+  </div>
+  <div id="nx-own-box" hidden>
+    <textarea class="nm-own" id="nx-own" spellcheck="false" autocapitalize="off" placeholder="Paste or type your words here. Put them on separate lines, or split them with spaces or commas." aria-label="Your own list of words"></textarea>
+    <div>
+      <button class="secondary" id="nx-own-example">no list handy? use 129 foods</button>
+      <span class="nm-own-count" id="nx-own-count"></span>
+    </div>
+    <p style="font-size: 13px; color: var(--muted);">Your list never leaves your computer. The training happens right here in this page, and nothing is sent anywhere. (Your browser remembers the list so that it is still here if you reload.) We lowercase everything and keep only the letters a to z.</p>
+  </div>
+  <div>
+    <button id="nx-train">train the network</button>
+    <button class="secondary" id="nx-stop" disabled>stop</button>
+    <span class="nm-status" id="nx-status"></span>
+  </div>
+  <div class="stat-row">
+    <span>step: <strong id="nx-step">0</strong> / 20,000</span>
+    <span>training loss: <strong id="nx-loss-train">?</strong></span>
+    <span>held-out loss: <strong id="nx-loss-held">?</strong></span>
+    <span>like picking among <strong id="nx-choices">?</strong> symbols</span>
+  </div>
+  <canvas class="nm-chart" id="nx-chart" width="640" height="210" aria-label="Loss as the network trains on the list you picked"></canvas>
+  <h4 class="nm-heading">Ten it is making up right now</h4>
+  <div class="nm-chips" id="nx-samples"></div>
+  <p class="nm-tally" id="nx-tally"></p>
+  <div style="margin-top: 10px;">
+    <button id="nx-gen">invent 10 more</button>
+    <button class="secondary" id="nx-check">invent 200 and check them</button>
+  </div>
+  <div class="nm-chips" id="nx-gen-out"></div>
+  <p class="nm-tally" id="nx-gen-tally"></p>
+  <p class="nm-tally" id="nx-check-tally"></p>
+  <div class="nm-chips nm-many" id="nx-check-out"></div>
+</div>
+
+<p><strong>Dinosaurs.</strong> The same code now writes things like <em>jeterosaurus</em>, <em>chanosaurus</em> and <em>micerator</em>. Of the 1,250 names it trained on, 522 contain <em>saur</em>, and it noticed. In our runs, a network shown the window <em>aur</em> gave more than 90% to u, and after <em>rus</em> it was 99% sure the name was over. Its held-out loss lands near 1.8 (the counting table gets 2.17 on this list). Dinosaur names are easier to predict than baby names, because they are built from the same few Greek and Latin pieces.</p>
+<p><strong>A short list.</strong> Try the 129 foods. The names are a treat: in our runs it served up <em>pomato</em>, <em>goosemary</em>, <em>roseberry</em> and <em>pumpling</em>. But look at the chart. The blue line dives toward 0.8 while the orange held-out line climbs past 4 and often past 5, far worse than knowing nothing. That is overfitting, straight out of {{ch:overfitting}}. With only 116 words to learn from, 2,257 weights are enough to nearly memorize them. Between a third and a half of what it wrote in our runs were plain copies of words on the list, and most of the rest were memorized chunks glued together.</p>
+<p>The code has no idea what a name, a dinosaur or a food is. Everything the model seems to know came out of the list. A model is made of its data.</p>
+
+<h3>It invents. It does not remember.</h3>
+<p>You might picture the model as a filing cabinet: it stored the 7,218 names, and now it pulls them back out. Let's check that. We can compare every name it writes against the list, which is something the model itself can't do.</p>
+
+<div class="predict" data-answer="c">
+  <p>The first-names network writes 200 names. How many of them will be copies of names it trained on?</p>
+  <button data-opt="a">Nearly all of them. That's where it learned names from</button>
+  <button data-opt="b">About half</button>
+  <button data-opt="c">Fewer than one in five</button>
+  <p class="why">In our runs it was about one in twelve. Roughly nine names in ten were ones the network had never been shown.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>New, or real?</h3>
+  <p>This uses the first-names network you trained in "Train a name inventor". It writes 200 names at temperature 1 and looks each one up. <strong>Purple</strong> names are new: they are not on our list at all. <strong>Grey</strong> ones copy a name from the training list. <strong>Gold</strong> ones are the special case: real names from the 802 we held out, which the network was never shown and came up with anyway.</p>
+  <div><button id="nm-check">invent 200 names and check them</button></div>
+  <p class="nm-tally" id="nm-check-tally"></p>
+  <div class="nm-chips nm-many" id="nm-check-out"></div>
+</div>
+
+<p>In our runs about 90% of the names were new, 7 to 10% copied a training name, and about 1% were gold: real names it had never seen. And "new" only means "not on our list". When we checked the new names against a bigger list of 29,494 real names, which we had kept away from the network, about one in ten turned out to be somebody's real name.</p>
+<p>So the filing-cabinet picture is wrong, and you can see why from the sizes. The training names contain 42,820 letters. The network has 2,257 weights. There is no room in there to keep the list. There is only room for habits: vowels and consonants take turns, names like to end in n or a, <em>ll</em> is fine and <em>qz</em> is not. When it writes, it follows those habits to somewhere new. Sometimes that somewhere is a name a real person already has.</p>
+<p>Now the uncomfortable part. The model has no idea which of its names are real. The badges came from <em>our</em> list, not from the network. From the inside, a real name and an invented one are the same kind of thing: a string of likely letters. A chatbot is in the same position with facts, and {{ch:mistakes}} looks at what that leads to.</p>
+
+<h3>From here to a chatbot</h3>
+<p>What you built is a real language model. A chatbot runs the same loop: predict a probability for every token, sample one, append it, repeat until the end token comes up. The differences are a matter of size.</p>
+<table>
+  <tr><th></th><th>your name inventor</th><th>a big chatbot</th></tr>
+  <tr><td>tokens in the dictionary</td><td>27 (letters and a dot)</td><td>about 100,000 (pieces of words)</td></tr>
+  <tr><td>how far back it can see</td><td>3 tokens</td><td>hundreds of thousands of tokens</td></tr>
+  <tr><td>numbers in each embedding row</td><td>2</td><td>thousands</td></tr>
+  <tr><td>weights</td><td>2,257</td><td>billions</td></tr>
+  <tr><td>learned from</td><td>7,218 names</td><td>a large part of everything people have written</td></tr>
+  <tr><td>how it writes</td><td>predict, sample, append, repeat</td><td>predict, sample, append, repeat</td></tr>
+</table>
+<p>One of those rows can't be fixed by making our network bigger: how far back it can see. Our design lays the rows for three letters side by side and wires each position to the hidden layer separately. Stretch that to a thousand tokens and the first layer becomes enormous, and it is still rigid: it learns one set of weights for "the letter two places back" and a different set for "the letter three places back", when what matters in real writing might be a word forty places back in this sentence and four hundred back in the next. What you want is a network that can look over everything so far and pick out the parts that matter right now. That trick is called attention, and it is {{ch:attention}}.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the name inventor</h3>
+  <p>This is <code>names.py</code>: the same network as the widget, in about 100 lines of numpy. It reads <code>names.txt</code>, shows the examples it cuts from the first name, scores the counting table, then trains and prints the loss every 2,000 steps along with one name the network writes at that moment. It finishes with twenty invented names, the q test, and the letter map drawn in text.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">names.py</span>
+      <span class="code-status" id="py-status-names">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-names" spellcheck="false" rows="30" data-src="names.py" data-files="names.txt"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="names">▶ run</button>
+    <button class="secondary" data-py-reset="names">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-names"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="bigidea">
+  <p>A language model does one thing: given the text so far, it gives a probability to every possible next token. Writing is that one thing in a loop: predict, sample, append, repeat. What comes out follows the habits of the training data. It is invented on the spot, not looked up.</p>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Two numbers per letter was a tight squeeze. In <code>names.py</code>, change <code>EMBED = 2</code> to <code>EMBED = 10</code> and <code>HIDDEN = 64</code> to <code>HIDDEN = 100</code>, and run it again. What happens to the held-out loss, and to the chance it gives u after q? (You lose the letter map, because ten numbers can't be drawn on a flat page.) Then go the other way: set <code>CONTEXT = 1</code>, so the network sees one letter, the same as the counting table. Which of the two does better now, and can you say why?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Where did the 50,038 training examples come from?</p>
+    <button data-opt="a">People wrote out a question and an answer for each one</button>
+    <button data-opt="b">A window was slid along each name, and the next letter was used as the answer</button>
+    <button data-opt="c">The network made them up during training</button>
+    <p class="why">Text is its own answer key. Cover the next letter and you have a question with a known answer, so a plain list of names is all the training data a language model needs.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>You turn the temperature down from 1.0 to 0.2 and the names get safer and more alike. What changed inside the network?</p>
+    <button data-opt="a">It was retrained to prefer common names</button>
+    <button data-opt="b">It can now see more than three letters back</button>
+    <button data-opt="c">Nothing. The same scores are divided by a smaller number before softmax, so the favorite wins more often</button>
+    <p class="why">Temperature is a setting on the dice, not on the weights. The network computes exactly the same scores either way.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A friend says: "It's not inventing anything. It saved all the names and picks one at random." What is the best evidence against that?</p>
+    <button data-opt="a">About nine in ten of the names it writes aren't on its training list, and 2,257 weights couldn't hold 7,218 names anyway</button>
+    <button data-opt="b">It takes a few seconds to train, and copying a list would be instant</button>
+    <button data-opt="c">The names come out in a different order every time</button>
+    <p class="why">A shuffled copy of the list would also come out in a different order every time. What settles it is that most of the output was never in the list, and that the network is far too small to store it. It learned habits and it follows them.</p>
+  </div>
+</div>
