@@ -1,0 +1,127 @@
+<p>Six chapters ago a network could not be handed a word. Since then you have built a tokenizer's dictionary, trained a model that invents names, watched a network learn where to look, followed a message through a chatbot, sorted 10,000 headlines, and seen four ways a model goes wrong. This is the place to check that it stuck, and then to try it on words that are yours.</p>
+
+<h3>Eight things to remember</h3>
+<ol>
+  <li>A language model never sees letters or words: text is chopped into tokens, each token is swapped for an id, and each id looks up a row of learned numbers called its embedding.</li>
+  <li>The dictionary of tokens is learned by counting which neighbors appear together most, and an id is only a row number: the meaning lives in the row.</li>
+  <li>A language model does one thing, which is to give every possible next token a probability, and writing is that one thing in a loop: predict, sample, append, repeat.</li>
+  <li>What a language model writes follows the habits of its training data and is invented on the spot, not looked up, so it cannot tell you which of its sentences are true.</li>
+  <li>Attention is a lookup with soft edges: a token's query is scored against every other token's key, softmax turns the scores into shares, and what comes back is a blend of values.</li>
+  <li>A chatbot is a language model trained in stages to continue a conversation helpfully, and during a chat its weights are frozen: everything it "remembers" is text sitting in its context window.</li>
+  <li>A decision model runs once and returns a typed answer with a probability, and what to do with that doubt is a human decision.</li>
+  <li>A model learns whatever its data and its score reward, so one overall number can hide who it fails, and a confident voice is not evidence.</li>
+</ol>
+
+<h3>Mixed quiz</h3>
+<p>Seven questions from all over Part 3. If one trips you up, the "why" under it says which chapter to revisit.</p>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A tokenizer gives one word the id 512 and another the id 513. What does that tell you about the two words?</p>
+    <button data-opt="a">They mean nearly the same thing</button>
+    <button data-opt="b">Nothing about meaning: the ids only say which rows of the embedding table to read</button>
+    <button data-opt="c">The second word is slightly more common</button>
+    <p class="why">Ids are handed out in the order the pieces were created. Whether two tokens are alike is decided by their embedding rows, and those are learned. See {{ch:tokens}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Your name inventor wrote a name that turns out to belong to a real person, and that name was never in its training list. How did that happen?</p>
+    <button data-opt="a">It looked the name up somewhere else</button>
+    <button data-opt="b">It must have been in the training list after all</button>
+    <button data-opt="c">It followed the habits of names, and those habits sometimes lead to a real one</button>
+    <p class="why">The model has only a few thousand weights and no list to consult. It samples likely letters, and likely letters sometimes spell a real name. It has no idea which of its names are real. See {{ch:names}}.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>You lower the temperature of a language model from 1.0 to 0.2. What changes?</p>
+    <button data-opt="a">The same scores are divided by a smaller number before softmax, so the favorite wins more often</button>
+    <button data-opt="b">The weights are retrained to be more careful</button>
+    <button data-opt="c">The model can see further back in the text</button>
+    <p class="why">Temperature is a setting on the dice, not on the network. Low temperature gives safer, more repetitive writing. High temperature gives surprises, and more nonsense. See {{ch:names}} and {{ch:chatbots}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Before any training, the locker-room model spread its attention evenly over all the lockers. Why?</p>
+    <button data-opt="a">It was programmed to start by looking everywhere</button>
+    <button data-opt="b">Softmax always gives equal shares</button>
+    <button data-opt="c">Tiny random weights make every match score close to zero, and equal scores get equal shares</button>
+    <p class="why">Softmax turns equal scores into equal shares. Only after training have the query and key weights grown enough for one locker's score to stand out. See {{ch:attention}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Halfway through a long chat, a chatbot "forgets" something you told it at the very start. What is the most likely reason?</p>
+    <button data-opt="a">Its weights were overwritten by your later messages</button>
+    <button data-opt="b">The chat grew longer than its context window, so the early part was dropped or squeezed into a summary</button>
+    <button data-opt="c">It decided the early part was not important</button>
+    <p class="why">The weights do not change while you chat. The window is the model's entire memory of the conversation, and it has a maximum length. See {{ch:chatbots}}.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A decision model says a message is spam with probability 0.55. What is the most sensible thing for a program to do with that?</p>
+    <button data-opt="a">It depends on which mistake is worse for this job, which is a choice a person has to make</button>
+    <button data-opt="b">Delete the message: 0.55 is more than half</button>
+    <button data-opt="c">Ask the model again until it is more sure</button>
+    <p class="why">The model supplies the doubt. Where to draw the line depends on whether a missed spam or a lost real message costs more. Asking again gives the same number: nothing about the model has changed. See {{ch:decide}} and {{ch:mistakes}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A model that spots a rare illness is "99% accurate". Only 1 patient in 100 has the illness. What should you ask first?</p>
+    <button data-opt="a">Whether 99% is better than last year's model</button>
+    <button data-opt="b">Nothing. 99% is nearly perfect</button>
+    <button data-opt="c">Of the patients who really have it, how many does it catch?</button>
+    <p class="why">A model that always says "healthy" would also be 99% accurate and would catch nobody. When the thing you are looking for is rare, accuracy cannot tell a useless model from a good one. See {{ch:mistakes}}.</p>
+  </div>
+</div>
+
+<h3>Build it: a classifier for your own messages</h3>
+<p>In {{ch:decide}} you trained a model on 10,000 headlines that somebody else collected. Now you are the one collecting. You will write about twenty short messages of two kinds that you choose, and train a tiny version of the same model to tell them apart.</p>
+<ol>
+  <li><strong>Pick two kinds of message</strong> that you could sort at a glance. Homework or fun. Excited or grumpy. Something you would say or something your sister would say.</li>
+  <li><strong>Write about ten of each.</strong> Short, lowercase, in your own words. Real ones are best.</li>
+  <li><strong>Predict:</strong> which single words do you think the model will lean on hardest?</li>
+  <li><strong>Run it,</strong> then type new sentences for it to sort.</li>
+</ol>
+<p>The script starts with twenty made-up messages, ten about homework and ten about fun, so you can watch it work before you change anything. It is the model from {{ch:decide}}, shrunk: a dictionary of words, a row of 8 numbers for each word, an average, and one layer that turns the average into a score for each kind.</p>
+
+<div class="predict" data-answer="b">
+  <p>The script holds back 5 of the 20 messages and trains on the other 15. One of the held-back messages is "i forgot my math book at school", which is a homework message. What will the model say?</p>
+  <button data-opt="a">Homework. It has the word "math" in it</button>
+  <button data-opt="b">Fun, and fairly sure of itself</button>
+  <button data-opt="c">A 50/50 shrug</button>
+  <p class="why">It says fun, 90% sure. With that message held back, the model has never seen "forgot" or "book", so they are invisible to it. It can see five words: i, my, math, at and school. Only "math" points toward homework. The other four turned up in its fifteen training messages only in fun ones ("i got a new bike", "at my house", "at the park after school"), and four small votes beat one.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Sort your own messages</h3>
+  <p>This is <code>my_messages.py</code>. Press run with the starter messages first and read the output from top to bottom: the loss falling, the five held-back messages with the model's answer for each, the three scores, the words it leans on hardest, and what it makes of the sentences in <code>TRY</code>. Words in [brackets] are ones the model cannot see, because they were in none of its training messages.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">my_messages.py</span>
+      <span class="code-status" id="py-status-messages">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-messages" spellcheck="false" rows="30" data-src="my_messages.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="messages">▶ run</button>
+    <button class="secondary" data-py-reset="messages">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-messages"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<h3>What you should have seen</h3>
+<p><strong>It learned something.</strong> The model has 546 weights. After 200 epochs it gets all 15 training messages right and 4 of the 5 held-back ones. Always answering "fun" would have scored 2 of 5, so it beat the baseline.</p>
+<p><strong>It leans on single words.</strong> Look at the list near the end of the output. Toward fun: <em>saturday</em>, <em>pool</em>, <em>park</em>, <em>party</em>. Toward homework: <em>test</em>, <em>math</em>, <em>english</em>, and also <em>for</em> and <em>have</em>, which are not about homework at all. They just happened to turn up in homework messages. That is the shortcut learning from {{ch:mistakes}}, in miniature.</p>
+<p><strong>You can fool it with one word.</strong> "we have pizza" comes out as homework, 97% sure, because "we" and "have" outvote "pizza". "homework is fun" comes out as homework, 98% sure, and look at the brackets: the model has never seen the word "fun" in a message, because "fun" was only ever the name of a pile.</p>
+<p><strong>It shrugs when it sees nothing.</strong> "fantastic news everybody" gets 50/50. Every word is in brackets, so the model has no evidence at all, and says so. That is the best thing it does.</p>
+<p><strong>Five messages is a blurry measuring stick.</strong> Change <code>SEED</code> and run it again. A different five are held back, the dictionary changes with them, and the held-back score moves. With a test this small, one message is worth twenty points. This is why real test sets have thousands of rows.</p>
+<p>Now make it yours. Replace the lines in <code>MESSAGES</code> with your own two kinds, put your own sentences in <code>TRY</code>, and run it. A few things to notice, none of which mean you did it wrong:</p>
+<ul>
+  <li>If one give-away word appears in most messages of one kind, the model will use that word and little else. Try writing messages that avoid it.</li>
+  <li>A word it has never seen is invisible. Twenty messages is a very small dictionary.</li>
+  <li>More messages help more than anything else you can change. Add ten and compare.</li>
+</ul>
+
+<div class="bigidea"><p>Text becomes ids, ids become rows of numbers, and a network turns those rows into a prediction: the next token, or an answer. What comes out follows the habits of the data it was trained on, and nothing else.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Show your classifier to someone and ask them to write a sentence that fools it. Then work out together which word did the damage (the bracketed words and the "leans on hardest" list are your clues) and add two or three training messages that would fix it. Does the fix hold, or did you just move the problem to a different word?</p>
+</div>
+
+<h3>Next: seeing, creating, playing</h3>
+<p>Everything in this part was made of text. Part 4 is about the other things a network can take in and put out: pictures, and moves in a game. It starts in {{ch:digits}}, where you train a network on thousands of handwritten digits and then write some for it yourself.</p>

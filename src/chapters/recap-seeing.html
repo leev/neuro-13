@@ -1,0 +1,211 @@
+<p>Parts 1 to 3 were about numbers in a table and words in a row. In this part the networks got out more. One learned to read handwriting. One was given eyes. One turned a screen of static into a heart, and a creature with no network at all learned a maze from nothing but points. This is the place to check that it stuck, and then to make a picture nobody has ever drawn, of a shape that you design.</p>
+
+<h3>Eight things to remember</h3>
+<ol>
+  <li>To a computer a picture is a grid of numbers, one per pixel, and a plain network reads it by flattening that grid into one long list.</li>
+  <li>A fully connected layer has no idea which pixels are neighbors, which is why it read scrambled digits as well as normal ones and fell apart when a digit slid three pixels sideways.</li>
+  <li>A model only works on inputs that look like the ones it trained on, so getting data into the shape it expects (preprocessing) is a real part of the job.</li>
+  <li>A filter is a tiny grid of weights slid across the whole picture, and because the same weights are used at every stop, it finds its pattern wherever the pattern turns up.</li>
+  <li>Stack layers of filters with pooling in between and a network finds small patterns, then patterns made of patterns, and nobody designs the filters: training finds them.</li>
+  <li>A diffusion model learns one small skill, guessing the noise that was mixed into something, and makes a picture by using that skill over and over on pure static.</li>
+  <li>In a diffusion model the training data decides what is possible, the prompt decides what you get, and the starting static decides the details.</li>
+  <li>In reinforcement learning nobody supplies the right answer: an agent collects rewards, passes the credit backward through time, has to balance exploring against doing what already works, and will chase exactly the reward you wrote.</li>
+</ol>
+
+<h3>Mixed quiz</h3>
+<p>Seven questions from all over Part 4. If one trips you up, the "why" under it says which chapter to revisit.</p>
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A digit reader gets 95% of its test digits right. You hand it a photo of your own 7, written small in the top corner of the frame, and it says "2, 98% sure". What is the best explanation?</p>
+    <button data-opt="a">It needs a few more epochs of training</button>
+    <button data-opt="b">Your 7 looks nothing like the centered, frame-filling digits it trained on, and it has no way to say "I don't know"</button>
+    <button data-opt="c">At 98% sure, it is probably right and your 7 really does look like a 2</button>
+    <p class="why">The 95% was measured on digits prepared exactly like the training ones. Softmax always hands out probabilities that add up to 1, so the network picks a digit and sounds sure, even for a picture unlike anything it has seen. That was the tidy-up switch in {{ch:digits}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>You shuffle the pixels of every picture in the same way, then train a plain network and a convolutional network on the shuffled pictures. Which one is hurt?</p>
+    <button data-opt="a">Both, about equally: nobody can read confetti</button>
+    <button data-opt="b">Only the plain network, because it has more weights to confuse</button>
+    <button data-opt="c">Only the convolutional network, because its filters depend on neighbors being neighbors</button>
+    <p class="why">The plain network never knew which pixels sat side by side, so a new order costs it nothing. A filter looks at a small patch and bets that the pixels in it belong together. Shuffle the picture and that bet stops paying. See {{ch:convolution}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>A 3 × 3 filter has −1 down its left column, 0 down the middle and +1 down the right. Which patch gives the biggest output?</p>
+    <button data-opt="a">Solid ink everywhere</button>
+    <button data-opt="b">Blank paper on the left, ink on the right</button>
+    <button data-opt="c">Ink on the left, blank paper on the right</button>
+    <p class="why">A filter answers "how much does this patch look like my pattern?" On solid ink the −1s cancel the +1s and the sum is 0. Ink on the left gives a negative number. Only paper-then-ink lines the ink up under the +1s. See {{ch:convolution}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>The convolutional network still read digits that had been pushed 4 pixels sideways, though it never trained on a shifted digit. A friend says: "Then it will read a digit lying on its side too." Are they right?</p>
+    <button data-opt="a">Yes. A filter finds its pattern anywhere, at any angle</button>
+    <button data-opt="b">No. Sliding is the only change the wiring handles for free. Turning and resizing have to be learned from examples</button>
+    <button data-opt="c">Yes. Pooling throws away position, and that includes which way up the digit is</button>
+    <p class="why">The same filter runs at every position, so a pattern that slides is still found. Turn the pattern and the filter no longer matches it. To cope with that, a network has to be shown turned and resized copies in training, which is called data augmentation. See the fine print in {{ch:convolution}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>A diffusion model takes 50 steps to turn static into a heart. What changes from one step to the next?</p>
+    <button data-opt="a">The weights: the network learns a little more about hearts at every step</button>
+    <button data-opt="b">Only the dots: each step takes out a little of the static the network guessed, which makes the next guess sharper</button>
+    <button data-opt="c">The prompt: it starts vague and gets more exact</button>
+    <p class="why">Making a picture is all forward passes. The weights were fixed when training ended, and the prompt stays the same. What improves is the question being asked: slightly cleaner dots have a slightly sharper answer. See {{ch:diffusion}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>The same 2,000 specks of static became a star with one switch on and a spiral with another. Where was the knowledge of what a star looks like?</p>
+    <button data-opt="a">In the static, which hides a faint star</button>
+    <button data-opt="b">In the switch, which carries the shape</button>
+    <button data-opt="c">In the weights, which learned it from training dots that were labeled "star"</button>
+    <p class="why">Every picture ruins into the same blob, so the static holds no star. The switch is a single on/off input. Everything about the shape was learned during training, when each ruined dot arrived with a label saying which picture it came from. The switch only picks which of the learned answers to use. See {{ch:diffusion}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>A trained creature has exploring set to 0%. A shortcut opens that is half as long as its usual route. It never takes it. Why?</p>
+    <button data-opt="a">With exploring at 0% its table can no longer change</button>
+    <button data-opt="b">It only makes the move its table rates best, so it never tests whether an old low number is still true</button>
+    <button data-opt="c">Its discount factor makes far-away rewards look too small</button>
+    <p class="why">Its table still learns from every move it makes. The trouble is which moves it makes: always the one it already believes is best. The number that says "that way hurts" was written when it was true, and only trying the move again could correct it. That is the price of never exploring, from {{ch:rl}}.</p>
+  </div>
+</div>
+
+<h3>Build it: a picture nobody drew, of a shape you designed</h3>
+<p>The diffusion model in {{ch:diffusion}} knew five pictures, and we chose all five. In this project you teach it a sixth, of your own design, and then watch your shape come out of pure static: 2,000 dots that were never in your drawing. It takes paper, a pencil and about ten lines of typing.</p>
+<p>We did the whole project ourselves first, with a rocket. Everything below is what happened.</p>
+
+<h4>1. Design it on graph paper</h4>
+<p>The script draws with a pen. A shape is a list of <strong>pen strokes</strong>, and a stroke is a list of corners that the pen visits in order, joined by straight lines. So draw a square on paper, mark −1 to 1 across the bottom and −1 to 1 up the side, and sketch something made of straight lines. Then read off the corners.</p>
+
+<figure style="margin: 20px 0; text-align: center;">
+  <svg viewBox="0 0 400 356" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A rocket drawn on graph paper that runs from minus 1 to 1 in both directions. The hull is one stroke through five corners, each fin is a stroke, the flame is a stroke, and the window is a circle." style="max-width: 400px; width: 100%;">
+    <rect x="60" y="36" width="280" height="280" fill="#fff" stroke="#9ca3af" stroke-width="1.5"/>
+    <g stroke="#e5e7eb" stroke-width="1">
+      <line x1="130" y1="36" x2="130" y2="316"/><line x1="200" y1="36" x2="200" y2="316"/><line x1="270" y1="36" x2="270" y2="316"/>
+      <line x1="60" y1="106" x2="340" y2="106"/><line x1="60" y1="176" x2="340" y2="176"/><line x1="60" y1="246" x2="340" y2="246"/>
+    </g>
+    <g font-size="12" fill="#6b7280" font-family="ui-monospace, Menlo, monospace">
+      <g text-anchor="middle"><text x="60" y="334">−1</text><text x="130" y="334">−0.5</text><text x="200" y="334">0</text><text x="270" y="334">0.5</text><text x="340" y="334">1</text></g>
+      <g text-anchor="end"><text x="52" y="320">−1</text><text x="52" y="250">−0.5</text><text x="52" y="180">0</text><text x="52" y="110">0.5</text><text x="52" y="40">1</text></g>
+    </g>
+    <g fill="none" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <polyline points="151,204 95,302 151,260" stroke="#2563eb"/>
+      <polyline points="249,204 305,302 249,260" stroke="#2563eb"/>
+      <polyline points="172,260 200,316 228,260" stroke="#dc2626"/>
+      <polyline points="200,36 249,127 249,260 151,260 151,127 200,36" stroke="#ea580c"/>
+      <circle cx="200" cy="162" r="21" stroke="#0d9488"/>
+    </g>
+    <g fill="#ea580c"><circle cx="200" cy="36" r="5"/><circle cx="249" cy="127" r="5"/><circle cx="249" cy="260" r="5"/><circle cx="151" cy="260" r="5"/><circle cx="151" cy="127" r="5"/></g>
+    <g font-size="11.5" fill="#9a3412" font-family="ui-monospace, Menlo, monospace">
+      <text x="210" y="32">(0, 1)</text>
+      <text x="257" y="124">(0.35, 0.35)</text>
+      <text x="257" y="246">(0.35, −0.6)</text>
+      <text x="143" y="124" text-anchor="end">(−0.35, 0.35)</text>
+      <text x="143" y="246" text-anchor="end">(−0.35, −0.6)</text>
+    </g>
+    <text x="200" y="352" text-anchor="middle" font-size="12" fill="#6b7280">x: across</text>
+  </svg>
+  <figcaption style="font-size: 14px; color: var(--muted);">Our rocket: a hull (orange, five corners), two fins (blue), a flame (red) and a round window (teal).</figcaption>
+</figure>
+
+<p>Three rules that will save you trouble:</p>
+<ul>
+  <li><strong>Lift the pen, start a new stroke.</strong> Our rocket has five strokes: the hull, a fin, the other fin, the flame and the window.</li>
+  <li><strong>To close a shape, come back to where you started.</strong> The hull's list begins and ends with <code>(0, 1)</code>.</li>
+  <li><strong>For a circle, borrow the script's helper.</strong> <code>circle(0, 0.1, 0.15)</code> is a circle centered at (0, 0.1) with radius 0.15.</li>
+</ul>
+<p>The size of your drawing and where it sits on the paper make no difference. The script moves every shape to the middle and rescales it.</p>
+
+<h4>2. Type it in</h4>
+<p>In the editor below, find <code>PEN_STROKES</code> (around line 83) and add your shape as a new entry, right after the line for <code>"heart"</code>. Ours:</p>
+<pre>    "rocket": [[(0, 1), (0.35, 0.35), (0.35, -0.6), (-0.35, -0.6), (-0.35, 0.35), (0, 1)],
+               [(-0.35, -0.2), (-0.75, -0.9), (-0.35, -0.6)],
+               [(0.35, -0.2), (0.75, -0.9), (0.35, -0.6)],
+               [(-0.2, -0.6), (0, -1), (0.2, -0.6)],
+               circle(0, 0.1, 0.15)],</pre>
+<p>Count the brackets: square brackets around the whole shape, square brackets around each stroke, round brackets around each corner, and a comma after every stroke.</p>
+
+<h4>3. Ask for it</h4>
+<p>Near the top of the script, line 42 says which shapes to train on. In this page the script uses the short list. Change <code>["heart", "star"]</code> to <code>["rocket", "heart"]</code>, with your shape's name in place of ours. Put your shape <em>first</em>: the script prints a picture of the first shape's training dots before it does anything else, and you want that picture to be yours.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Teach the diffusion model your shape</h3>
+  <p>This is <code>diffusion.py</code> from {{ch:diffusion}}, unchanged, waiting for your two edits. Inside this page it runs on its quick setting: two shapes, a small network of 5,906 weights and 4,000 training steps. Press run and read the output from the top: your shape as 2,000 training dots, the same dots being ruined, the loss, and then the pictures it makes from pure static.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">diffusion.py</span>
+      <span class="code-status" id="py-status-shape">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-shape" spellcheck="false" rows="30" data-src="diffusion.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="shape">▶ run</button>
+    <button class="secondary" data-py-reset="shape">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-shape"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<h4>4. Read what came out</h4>
+<p><strong>The training picture comes first, within a second.</strong> Check it before you look at anything else. This is your drawing as the network will see it: 2,000 dots sprinkled along your pen strokes. If a line is missing or a fin points the wrong way, the mistake is in your list of corners, and no amount of training will fix it.</p>
+<p><strong>Then the loss.</strong> Ours began at 0.585 after the first 400 steps and ended at 0.477. It never gets near 0, for the reason {{ch:diffusion}} gave: static that slides a dot along its own line can't be guessed.</p>
+<p><strong>Then the pictures from static.</strong> Here is the rocket our run made, from 2,000 dots of pure static. Compare the fins, the flame and the window with the drawing above.</p>
+<pre data-no-gloss>generated from pure static, asked for "rocket"
+                      .#oo
+                       o##.
+                     .#o..#..
+                     ##.. .#oo
+                   .#o.    o#o
+                   #o      o.ooo
+                  o#.      .  o#
+                  #. o....  .. o#
+                 o    o##### . .#o
+                 ##.  #o...#oo.#oo
+                 #. .#o  o #o. ##
+                .#o oo#ooo#o#.. #
+                .#o  . .. ...o.o#    .
+                o#o   .    ... ##o   .
+               o##o      .     ##oo.
+              #o#ooo. . .      o##oo
+            o## .#.ooo#       oo.#### .
+           o#o..#######.o.ooo###o ####..
+          .##ooo. . .oo...o#oo .o o####o
+         .##..   ..   .#.o#o  .     .o##o.o
+         o#...        ..###            #.
+                        .              o
+   average gap to the nearest training dot: 0.040   (for brand-new real dots it is 0.017)</pre>
+<p>It is fuzzier than the training picture, because the quick setting gives a small network very little practice. Now read the last line. A copy of a training dot would sit 0.000 away from one. These dots sit 0.040 away on average, on a rocket about 3.8 wide. Nothing was copied. The network learned where the dots of a rocket tend to be, and put new ones there.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: the picture and numbers above are from our run on a laptop. The script's dice are fixed, so your run of the same rocket should come out close to this, but different computers round their arithmetic slightly differently, and over 4,000 steps that can move a few dots and the last digit of a number.</p>
+
+<h4>5. When it goes wrong</h4>
+<p>We made each of these mistakes on purpose to see what the script would say.</p>
+<table>
+  <tr><th>What you see</th><th>What happened</th></tr>
+  <tr><td><code>KeyError: 'rokcet'</code></td><td>The name in the list on line 42 does not match the name in <code>PEN_STROKES</code>. They have to be spelled the same.</td></tr>
+  <tr><td><code>TypeError: list indices must be integers or slices, not tuple</code></td><td>A comma is missing between two strokes. Python even asks: "perhaps you missed a comma?"</td></tr>
+  <tr><td>One side of your shape is missing from the training picture</td><td>The stroke was not closed. Repeat its first corner at the end of the list.</td></tr>
+  <tr><td>A small part is faint, or missing from the generated picture</td><td>The dots are shared out by length, so a short stroke gets few of them. Draw that part bigger.</td></tr>
+</table>
+
+<h4>6. Make a film strip</h4>
+<p>The widget in {{ch:diffusion}} let you scrub through the 50 steps. You can make your script do the same for your own shape. Find the function <code>generate</code> near the bottom. Right after its line that begins <code>x = keep[level - 1]</code>, add these two lines, indented to match it:</p>
+<pre>        if level - 1 in (35, 20, 10):
+            show(x, f"cleaned down to noise level {level - 1}")</pre>
+<p>Run it again. Before each finished picture you now get three more: the cloud at noise level 35, at 20 and at 10. In ours, level 35 was a blob with nothing to see. At level 20 the base and the fins had turned up. At level 10 it was plainly a rocket in a haze, and the last ten steps pulled the haze into lines. Rough decisions first, fine ones last, exactly as {{ch:diffusion}} said.</p>
+
+<div class="predict" data-answer="b">
+  <p>One more experiment. Near the top of the script, change <code>TRAIN_STEPS = 4000 if QUICK</code> to <code>TRAIN_STEPS = 200 if QUICK</code>, so the network gets one twentieth of the practice. What will it make from static now?</p>
+  <button data-opt="a">The same shape, sharp but smaller</button>
+  <button data-opt="b">A scatter of dots with only the roughest outline of the shape</button>
+  <button data-opt="c">Pure static, exactly as it started</button>
+  <p class="why">A scatter with a hint of shape in it. In our run the loss stopped at 0.555, the bottom of the rocket was just about there and the top was a smear. The gap to the nearest training dot was 0.256, more than six times what it was after 4,000 steps. After 200 steps the network has learned roughly where rocket dots live and nothing finer. Put it back to 4000 when you are done.</p>
+</div>
+
+<h4>7. Show someone</h4>
+<p>Print the training picture and the generated one, or put them side by side on the screen, and ask someone at home which one you drew and which one a network made out of static. Then show them the gap number and explain what a 0.000 would have meant. If you made the film strip, show that too: it is the whole idea of an image generator in four pictures.</p>
+
+<div class="bigidea"><p>Reading a picture, making one and learning a game all ran on ideas you already had. What changed each time was the wiring, such as filters that treat pixels as neighbors, and where the feedback came from: a label, noise we made ourselves, or nothing but a reward.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Teach it two shapes of your own at once, say your two initials, by putting both names in the list on line 42. Does each prompt still give the right shape, or do they leak into each other? Then try it on your own computer, where the script does its full job: a bigger network and 30,000 steps. Add your shape's name to the <em>second</em> list on line 42 as well, the one that starts with <code>"smiley"</code>, and run <code>python3 diffusion.py</code>. {{Ch:projects}} explains how to set that up. Compare the gap number with the one you got in this page.</p>
+</div>
+
+<h3>Next: your turn</h3>
+<p>That is the end of the guided tour. You have now met every kind of network this book covers, and Part 5 hands you the controls. {{Ch:pytorch}} shows the tools professionals use, by having you build a small version of the most important one. {{Ch:playground}} is a lab where you choose the data, the layers and every knob. {{Ch:frontier}} is a map of what the biggest systems are doing right now. And {{ch:projects}} has three projects that are yours from start to finish.</p>

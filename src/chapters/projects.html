@@ -1,0 +1,188 @@
+<p>You have read how it works. The way to find out whether you understand it is to make something that nobody set up for you. Here are three projects: one for an afternoon, done right on this page; one for a weekend, on your own computer; and one that is a real investigation, the kind you could enter in a science fair. Each ends with something to show another person.</p>
+
+<h3>Project 1 (an afternoon): teach it your own symbols</h3>
+<p>In {{ch:digits}} a network learned ten digits from 8,000 examples that strangers wrote decades ago. This time there are no strangers. You invent the symbols, you draw every example, and you find out for yourself how many it takes.</p>
+<p>Pick two to four symbols that look different from each other: a star, a lightning bolt, a spiral, your initials. Draw about a dozen of each. Then train a network on them and draw new ones for it to read.</p>
+
+<div class="predict" data-answer="c">
+  <p>You draw twelve stars and twelve bolts, all about the same size, all in the middle of the pad, and train on them. Then you draw a perfectly good star, small, in the top corner. What will the network make of it?</p>
+  <button data-opt="a">Star. A star is a star</button>
+  <button data-opt="b">It will say it doesn't know</button>
+  <button data-opt="c">It could say anything, and it may sound sure</button>
+  <p class="why">This network has no tidy-up step and no filters. It is the plain kind from {{ch:digits}}, which learns "ink on these particular pixels". A small star in the corner puts ink on pixels it has never seen inked, and softmax always picks something. Try it, and then try the fix in step 2.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ build it</div>
+  <h3>Teach it your own symbols</h3>
+  <p>Everything here happens in your browser. Your drawings are kept on this device so they are still here when you come back, and they are never sent anywhere.</p>
+
+  <div class="sy-step">
+    <h4><span class="sy-num">1</span> Draw your examples</h4>
+    <p>Click a symbol to choose it, type a name for it, then draw it on the pad and press keep. Draw each one a little differently, the way you naturally would.</p>
+    <div class="sy-collect">
+      <div class="sy-pad-wrap" id="sy-pad-wrap">
+        <canvas class="sy-pad" id="sy-pad" width="280" height="280"></canvas>
+        <div class="sy-pad-tools">
+          <button id="sy-keep" disabled>keep it</button>
+          <button class="secondary" id="sy-wipe">wipe the pad</button>
+        </div>
+      </div>
+      <div>
+        <div class="sy-symbols" id="sy-symbols"></div>
+        <div class="sy-row">
+          <button class="secondary" id="sy-add">add another symbol</button>
+          <button class="secondary" id="sy-clear">throw away all my drawings</button>
+        </div>
+        <p class="sy-key"><i></i> a drawing the network trains on <span class="sy-thumb held" style="width: 14px; height: 14px; margin: 0 4px;"></span> every fourth drawing is held back as a test, and never trained on. Click a drawing to delete it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sy-step">
+    <h4><span class="sy-num">2</span> Train</h4>
+    <p>The network is the plain kind from {{ch:digits}}: 784 inputs, one hidden layer, one output per symbol. It starts from random weights every time you press train.</p>
+    <div class="toggle-row" id="sy-mode">
+      <div class="toggle on" data-copies="0">train on only my drawings</div>
+      <div class="toggle" data-copies="1">also train on slid copies</div>
+    </div>
+    <p class="sy-small">"Slid copies" makes <span id="sy-copies-n">8</span> extra copies of every training drawing, each pushed up to <span id="sy-slide-n">4</span> pixels in a random direction. Making extra training examples by changing the ones you have is called data augmentation.</p>
+    <div class="sy-row">
+      <button id="sy-train" disabled>train the network</button>
+    </div>
+    <p class="sy-small" id="sy-ready"></p>
+    <div class="stat-row">
+      <span>epoch: <strong id="sy-epoch">0</strong> / 60</span>
+      <span>pictures trained on: <strong id="sy-pictures">?</strong></span>
+      <span>weights: <strong id="sy-weights">?</strong></span>
+    </div>
+    <canvas id="sy-chart" width="560" height="190"></canvas>
+    <table class="sy-scores">
+      <thead>
+        <tr><th>trained on</th><th>pictures</th><th>its training drawings</th><th>held-back drawings</th><th>held-back drawings, slid <span class="sy-nudge-n">3</span> pixels</th></tr>
+      </thead>
+      <tbody id="sy-scores"></tbody>
+    </table>
+    <p class="sy-warn" id="sy-stale" hidden>Your drawings have changed since this network was trained. Train again to bring the scores up to date.</p>
+    <p class="sy-small" id="sy-wrong-note"></p>
+    <div class="sy-tiles" id="sy-wrong"></div>
+  </div>
+
+  <div class="sy-step">
+    <h4><span class="sy-num">3</span> Draw for it</h4>
+    <p>Draw one of your symbols. The small picture is the 28 × 28 grid of numbers the network actually receives. Then use the buttons to slide or shrink what you drew, and watch the bars.</p>
+    <div class="sy-live">
+      <div>
+        <canvas class="sy-pad" id="sy-try" width="280" height="280"></canvas>
+        <div class="sy-pad-tools">
+          <button class="secondary" id="sy-try-wipe">wipe</button>
+          <button class="secondary" id="sy-try-left">← slide <span class="sy-nudge-n">3</span></button>
+          <button class="secondary" id="sy-try-right">slide <span class="sy-nudge-n">3</span> →</button>
+          <button class="secondary" id="sy-try-shrink">shrink</button>
+        </div>
+      </div>
+      <div>
+        <div class="sy-seen-row">
+          <div class="sy-seen-box">
+            <canvas id="sy-seen" width="28" height="28"></canvas>
+            <div class="sy-caption">what the network sees</div>
+          </div>
+          <div>
+            <div class="sy-guess" id="sy-guess">?</div>
+            <div class="sy-sure" id="sy-sure">train the network first</div>
+          </div>
+        </div>
+        <div id="sy-bars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>What to look for</h3>
+<p>Your numbers depend entirely on what you drew, so there are none to quote here. These are the things worth catching.</p>
+<ul>
+  <li><strong>The first two columns flatter it.</strong> With a dozen drawings of each symbol, the network usually gets every training drawing right, and most or all of the held-back ones. Before you celebrate, read the last column. Those are the same held-back drawings, pushed three pixels up, down, left and right. A person would not notice the difference.</li>
+  <li><strong>It memorized where the ink was.</strong> That is {{ch:overfitting}} and the blind spot from {{ch:digits}} arriving together. A few dozen pictures are far too few for tens of thousands of weights to learn what a star is. They are enough to learn where your stars happened to be.</li>
+  <li><strong>The lever.</strong> Switch to "also train on slid copies" and train again. Now compare the two rows of the table, especially the last column. You did not draw anything new. You showed the network the same drawings in slightly different places, which told it that position is not what makes a star a star.</li>
+  <li><strong>What the lever does not fix.</strong> Press shrink a few times. Slid copies taught it about sliding and nothing about size. A model learns the kinds of variety it was shown, and no others.</li>
+  <li><strong>Somebody else's hand.</strong> Ask another person to draw your symbols in step 3 without seeing your examples. Then ask them to add a few of their own to step 1 and train again.</li>
+</ul>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: {{ch:convolution}} showed a better answer to the sliding problem than brute force: build "the same pattern can be anywhere" into the wiring. This project deliberately uses the plain network, so that you run into the problem yourself and feel what data augmentation buys.</p>
+<p><strong>To show someone:</strong> train it on symbols only you know the meaning of, and have them guess which is which from the bars alone. Then let them try to draw one it gets wrong.</p>
+
+<h3>Project 2 (a weekend): your data, your computer</h3>
+<p>The scripts in this book are short on purpose, so that you can take one and point it at something of your own. Pick one of these, or invent a third.</p>
+<p><strong>A name inventor for a list you collect.</strong> <code>names.py</code> from {{ch:names}} will learn from any text file with one word per line. Collect a few hundred words of one kind: towns in your country, star names, breeds of dog, characters you made up. Save them in a file, lowercase, using only the letters a to z. In the script, change <code>names.txt</code> to your file's name, and run it. Things to expect: a list of fewer than about 200 words gets memorized (you saw that with the 129 foods), and the more alike your words are, the more convincing the inventions.</p>
+<p><strong>A sorter for text you gather.</strong> <code>neuro10.py</code> from {{ch:decide}} reads a file with two columns, a topic and a piece of text. Build your own: a few hundred lines of two to four kinds that you can label quickly. Lines from different books. Song titles by decade. Your own messages. Keep the two column names the script expects, and change the list of topics at the top. Look at what it gets wrong on the held-back rows before you look at its score.</p>
+<p>When it does not work, and at first it won't, these are the usual reasons:</p>
+<table>
+  <tr><th>What you see</th><th>What it usually means</th></tr>
+  <tr><td>An error naming a file</td><td>The script is not being run from the folder the file is in, or the name is spelled differently.</td></tr>
+  <tr><td>Training score high, held-back score at the baseline</td><td>It memorized. You need more examples, or your labels do not follow from the text.</td></tr>
+  <tr><td>Both scores stuck at the baseline</td><td>It is not learning at all. Check that the labels are spelled the same way every time, then try more epochs.</td></tr>
+  <tr><td>The loss jumps around or prints <code>nan</code></td><td>The learning rate is too big for your data. Halve it and run again.</td></tr>
+  <tr><td>It works suspiciously well</td><td>Look for a shortcut, like the news-agency tags in {{ch:mistakes}}. Is there a give-away word in every example of one kind?</td></tr>
+</table>
+<p><strong>To show someone:</strong> the three funniest things your name inventor wrote, or the one sentence that fools your sorter and your explanation of why.</p>
+
+<h3>Project 3 (as long as you like): a real investigation</h3>
+<p>Scientists who study neural networks do what you did in {{ch:playground}}: they change one thing, run it many times, and write down what happened. You can do a real one of these with the tools in this book. A good question is one where you honestly do not know the answer, and where the answer is a number you can measure.</p>
+<p>Three to start from:</p>
+<ul>
+  <li><strong>How much does luck matter?</strong> In {{ch:playground}}, pick one setup and press "new start" twenty times, writing down the epoch at which it reaches 95% each time, or that it never did. How wide is the spread? Does a bigger network make the spread narrower or wider?</li>
+  <li><strong>How many examples is enough?</strong> In the symbol teacher above, train with 4, 8, 12, 16 and 20 drawings of each symbol, and record the last column each time. Is the improvement steady, or does it flatten out? Does the answer change with slid copies switched on?</li>
+  <li><strong>Does a creature that explores more end up better off?</strong> In {{ch:rl}}, run 500 episodes at each of five settings of the exploring slider and record the average points over the last 20. Then dry up the lava and do it again. Which setting would you choose if you did not know whether the maze was going to change?</li>
+</ul>
+<p>Whatever you choose, write it up. A lab report can be half a page:</p>
+<pre>QUESTION     One sentence. What do I want to find out?
+PREDICTION   What I think will happen, and why. Written BEFORE I run anything.
+METHOD       Exactly what I set, what I changed, and what I measured.
+             Enough detail that a friend could repeat it.
+RESULTS      A table of what happened. Every run, not just the good ones.
+             Include how many random starts I used.
+CONCLUSION   Was my prediction right? What is my best explanation?
+NEXT         The question this made me want to ask.</pre>
+<p>Two rules make the difference between an investigation and an afternoon of clicking. Change one thing at a time. And never trust a single run: the depth chapter of this book once taught something false because of exactly that, until somebody repeated the experiment from sixty random starts.</p>
+<p><strong>To show someone:</strong> your prediction and your results table, side by side. If they disagree, even better.</p>
+
+<h3>Run the code on your own computer</h3>
+<p>Every Python program in this book runs on the page, except the three that need PyTorch. Running them on your own computer is faster, lets you use your own files, and is the only way to do project 2.</p>
+<ol>
+  <li><strong>Get Python.</strong> Download it from <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a> and install it. On Windows, tick "Add Python to PATH" in the installer. If the computer is not yours, ask first.</li>
+  <li><strong>Get the scripts.</strong> Download <a href="neuro13-code.zip">neuro13-code.zip</a> and unzip it. You get a folder called <code>neuro13</code> with every script and every dataset in it.</li>
+  <li><strong>Open a terminal in that folder.</strong> On a Mac, open the Terminal app, type <code>cd </code> (with a space), drag the folder onto the window and press return. On Windows, open the folder, click the address bar, type <code>cmd</code> and press Enter.</li>
+  <li><strong>Install numpy,</strong> once: <code>python3 -m pip install numpy</code>. On Windows, type <code>python</code> wherever these instructions say <code>python3</code>.</li>
+  <li><strong>Run something:</strong> <code>python3 neuro1.py</code></li>
+</ol>
+<p><code>neuro7.py</code> also needs scikit-learn (<code>python3 -m pip install scikit-learn</code>). The three PyTorch scripts need more, and {{ch:pytorch}} explains how to install it.</p>
+
+<h3>Every script in the book</h3>
+<table>
+  <tr><th>Script</th><th>Chapter</th><th>What it does</th><th>Runs on the page?</th></tr>
+  <tr><td><code>neuro1.py</code></td><td>{{title:training}}</td><td>One neuron learns the screen-time rule</td><td>yes</td></tr>
+  <tr><td><code>neuro2.py</code></td><td>{{title:xor-fail}}</td><td>The same neuron fails to learn XOR</td><td>yes</td></tr>
+  <tr><td><code>my_rule.py</code></td><td>{{title:recap-neuron}}</td><td>Teach one neuron a rule you invent</td><td>yes</td></tr>
+  <tr><td><code>neuro3.py</code></td><td>{{title:hidden}}</td><td>A hidden layer solves XOR</td><td>yes</td></tr>
+  <tr><td><code>neuro4.py</code></td><td>{{title:multi}}</td><td>The snack picker: three possible answers</td><td>yes</td></tr>
+  <tr><td><code>neuro5.py</code></td><td>{{title:activations}}</td><td>The snack picker again, with ReLU</td><td>yes</td></tr>
+  <tr><td><code>neuro6.py</code></td><td>{{title:meals}}</td><td>The meal guesser, which has to combine clues</td><td>yes</td></tr>
+  <tr><td><code>backprop.py</code></td><td>{{title:backprop}}</td><td>One round of backpropagation, every number printed</td><td>yes</td></tr>
+  <tr><td><code>neuro7.py</code></td><td>{{title:real-data}}</td><td>150 real iris flowers, with a held-back test set</td><td>yes</td></tr>
+  <tr><td><code>overfit.py</code></td><td>{{title:overfitting}}</td><td>A network memorizes noisy dots, and three cures</td><td>yes</td></tr>
+  <tr><td><code>my_data.py</code></td><td>{{title:recap-learning}}</td><td>Train a network on a table you write</td><td>yes</td></tr>
+  <tr><td><code>names.py</code></td><td>{{title:names}}</td><td>A language model that invents names</td><td>yes</td></tr>
+  <tr><td><code>attention.py</code></td><td>{{title:attention}}</td><td>A network learns where to look</td><td>yes</td></tr>
+  <tr><td><code>neuro10.py</code></td><td>{{title:decide}}</td><td>Sort 10,000 headlines, with honest confidence</td><td>yes</td></tr>
+  <tr><td><code>my_messages.py</code></td><td>{{title:recap-language}}</td><td>Sort messages you write</td><td>yes</td></tr>
+  <tr><td><code>digits.py</code></td><td>{{title:digits}}</td><td>Read handwritten digits</td><td>yes</td></tr>
+  <tr><td><code>convnet.py</code></td><td>{{title:convolution}}</td><td>Trains the convolutional network the chapter uses</td><td>no: needs PyTorch</td></tr>
+  <tr><td><code>diffusion.py</code></td><td>{{title:diffusion}}</td><td>Turn static into shapes</td><td>yes (a quick version)</td></tr>
+  <tr><td><code>maze.py</code></td><td>{{title:rl}}</td><td>A creature learns a maze from rewards</td><td>yes</td></tr>
+  <tr><td><code>autograd.py</code></td><td>{{title:pytorch}}</td><td>A 60-line engine that finds every gradient for you</td><td>yes</td></tr>
+  <tr><td><code>neuro8.py</code></td><td>{{title:pytorch}}</td><td>The iris network in PyTorch</td><td>no: needs PyTorch</td></tr>
+  <tr><td><code>neuro9.py</code></td><td>{{title:pytorch}}</td><td>Handwritten digits in PyTorch, on all of MNIST</td><td>no: needs PyTorch</td></tr>
+</table>
+
+<div class="bigidea"><p>Understanding something and being able to build it are different skills, and the second one only comes from building. Start smaller than you think you should, change one thing at a time, and show somebody what you made.</p></div>
+
+<p>When you have picked a project, or finished one, {{ch:next}} has the best places to keep going.</p>
