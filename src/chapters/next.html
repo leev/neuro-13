@@ -1,0 +1,67 @@
+<p>This book ends here. What you can do with it doesn't. Below is a short list of the best places to go next, sorted by what you feel like doing: watching, building, reading, or filling in the math and the Python. It leaves out far more than it includes. Everything on it is free to use, and every link was opened and checked in November 2026.</p>
+<p>Each entry says how hard it is, in one of three ways. <strong>Gentle</strong> means you could start today. <strong>A stretch</strong> means it expects some Python or some patience, and repays both. <strong>For later</strong> means it was written for university students. It is good to know those exist, and no reason to feel bad if you bounce off one now.</p>
+<p style="font-size: 14px; color: var(--muted);">All of these links leave this book for other people's websites, and several are YouTube videos. If you aren't sure you're allowed, ask first.</p>
+
+<h3>If you want to watch</h3>
+<ul>
+  <li><strong><a href="https://www.3blue1brown.com/?topic=neural-networks" target="_blank" rel="noopener">3Blue1Brown's neural network series</a></strong>, by Grant Sanderson. Nine animated lessons that begin with a network reading handwritten digits, much like yours in {{ch:digits}}, and go on through gradient descent, backpropagation, transformers and attention. <em>Gentle.</em> If you liked the pictures in this book more than the code, start here. It continues {{ch:descent}}, {{ch:backprop}} and {{ch:attention}}.</li>
+  <li><strong><a href="https://www.youtube.com/watch?v=zjkBMFhNj_g" target="_blank" rel="noopener">"Intro to Large Language Models"</a></strong>, by Andrej Karpathy. A one-hour talk with no code about what a chatbot is and what people are building around it. <em>Gentle.</em> It continues {{ch:chatbots}}. It is from 2023, so the newest things in {{ch:frontier}} are not in it.</li>
+</ul>
+
+<h3>If you want to build</h3>
+<ul>
+  <li><strong><a href="https://teachablemachine.withgoogle.com/" target="_blank" rel="noopener">Teachable Machine</a></strong>, from Google. Train a classifier on your own pictures, sounds or poses, in the browser, with no code at all. <em>Gentle.</em> It uses your camera or microphone, and the site says you can choose to keep everything on your own device. It continues {{ch:digits}}.</li>
+  <li><strong><a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a></strong>. A famous neural network toy that runs in the browser: dots, layers and a play button. <em>Gentle.</em> It continues {{ch:playground}}. Its hardest dataset is a spiral, like the one in {{ch:depth}}. See how few neurons you can solve it with.</li>
+  <li><strong><a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer</a></strong> and <strong><a href="https://poloclub.github.io/transformer-explainer/" target="_blank" rel="noopener">Transformer Explainer</a></strong>. Two interactive pages. The first shows the numbers inside a small image network as it looks at a photo. The second shows a real small GPT-2 model, with 124 million weights, choosing its next word, and it has the temperature and top-k knobs you already know. Its ready-made examples work straight away. To try a sentence of your own it downloads the whole model, about 600 megabytes, so wait until you are on Wi-Fi. <em>Gentle to poke at, a stretch to follow completely.</em> They continue {{ch:convolution}} and {{ch:attention}}.</li>
+  <li><strong><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">"Neural Networks: Zero to Hero"</a></strong>, by Andrej Karpathy. Eight long videos, most of them about two hours, in which he types out every line of a neural network starting from nothing. <em>A stretch:</em> he asks for solid Python and a little calculus. The first video builds the same kind of engine you built in {{ch:pytorch}}. The second builds a name inventor from the very list of names that {{ch:names}} borrowed. The seventh, <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">"Let's build GPT"</a>, builds a small transformer that writes, which is {{ch:attention}} and {{ch:chatbots}} made real. If you do one hard thing after this book, do this.</li>
+  <li><strong><a href="https://course.fast.ai/" target="_blank" rel="noopener">Practical Deep Learning for Coders</a></strong>, from fast.ai. A course of nine lessons, about 90 minutes each, that has you training a real image classifier almost at once and explains the insides afterwards. <em>A stretch:</em> it asks for about a year of coding experience. It continues {{ch:pytorch}}.</li>
+</ul>
+
+<h3>If you want to read</h3>
+<ul>
+  <li><strong><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">"The Illustrated Transformer"</a></strong>, by Jay Alammar (2018). One long page of drawings that walks through a whole transformer, piece by piece. <em>A stretch.</em> It continues {{ch:attention}}.</li>
+  <li><strong><a href="https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/" target="_blank" rel="noopener">"What Is ChatGPT Doing … and Why Does It Work?"</a></strong>, by Stephen Wolfram (2023). A very long essay whose first heading is "It's Just Adding One Word at a Time". <em>Gentle at the start, a stretch by the end.</em> It continues {{ch:chatbots}}.</li>
+  <li><strong><a href="https://distill.pub/" target="_blank" rel="noopener">Distill</a></strong>. A journal of carefully illustrated explanations, published from 2016 to 2021. Nothing new has appeared since, but the old articles still have some of the best pictures of what goes on inside an image network. Start with <a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">"Feature Visualization"</a>. <em>A stretch.</em> It continues {{ch:convolution}} and the "Looking inside" section of {{ch:frontier}}.</li>
+  <li><strong><a href="http://neuralnetworksanddeeplearning.com/" target="_blank" rel="noopener"><em>Neural Networks and Deep Learning</em></a></strong>, by Michael Nielsen (2015). A free online book that builds a digit reader in Python and explains backpropagation with great care. <em>A stretch:</em> it has real math in it. It was finished before transformers existed. It continues {{ch:digits}} and {{ch:backprop}}. One warning: the site is old and has no https, so your browser may refuse to open it or ask you first. It is a book to read, with nothing to type in.</li>
+  <li><strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener"><em>Understanding Deep Learning</em></a></strong>, by Simon Prince (2023). A modern textbook with a free PDF and 68 Python notebooks to go with it. <em>For later.</em> It is a university book, and the best one to grow into.</li>
+  <li><strong><a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener"><em>Deep Learning</em></a></strong>, by Ian Goodfellow, Yoshua Bengio and Aaron Courville (2016). The classic textbook, free to read online. <em>For later.</em> It came out a year before the transformer, so read it for the foundations and not for the news.</li>
+</ul>
+
+<h3>If you want the math</h3>
+<p>You got through this book on arithmetic and graphs. To go further you will want four things, in this order:</p>
+<ol>
+  <li><strong>Algebra and graphs.</strong> Variables, functions, and the slope of a line. Everything else stands on this. It is the language of {{ch:basics}} and {{ch:tables-dots}}.</li>
+  <li><strong>Probability and a little statistics.</strong> Chances that add up to 1, averages, and logarithms. That is softmax in {{ch:multi}} and the loss in {{ch:names}}.</li>
+  <li><strong>Vectors and matrices.</strong> Lists and grids of numbers, dot products, and multiplying a grid by a list. The subject is called linear algebra, and it is every layer in {{ch:scale}} and every match score in {{ch:attention}}.</li>
+  <li><strong>Calculus.</strong> Mainly derivatives and the chain rule: the slope of a curve, and how slopes multiply along a chain. That is {{ch:descent}} and {{ch:backprop}}.</li>
+</ol>
+<p>You do not have to finish that list before you build anything. Most people learn the math when a project makes them need it, and it sticks better that way.</p>
+<ul>
+  <li><strong><a href="https://www.khanacademy.org/math" target="_blank" rel="noopener">Khan Academy</a></strong> has free lessons with practice problems for all four: <a href="https://www.khanacademy.org/math/algebra" target="_blank" rel="noopener">algebra</a>, <a href="https://www.khanacademy.org/math/statistics-probability" target="_blank" rel="noopener">statistics and probability</a>, <a href="https://www.khanacademy.org/math/linear-algebra" target="_blank" rel="noopener">linear algebra</a> and <a href="https://www.khanacademy.org/math/calculus-1" target="_blank" rel="noopener">calculus</a>. <em>Gentle</em>, and it lets you start wherever you are.</li>
+  <li><strong>3Blue1Brown</strong> has two short video series that show what the last two subjects look like: <a href="https://www.3blue1brown.com/?topic=linear-algebra" target="_blank" rel="noopener">linear algebra</a> and <a href="https://www.3blue1brown.com/?topic=calculus" target="_blank" rel="noopener">calculus</a>. <em>A stretch.</em> Watch these for the pictures, and use Khan Academy for the practice.</li>
+</ul>
+
+<h3>If you want to learn Python</h3>
+<p>You have been reading and changing Python all through this book. Writing your own from a blank page is a different skill, and it is the one that opens up everything in the "build" list.</p>
+<ul>
+  <li><strong><a href="https://www.khanacademy.org/computing/intro-to-python-fundamentals" target="_blank" rel="noopener">Intro to computer science: Python</a></strong>, from Khan Academy. A course for complete beginners that runs in the browser. <em>Gentle.</em></li>
+  <li><strong><a href="https://automatetheboringstuff.com/" target="_blank" rel="noopener"><em>Automate the Boring Stuff with Python</em></a></strong>, by Al Sweigart. A book that is free to read online and teaches Python by making it do useful chores. It expects no programming experience. <em>Gentle.</em></li>
+  <li><strong><a href="https://numpy.org/doc/stable/user/absolute_beginners.html" target="_blank" rel="noopener">NumPy: the absolute basics for beginners</a></strong>. Every script in this book leans on NumPy, and this is its own first lesson. <em>A stretch</em> until you know some Python.</li>
+  <li><strong><a href="https://docs.python.org/3/tutorial/" target="_blank" rel="noopener">The Python Tutorial</a></strong>, from the people who make Python. Dry, complete and correct. <em>A stretch.</em> Use it once you can already write a small program.</li>
+</ul>
+<p>Then go back to this book's own scripts. They are all in <a href="neuro13-code.zip">one zip file</a>, and {{title:projects}} explains how to run them on your own computer.</p>
+
+<h3>Five habits for learning on your own</h3>
+<ol>
+  <li><strong>Build small things.</strong> A tiny network that you finished teaches you more than a big one you gave up on.</li>
+  <li><strong>Change one thing at a time.</strong> If you change three settings and the result gets better, you have learned nothing about any of them. That was the lesson of {{ch:playground}}.</li>
+  <li><strong>Read other people's code.</strong> Start with the scripts in this book. Type them out instead of pasting them, and you'll notice every line.</li>
+  <li><strong>Explain it to someone.</strong> A friend, a parent, a rubber duck. The place where your explanation gets vague is the part you don't understand yet.</li>
+  <li><strong>Expect to be confused.</strong> Being confused doesn't mean you are bad at this. It is what learning something hard feels like from the inside.</li>
+</ol>
+
+<div class="bigidea"><p>You don't need permission, a degree or a powerful computer to keep going. You need a small project, the habit of changing one thing at a time, and the patience to stay confused for a while.</p></div>
+
+<h3>That's the book</h3>
+<p>You started with one neuron and three numbers. You now know how the machines that read, write, see and draw are put together, and where the people who build them have run out of answers.</p>
+<p>If you haven't picked a project from {{title:projects}} yet, pick one. It is the best next step on this whole page. And when every chapter is ticked off, <a href="certificate.html">your certificate</a> is waiting. Thank you for reading. Go and build something.</p>

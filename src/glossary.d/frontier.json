@@ -1,0 +1,13 @@
+{
+  "reasoning model": "A language model trained to write out its working before it answers. The working is ordinary tokens that the model then reads back, like scratch paper.",
+  "tool call": "A request, written by a model in a fixed format, asking the app around it to do something the model cannot: run a search, do a calculation, open a file.",
+  "AI agent": "A language model run in a loop with tools: it asks for an action, reads what came back, and decides what to do next until the job is done.",
+  "retrieval": "Searching a pile of documents for passages related to a question and pasting them into the context window, so the model can answer from text in front of it. Short for retrieval-augmented generation, or RAG.",
+  "prompt injection": "Text hidden in a web page, file or tool result that is written to look like instructions, in the hope that a model reading it will obey.",
+  "multimodal": "Able to take in more than one kind of input, such as text, pictures and sound, in a single model.",
+  "open weights": "A trained model whose numbers have been published as a file, so that anyone can download it and run it on their own computer.",
+  "quantization": "Storing each weight with fewer bits, such as 4 instead of 16. The model file gets much smaller and its answers usually get only slightly worse.",
+  "interpretability": "The science of opening up a trained network to find out what it has learned and how it gets its answers.",
+  "alignment": "The work of making sure an AI system does what people actually meant, and not only what its training happened to reward.",
+  "System One model": "A model built to give a fast, typed decision (a yes or no, a choice, or a score) in a single pass through its network, instead of writing text."
+}

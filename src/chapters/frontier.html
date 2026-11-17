@@ -1,75 +1,203 @@
-<p>Same machinery scales up. Two big architectural ideas you'll meet from here:</p>
+<p>You have built a small version of nearly everything in modern AI, and {{ch:timeline}} showed you where each piece sits. This chapter is about the right-hand end of that line: the newest parts of the map, which were still being drawn while this book was written, and the edge of it, where the questions have no answers yet.</p>
+<p>A warning about dates. This chapter describes things as they stood in late 2026, and this field moves fast enough that some of it will be out of date when you read it. Wherever a number could go stale, it has a date on it.</p>
 
-<h3>Convolutional networks (CNNs) — for images</h3>
-<p>The "hello world" of deep learning is <a href="http://yann.lecun.com/exdb/mnist/" target="_blank" rel="noopener"><strong>MNIST</strong></a> — 60,000 handwritten digit images (28×28 pixels, 10 classes). A plain fully-connected network like the snack picker can hit ~97% accuracy on MNIST. State of the art with convolutional networks is ~99.8%.</p>
+<h3>Thinking before answering</h3>
 
-<p>The change: replace <code>nn.Linear</code> in the early layers with <code>nn.Conv2d</code>. Each neuron only looks at a small spatial patch of the image (say, 3×3 pixels) and <strong>shares its weights</strong> across all positions. This means the same edge detector gets applied everywhere in the image — a great fit for pictures, which are translation-invariant (a cat is a cat whether it's in the top-left or bottom-right of the photo).</p>
+<div class="predict" data-answer="b">
+  <p>Answer this one fast, without working it out. A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?</p>
+  <button data-opt="a">10 cents</button>
+  <button data-opt="b">5 cents</button>
+  <button data-opt="c">1 dollar</button>
+  <p class="why">5 cents. If the ball cost 10 cents, the bat would cost $1.10 and the two together would cost $1.20. The puzzle comes from the psychologist Shane Frederick. Daniel Kahneman used it in his book <em>Thinking, Fast and Slow</em>, where he reports that more than half of the students who tried it at Harvard, MIT and Princeton said 10 cents. If you did too, you are in good company.</p>
+</div>
 
-<p>Pattern: <code>Conv → ReLU → Pool → Conv → ReLU → Pool → ... → Linear</code>. CNNs are everywhere images are: medical scans, face recognition, self-driving car perception, photo classification. The 1998 paper that started it all is LeCun et al.'s <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf" target="_blank" rel="noopener">LeNet-5</a>. The 2012 paper that proved CNNs could win the open competition for general image recognition is <a href="https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html" target="_blank" rel="noopener">AlexNet</a>. If you want to <em>see</em> what conv filters actually look like, Chris Olah's <a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">distill.pub feature visualization</a> is a masterpiece.</p>
+<p>Ten cents is your fast system answering before your slow one gets a turn. {{Ch:decide}} borrowed Kahneman's names for the two: System 1 is the quick gut reaction, and System 2 is the careful working-out.</p>
+<p>Now think about the chatbot in {{ch:chatbots}}. Every token it writes comes from one trip through the network, and one trip is a fixed amount of work: the same stack of layers, once. If the first token of the reply has to be the answer, everything has to be worked out inside that single trip. For "what is the capital of France?" one trip is plenty. For a problem with six steps, it is like being made to shout out the bat-and-ball answer the instant you hear the question.</p>
+<p>The fix is the one your math teacher keeps asking for: show your work. A <strong>reasoning model</strong> is a language model trained to write out its working before it answers. Nothing about the machinery is new. It is the same next-token loop. What changes is what the first tokens are for. They are scratch paper.</p>
 
-<h3>Transformers — for sequences (and now everything)</h3>
-<p>You already met the basic idea in {{ch:chatbots}}. For sequences (text, audio, code), replace fully-connected hidden layers with <strong>attention blocks</strong>. Each token gets to look at every other token and pull a weighted blend of their values into its own representation. The output is still a softmax over a vocabulary, one token at a time.</p>
+<figure class="fr-figure" data-no-gloss>
+  <div class="demo-label">Illustration · hand-written, not a live model</div>
+  <div class="fr-ctx">
+    <div class="fr-turn"><span class="fr-tag">&lt;user&gt;</span><p>What is 17 × 24?</p></div>
+    <div class="fr-turn fr-scratch"><span class="fr-tag">&lt;thinking&gt;</span><p>17 × 24 is 17 × 20 plus 17 × 4.<br>17 × 20 = 340.<br>17 × 4 = 68.<br>340 + 68 = 408.<br>Check: 408 ÷ 24 = 17. Good.</p></div>
+    <div class="fr-turn"><span class="fr-tag">&lt;assistant&gt;</span><p>17 × 24 = 408.</p></div>
+  </div>
+  <figcaption>The middle block is the scratch paper. By the time the model writes 408, the 340 and the 68 are already sitting in the window for it to read. Many apps hide this block, or show only a summary of it.</figcaption>
+</figure>
 
-<p>Every modern LLM (GPT, Claude, Gemini, Llama) is a stack of transformer blocks. Plus a few practical tricks (positional embeddings, layer normalization, mixture of experts), but the core is just stacked attention + feed-forward layers, with softmax at the end. The original paper is <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Vaswani et al., "Attention Is All You Need" (2017)</a>. The kid-friendly walkthrough is Jay Alammar's <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">"The Illustrated Transformer"</a>.</p>
+<p>Why does writing it down help? Because the context window is the only thing carried from one trip to the next. A number the model has written is a number it no longer has to work out again. Each trip does one small step and leaves the result on the page for the trip after it. Written working turns a pile of short trips into one long calculation.</p>
+<p>It also lets the model catch itself. A later trip can read an earlier line, find that it doesn't add up, and write a correction. It is part of why newer chatbots usually get the r's in <em>strawberry</em> right ({{ch:tokens}}): they spell the word out one letter at a time, then count what they wrote.</p>
+<p>Researchers noticed in 2022 that showing an ordinary language model a few worked examples, steps and all, made it <a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener">much better at math word problems</a>. Reasoning models train for it. The model practices on problems whose answers can be checked, such as math and programming puzzles, and it is rewarded when its final answer comes out right. That is the reinforcement learning of {{ch:rl}}: nobody marks each line of the working, only the result. It is the "practice at reasoning step by step" that {{ch:chatbots}} mentioned.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: every lab trains its reasoning models a little differently, and most of the details are not published. "Practice on checkable problems, with a reward for the right answer" is the common outline.</p>
 
-<h3>The honest summary</h3>
-<p>Whether you're building a snack classifier, a digit recognizer, or a frontier LLM, the same primitives keep showing up:</p>
+<div class="predict" data-answer="b">
+  <p>A reasoning model writes 2,000 tokens of working and then a 100-token answer. How many trips through the network did that take?</p>
+  <button data-opt="a">100. Only the answer counts</button>
+  <button data-opt="b">2,100. The working is made of tokens too</button>
+  <button data-opt="c">1. It thinks once, then writes</button>
+  <p class="why">2,100. There is no separate thinking machine. Thinking is tokens, and every token costs one trip. The reader of the answer sees 100 tokens and waits for 2,100.</p>
+</div>
+
+<p>That is the price. A reasoning model can take many seconds, sometimes minutes, where an ordinary one takes a moment, and it uses more electricity doing it. The companies that sell these models charge for the working as well as the answer, even when the app hides the working. OpenAI tells programmers that one request can use anywhere from a few hundred to tens of thousands of these hidden tokens.</p>
+<p>Three limits worth knowing:</p>
 <ul>
-  <li><strong>Weighted sums</strong> (matrix multiplies)</li>
-  <li><strong>Non-linearities</strong> (ReLU and its cousins)</li>
-  <li><strong>Softmax</strong> at the output</li>
-  <li><strong>Backpropagation</strong> through everything</li>
+  <li><strong>More thinking doesn't add knowledge.</strong> A model can reason very carefully from a "fact" it made up. Scratch paper does nothing for the hallucinations in {{ch:mistakes}}.</li>
+  <li><strong>The working is not a window into the network.</strong> In 2025 researchers at Anthropic slipped hints about the right answer into test questions. The models used the hints, but their written working owned up to it only some of the time: <a href="https://www.anthropic.com/research/reasoning-models-dont-say-think" target="_blank" rel="noopener">25% of the time for one model and 39% for another</a>. What a model writes about its reasoning and what its weights actually did are two different things.</li>
+  <li><strong>Most questions don't need it.</strong> For "is this email spam?", writing an essay first is a waste.</li>
 </ul>
-<p>The math you wrote by hand in {{ch:hidden}} still shows up inside GPT-class models. The advanced systems add a lot of scale, data, architecture, and engineering, but the basic training idea should feel recognizable now.</p>
+<p>That last point is where the two newest moments on the timeline in {{ch:timeline}} meet. The System One models in {{ch:decide}} sit at one end: one trip, one typed answer, nothing written. Reasoning models sit at the other: thousands of trips for one careful answer. They are the fast and slow versions of the same machine, and people who build software now choose between them the way you choose between a glance and a long hard look.</p>
+
+<h3>Tools and agents</h3>
+<p>A reasoning model can work out 17 × 24 on scratch paper. It still can't know what the weather is, what is in your school library, or what happened yesterday. {{Ch:chatbots}} put it bluntly: everything a model knows is either frozen in its weights or sitting in its context window. Tools are how new things get into the window.</p>
+<p>The model does not do it alone. It takes a partner: the app around the model, which is ordinary code with no neural network in it.</p>
+<ol>
+  <li><strong>The app describes the tools.</strong> Its system prompt lists what is available, what each tool does, and the exact format to ask for it in.</li>
+  <li><strong>The model asks.</strong> When it decides it needs one, the model writes a request in that format instead of writing an answer. That request is a <strong>tool call</strong>. It is only tokens, like everything else a model produces.</li>
+  <li><strong>The app does the work.</strong> It spots the request, runs the search or the calculation or the program, and pastes the result into the context window.</li>
+  <li><strong>The model reads on.</strong> It runs again, sees the result in the window like any other text, and either answers or asks for another tool.</li>
+</ol>
+
+<div class="predict" data-answer="b">
+  <p>A model with a calculator tool needs to know 412 ÷ 21. Where does the division actually happen?</p>
+  <button data-opt="a">Inside the network, in a special layer for arithmetic</button>
+  <button data-opt="b">In ordinary code outside the model, which pastes the result into the window</button>
+  <button data-opt="c">In a second neural network that is trained only on math</button>
+  <p class="why">In ordinary code. The model writes "please divide 412 by 21" in a format the app understands, and the app does the sum the way any calculator would. In the widget below, you are that app.</p>
+</div>
 
 <div class="interactive">
-  <div class="interactive-title">▸ try it — comparison: how a <em>not</em>-neural-network does it</div>
-  <h3>Draw a digit (template matcher, not a neural net)</h3>
-  <p><strong>Important:</strong> this widget is <em>not</em> a trained neural network. It's a "template matcher" — a much older, simpler trick where we hand-make a few example pictures of each digit and find the closest match to your drawing using cosine similarity. We've left it here as a <em>comparison</em>: drawing a few digits will show you exactly how brittle hand-coded matching is. The real MNIST neural network is the next script (<code>neuro9.py</code>) — to run it you'll need PyTorch locally.</p>
-  <div class="digit-tool">
-    <div>
-      <canvas id="digit-canvas" width="280" height="280"></canvas>
-      <div style="margin-top: 10px;">
-        <button id="digit-clear">clear</button>
-        <button class="secondary" id="digit-demo">draw demo 2</button>
-      </div>
-    </div>
-    <div>
-      <div class="digit-result" id="digit-pred">?</div>
-      <div id="digit-bars"></div>
-      <p style="font-size: 13px; color: var(--muted);">Try drawing the same digit skinny, wide, tilted, or off-center. The score changes because the template matcher is brittle. A trained neural network learns many versions of each digit.</p>
-    </div>
+  <div class="interactive-title">▸ try it</div>
+  <h3>You are the app</h3>
+  <div class="demo-label" data-no-gloss>Illustration · scripted model, real calculator</div>
+  <p>A student asks a library helper a question it can't answer from its weights. Press the button to do the app's two jobs in turn: send the window to the model, then run whatever tool it asks for. Watch what gets added to the window each time, and who added it.</p>
+  <p class="fr-small">The model's lines here are scripted by us: no network is running. The school, its library and its books are made up. The calculator is real. When you run it, your browser does the division.</p>
+  <div class="fr-label" id="ta-topic-label">The student wants a book about</div>
+  <div class="toggle-row" id="ta-topic" role="group" aria-labelledby="ta-topic-label">
+    <div class="toggle on" role="button" tabindex="0" aria-pressed="true" data-topic="volcanoes">volcanoes</div>
+    <div class="toggle" role="button" tabindex="0" aria-pressed="false" data-topic="sharks">sharks</div>
+    <div class="toggle" role="button" tabindex="0" aria-pressed="false" data-topic="space">space</div>
+  </div>
+  <div class="fr-label" id="ta-catalog-label">The library's catalog is</div>
+  <div class="toggle-row" id="ta-catalog" role="group" aria-labelledby="ta-catalog-label">
+    <div class="toggle on" role="button" tabindex="0" aria-pressed="true" data-catalog="fresh">up to date</div>
+    <div class="toggle" role="button" tabindex="0" aria-pressed="false" data-catalog="stale">a copy from 2020</div>
+  </div>
+  <div class="fr-ctx fr-live" id="ta-window" data-no-gloss></div>
+  <p class="fr-key" data-no-gloss><span><i class="fr-k-app"></i>written by the app (you)</span><span><i class="fr-k-model"></i>written by the model</span><span><i class="fr-k-user"></i>written by the student</span></p>
+  <p class="ta-note" id="ta-note" aria-live="polite"></p>
+  <div>
+    <button type="button" id="ta-go">send the window to the model</button>
+    <button type="button" class="secondary" id="ta-reset">start over</button>
+  </div>
+  <div class="stat-row">
+    <span>times the model ran: <strong id="ta-trips">0</strong></span>
+    <span>tools you ran: <strong id="ta-tools">0</strong></span>
+    <span>blocks in the window: <strong id="ta-lines">2</strong></span>
   </div>
 </div>
 
-<p>To run the bigger example yourself: <code>neuro9.py</code> in this folder trains a real MNIST classifier with PyTorch. Needs <code>pip install torch torchvision</code> and a few minutes of CPU (or seconds on a GPU). After 5 epochs you'll see ~98% test accuracy. That's your network classifying handwritten digits well — which, when you remember that we started this story with a single neuron deciding "screen time: yes or no", is a pretty good place to stop.</p>
+<h3>What just happened</h3>
+<p>The model ran three times and you ran two tools. The model never opened the catalog and never divided anything. It wrote two short requests and one answer. You never decided anything. You ran what was asked for and pasted in what came back. Neither of you could have answered the question alone.</p>
+<p>Every result reached the model the same way: as text in its window, read exactly like the student's question. The model can't open the catalog and check. It takes what the app pastes in.</p>
+<p>Now switch the catalog to <strong>a copy from 2020</strong> and run it again. The model does everything right and gives a wrong answer, because the library's longest book on the subject was added in 2025 and the old copy doesn't list it. Nothing in the window says the copy is old. Hold on to that.</p>
 
-<h3>If you finished this book and want to go further</h3>
-<p>The short list of places to go next:</p>
+<h3>Loop it and you have an agent</h3>
+<p>You went around the loop twice: ask for a tool, read the result, decide what to do next. Let the model keep choosing its own next step until the job is done, and you have what people call an <strong>AI agent</strong>: a language model run in a loop with tools. A coding agent edits a file, runs the program, reads the error message, and tries again. This is where reasoning and tools meet: the model thinks about what to do, does one thing, looks at what happened, and thinks again.</p>
+
+<h3>Looking things up before answering</h3>
+<p>The most common tool of all is a search through documents. Before the model answers, the app looks through a pile of text (a school handbook, a company's manuals, the web) for the passages most related to the question, and pastes them into the window. Fetching text to put in front of the model is called <strong>retrieval</strong>. Often the search uses embeddings: the app turns the question into a row of numbers and finds the passages whose rows are closest to it. That is the trick behind the word neighbors in {{ch:decide}}, applied to whole paragraphs.</p>
+<p>This is the "give it a way to look things up" fix for hallucination that {{ch:mistakes}} promised, and you have just operated it. It helps for a simple reason: copying a fact from a page in the window is much easier than rebuilding it from the weights. And the model can say which page it used, so you can check.</p>
+<p>It is not a cure, and you have seen one reason already.</p>
 <ul>
-  <li>Watch <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown's neural networks series</a>. Same ideas, animated beautifully.</li>
-  <li>Do Andrej Karpathy's <a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">"Neural Networks: Zero to Hero"</a>. From-scratch backprop in Python, building up to a working GPT. Direct continuation of this book.</li>
-  <li>Read Karpathy's older essay <a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">"The Unreasonable Effectiveness of Recurrent Neural Networks"</a> — written before GPT existed but it's the essay that made a lot of people fall in love with the field.</li>
-  <li>If you want a real textbook: <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">Goodfellow, Bengio, and Courville's <em>Deep Learning</em></a> is free online.</li>
-  <li>If you want a course: <a href="https://course.fast.ai/" target="_blank" rel="noopener">fast.ai's "Practical Deep Learning for Coders"</a> is the most-recommended hands-on next step.</li>
+  <li><strong>The source can be wrong or out of date.</strong> That was the 2020 catalog. The model passed the mistake along in a confident voice.</li>
+  <li><strong>The model can misread the source,</strong> or blend what the page says with what its weights half-remember.</li>
+  <li><strong>The model can skip the search</strong> and answer from memory when it should have looked.</li>
 </ul>
+<p>In 2024 researchers at Stanford <a href="https://hai.stanford.edu/news/ai-trial-legal-models-hallucinate-1-out-6-or-more-benchmarking-queries" target="_blank" rel="noopener">tested AI research tools sold to lawyers</a>. All were built with retrieval, and their makers had advertised them as avoiding made-up answers. Two of the tools still gave wrong information on more than 17% of the test questions, and a third on more than 34%. That was much better than the general chatbots the same team had tested earlier, which got between 58% and 82% of legal questions wrong. It was also a long way from cured. (Products change quickly. Those numbers describe the tools as they were in 2024.)</p>
+<div class="callout">Tools bring a new problem with them. A tool result is text, and a model can't always tell information from instructions. Somebody can write a web page that says "ignore what you were told and do this instead", and a model that reads the page may obey. This is called <strong>prompt injection</strong>, and nobody has a complete fix for it yet. It is why a careful app asks a person before an agent sends a message, buys something or deletes a file.</div>
 
-<div class="interactive">
-  <div class="interactive-title">▸ run locally</div>
-  <h3>Train the real MNIST model</h3>
-  <p>This is <code>neuro9.py</code>. It downloads MNIST on first run and trains a real PyTorch digit classifier.</p>
-  <div class="run-note"><code>pip install torch torchvision</code><br><code>python3 neuro9.py</code></div>
-  <div class="code-editor-wrap">
-    <div class="code-header">
-      <span class="code-filename">neuro9.py</span>
-      <span class="code-status ready" id="py-status-9">local Python script</span>
-    </div>
-    <textarea class="code-editor" id="py-code-9" spellcheck="false" rows="30" data-src="neuro9.py"></textarea>
-  </div>
-  <div class="terminal" id="py-out-9"><span class="dim">Run locally with: python3 neuro9.py</span></div>
-</div>
+<h3>More than text</h3>
+<p>Nothing inside a transformer cares what its tokens stand for. It takes in rows of numbers. In {{ch:tokens}} each row belonged to a piece of a word. Turn anything else into rows of numbers and the same network can read that too.</p>
+<ul>
+  <li><strong>Pictures.</strong> Cut the picture into a grid of small squares called patches. A picture 224 pixels on a side, cut into squares 16 pixels on a side, gives 196 patches. Each patch's pixel values go through one layer of weights and come out as a row of numbers, the same size as a token's row. From there, attention treats the patches like words. The 2020 paper that showed this working is called <a href="https://arxiv.org/abs/2010.11929" target="_blank" rel="noopener">"An Image is Worth 16x16 Words"</a>.</li>
+  <li><strong>Sound.</strong> Cut the recording into short slices and describe each slice by how much of each pitch is in it. That is the "picture of pitch against time" that {{ch:convolution}} mentioned, and each strip of it becomes a row of numbers.</li>
+</ul>
+<p>A convolutional network has "nearby pixels belong together" built into its wiring. A transformer looking at patches has to learn that from examples. Given enough examples, it does.</p>
+<p>A model that takes in more than one kind of input is called <strong>multimodal</strong>. OpenAI's GPT-4o, from May 2024, handles text, pictures and sound in a single network. Clef, from {{ch:decide}}, reads text and pictures. The image generators in {{ch:diffusion}} run the same connection in the other direction: text goes in, and a picture comes out.</p>
+
+<h3>Small models and your own computer</h3>
+<p>{{Ch:what-changes}} said that a trained model is its numbers and nothing else. So a model is a file. If the company that trained it publishes the file, anyone can download it and run it on their own machine. A model shared like that has <strong>open weights</strong>. Meta's Llama models, Google's Gemma models and Clef all work this way.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: open weights does not mean everything is open. You usually get the numbers without the training data, and each model comes with its own rules about what you may use it for.</p>
+<p>Will it fit? A weight is normally stored using 16 or 32 bits. <strong>Quantization</strong> stores every weight more roughly, in 8 bits or even 4, a bit like rounding every price in a shop to the nearest dollar. The file shrinks, and the answers usually get only slightly worse. Take Google's figures for its Gemma 4 models, released in April 2026. The largest has 31 billion weights and needs about 70 gigabytes of memory at 16 bits per weight. At 4 bits it needs about 17.5, which a powerful home computer can manage. The smallest is built for phones and needs about 1 gigabyte.</p>
+<p>Small models know less and make more mistakes than the giants. In return, nothing you type leaves your device, the model works with no internet, and you can open it up and study it, which the next section is about.</p>
+<p>You can also change a model you have downloaded. That is the fine-tuning from {{ch:chatbots}}: more training, on your own examples. A cheaper version freezes the original weights and trains a small add-on set of numbers beside them. The 2021 paper behind the best-known way of doing this, <a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA</a>, reported that for the 175-billion-weight GPT-3 it cut the count of numbers being trained by a factor of 10,000.</p>
+
+<h3>Looking inside</h3>
+<p>You have been opening networks up all through this book:</p>
+<ul>
+  <li>{{Ch:depth}}: maps of where each hidden neuron gets excited. Stripes in layer 1, bent shapes in layer 2.</li>
+  <li>{{Ch:digits}}: one neuron's 784 weights laid out as a picture of the ink it likes.</li>
+  <li>{{Ch:convolution}}: filters nobody designed, which turned out to be edge detectors.</li>
+  <li>{{Ch:names}}: the five vowels gathering in one part of the letter map.</li>
+  <li>{{Ch:attention}}: bars showing which locker the model was looking at.</li>
+  <li>{{Ch:decide}}: the words the model had filed next to the one you typed.</li>
+</ul>
+<p>Each time the move was the same. You didn't settle for the network's score. You opened it and looked at what it had learned. Doing that on purpose, as a science, is called <strong>interpretability</strong>.</p>
+<p>It worked in this book because the networks were tiny. On a big one, two things get in the way. The first is size: the standing-or-ducking network in {{ch:mistakes}} had 33 weights, and a large language model can have hundreds of billions.</p>
+<p>The second is that neurons are mixed up. In {{ch:digits}} you hoped for 64 neat pictures of digits and got smudges, because no single neuron reads a digit. In big networks this gets much stronger. One neuron often takes part in many unrelated things: in one well-studied image network, researchers found <a href="https://distill.pub/2020/circuits/zoom-in/" target="_blank" rel="noopener">a single neuron that responds to cat faces, the fronts of cars, and cat legs</a>. And one idea is spread across many neurons.</p>
+<p>Think of an orchestra recorded with a hundred microphones. Every microphone picks up many instruments, and every instrument is heard on many microphones. Listening to one microphone tells you very little. To hear the violin you have to un-mix the recording.</p>
+<p>That is what researchers now do. They train a second, helper network whose only job is to describe the big network's activity as a mix of separate patterns, each one a group of neurons that tend to fire together. Many of those patterns turn out to stand for one recognizable thing.</p>
+<p>In 2024 researchers at Anthropic used this method on one of their Claude models and <a href="https://www.anthropic.com/research/mapping-mind-language-model" target="_blank" rel="noopener">pulled out millions of patterns</a>. One responded to the Golden Gate Bridge: to its name in many languages, and to photos of it. Then they reached into the network and turned that one pattern up. The model started bringing the bridge into answers about almost anything, and when asked about its own physical form, it said it was the bridge. So the pattern is not just a label that researchers imagined. It is part of how the model works. A team at OpenAI published similar work on GPT-4 the same year.</p>
+<p>In 2025 the Anthropic researchers went a step further and <a href="https://www.anthropic.com/research/tracing-thoughts-language-model" target="_blank" rel="noopener">followed patterns step by step</a> through a model while it worked. Two things they found:</p>
+<ul>
+  <li><strong>It plans a rhyme.</strong> This is the one {{ch:chatbots}} promised you. Asked for a two-line rhyming poem, the model picked out words that would rhyme (in their example, "rabbit") before it started writing the second line, and then wrote the line to land on that word. When the researchers switched off "rabbit" inside the network, the line ended on "habit" instead.</li>
+  <li><strong>It adds in its own way.</strong> Asked for 36 + 59, one path through the network worked out roughly how big the answer should be while another worked out the last digit exactly, and the two were combined. Asked afterwards how it got 95, the model described carrying the 1, the way school teaches it. That is not what the tracing showed.</li>
+</ul>
+<p>That second finding is the limit from the reasoning section again, seen from the inside: a model's account of its own thinking is one more piece of generated text.</p>
+<p>The people doing this work are careful about how far it goes. By their own account, the methods capture only a fraction of what the network is doing, and tracing a prompt a few dozen words long takes hours of human effort. Nobody can yet read a large network the way a programmer reads code.</p>
+<p>Why bother? {{Ch:mistakes}} showed you a classifier that looked for a tag instead of a horse, and researchers only found out by checking what it was looking at. A test score says whether a model got the answers right. Looking inside can say whether it got them right for the right reasons. And these networks were made by training, not by design, so nobody wrote down how they work. Finding out is real science, closer to biology than to engineering.</p>
+
+<h3>What nobody knows yet</h3>
+<p>This book has been full of things that are understood. Here are five that aren't. They are not gaps in this book. Nobody has the answers.</p>
+<p><strong>Why do very large networks learn instead of memorize?</strong> {{Ch:overfitting}} left this one hanging. In 2016 researchers took a standard set of labelled photos, <a href="https://arxiv.org/abs/1611.03530" target="_blank" rel="noopener">shuffled the labels at random</a>, and trained ordinary image networks on the nonsense. The networks fit it easily. So they have plenty of room to memorize a whole training set. Yet given the true labels, the very same networks learn patterns that carry over to photos they have never seen. Why take the pattern when memorizing was on offer? Stranger still, researchers have measured cases where making a network bigger makes its test score <a href="https://arxiv.org/abs/1912.02292" target="_blank" rel="noopener">worse at first and then better again</a>. One leading idea is that the nudging itself, step by small step, tends to settle on simple solutions. Nobody has a complete theory.</p>
+<p><strong>How far does "bigger" keep working?</strong> The scaling laws in {{ch:scale}} are measurements, not laws of nature. They say what happened as models grew. They can't promise what happens next, and every step up costs far more than the one before. Some researchers expect more data and more computing to keep paying off for years. Others think new ideas will be needed first. Both groups include serious people, and the only way to find out is to try.</p>
+<p><strong>How do you make sure a system does what you meant?</strong> You have watched this go wrong three times. The creature in {{ch:rl}} stepped on and off a snack forever because that was what the reward paid for. The headline model in {{ch:mistakes}} read the agency tag instead of the story. The reasoning models above used a hint and didn't say so. In each case the system did what its training rewarded, which was not quite what anybody wanted. The work of closing that gap is called <strong>alignment</strong>. It gets more important as agents are trusted with longer jobs and less supervision, and looking inside is one of the tools people hope will help.</p>
+<p><strong>What does all this cost in chips and electricity?</strong> {{Ch:scale}} added up one training run. Here is the bigger picture. The International Energy Agency <a href="https://www.iea.org/reports/key-questions-on-energy-and-ai" target="_blank" rel="noopener">reported in 2026</a> that the world's data centers (all of them, not only the ones running AI) used about 485 terawatt-hours of electricity in 2025. The year before it was 415, around 1.5% of all the electricity used in the world. So the total grew by 17% in one year, and the part used by data centers built mainly for AI grew by 50%. The agency expects about 950 terawatt-hours by 2030, around 3% of the world's electricity.</p>
+<p>One question to a chatbot is tiny by comparison. In August 2025 Google <a href="https://cloud.google.com/blog/products/infrastructure/measuring-the-environmental-impact-of-ai-inference" target="_blank" rel="noopener">estimated</a> that a typical text question to its Gemini chatbot used 0.24 watt-hours, which it compared to watching TV for less than nine seconds. That is the company's own figure, it has not been checked by outsiders, and it covers text only. A reasoning model that writes fifty times as many tokens makes roughly fifty times as many trips. How fast the total will grow, where the power and the chips will come from, and whether models can be made efficient faster than people find new uses for them: nobody knows.</p>
+<p><strong>Who gets to decide how these systems are used?</strong> The rules are being written right now. The European Union's AI Act became law in August 2024, with its rules arriving in stages over the following years. It sorts uses of AI by how much harm they could do: some are banned, some have strict requirements, some must say plainly that they are AI, and most have no special rules. Other governments are choosing differently. The companies write rules of their own, like the public documents {{ch:chatbots}} mentioned. Courts are still deciding whether training on people's writing and art without asking is allowed, the question {{ch:diffusion}} raised. Your school is probably working out its own rules about homework. None of these are engineering questions, and engineers shouldn't be the only ones answering them. You get a say, and a better-informed one than most, because you know how the thing works.</p>
+
+<h3>The field is young</h3>
+<p>Look at the timeline in {{ch:timeline}} once more. The paper that made backpropagation famous came out in 1986, which makes it younger than many of your teachers. AlexNet was built by two students and their professor. The transformer is younger than you are, or close to it.</p>
+<p>Many of the people on that line began where you are now: curious about how a machine made of arithmetic could possibly learn anything. Every question in the last section is still open, and some of them may well be answered by people who are in middle school today. You already understand the parts they will be working with.</p>
+
+<div class="bigidea"><p>The newest systems are built from parts you already know: the same next-token loop, given scratch paper to think on and tools to reach outside itself. What nobody has yet is a full account of why it works so well, how far it will go, and how to be sure it does what we mean.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Run <code>neuro9.py</code>, then reduce the first hidden layer from 128 neurons to 16. Watch how the test accuracy changes.</p>
+  <p>Design a tool. Pick a question a chatbot could not answer from its weights, such as "what is for lunch at my school tomorrow?" Write down four things: the tool's name, exactly what the model would send to it, what would come back, and one way the result could be wrong without the model being able to tell.</p>
+  <p>Then pick the open question from the last section that you would most like to work on. What is the first thing you would measure?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A reasoning model takes thirty seconds over a question that an ordinary model answers in two. What is it doing with the extra time?</p>
+    <button data-opt="a">Searching a bigger store of facts inside its weights</button>
+    <button data-opt="b">Writing tokens of working, one trip each, which it then reads back</button>
+    <button data-opt="c">Retraining its weights on your question</button>
+    <p class="why">The working is made of ordinary tokens, and each one costs a trip through the network. The weights don't change while it answers, and there is no bigger store to search: thinking longer adds steps, not knowledge.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A chatbot with a search tool gives you an answer and a link to the page it used. Why might the answer still be wrong?</p>
+    <button data-opt="a">It can't be. It looked the answer up</button>
+    <button data-opt="b">Search tools only work for math questions</button>
+    <button data-opt="c">The page may be wrong or out of date, or the model may have misread it</button>
+    <p class="why">The search result is text pasted into the window, and the model reads it like any other text. A wrong page gives a confident wrong answer, as the 2020 catalog did. The link is still worth a lot: it lets you check.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Why can't researchers understand a big network by studying its neurons one at a time?</p>
+    <button data-opt="a">One neuron often takes part in many unrelated things, and one idea is spread over many neurons</button>
+    <button data-opt="b">The weights are secret, even from the people who trained the network</button>
+    <button data-opt="c">The neurons change their jobs every time someone chats with the model</button>
+    <p class="why">It is the orchestra and the microphones. The weights are not hidden from the people who trained them, and they stay fixed while you chat. The difficulty is that the meaning is mixed across neurons and has to be un-mixed.</p>
+  </div>
 </div>

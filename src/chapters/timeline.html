@@ -1,0 +1,164 @@
+<p>You have now built a small version of nearly everything in modern AI: a neuron, a network that learns, a language model, attention, a digit reader, a picture maker, a game player, and the engine that trains them all. This chapter puts the whole story on one line, so you can see where each thing you built sits, and how long the world waited for it.</p>
+<p>Chatbots arrived in most people's lives in 2022, which makes neural networks feel like a new invention. They aren't.</p>
+
+<div class="predict" data-answer="c">
+  <p>How old is the idea of an artificial neuron: a little unit that adds up its inputs and fires if the total is big enough?</p>
+  <button data-opt="a">About 15 years. It arrived with smartphones and big data</button>
+  <button data-opt="b">About 40 years. It arrived with home computers</button>
+  <button data-opt="c">More than 80 years. It is older than most grandparents</button>
+  <p class="why">The first one was described in 1943. Step through the line below and watch how long the idea had to wait.</p>
+</div>
+
+<div class="interactive tl-box">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Fifteen moments, 1943 to 2026</h3>
+  <p>The line runs from the first neuron on paper to the models of 2026. Press <strong>later</strong> to step through it, or tap anywhere on the line to jump. Each card says where in this book you met the small version. The dots are colored by the part of the book that covers them, and they sit at their true distance apart, so watch how the spacing changes.</p>
+  <div class="tl" id="tl">
+    <div class="tl-rail" id="tl-rail"></div>
+    <div class="tl-nav">
+      <button type="button" class="secondary" id="tl-prev">← earlier</button>
+      <span class="tl-pos" id="tl-pos" aria-live="polite"></span>
+      <button type="button" id="tl-next">later →</button>
+    </div>
+    <ol class="tl-list" id="tl-list">
+      <li class="tl-item" data-year="1943" data-tag="neuron" data-chapters="neuron">
+        <div class="tl-when">1943</div>
+        <h4>A neuron made of math</h4>
+        <p>Warren McCulloch and Walter Pitts publish the first mathematical model of a neuron: a unit that adds up its inputs and fires if the total reaches a threshold. Nothing in it learns. A person has to choose the wiring.</p>
+        <p class="tl-built"><strong>Your small version:</strong> {{ch:neuron}}, where you set the weights by hand too.</p>
+      </li>
+      <li class="tl-item" data-year="1958" data-tag="perceptron" data-chapters="training">
+        <div class="tl-when">1958</div>
+        <h4>The perceptron: a neuron that learns</h4>
+        <p>Frank Rosenblatt unveils a machine that adjusts its own weights from examples. A newspaper reports that the U.S. Navy expects it to walk, talk and see one day.</p>
+        <p class="tl-built"><strong>Your small version:</strong> {{ch:training}}, where a neuron found its own weights.</p>
+      </li>
+      <li class="tl-item" data-year="1969" data-tag="limits" data-chapters="xor-fail">
+        <div class="tl-when">1969</div>
+        <h4>The book of limits</h4>
+        <p>Marvin Minsky and Seymour Papert's book <em>Perceptrons</em> proves that a single layer of adjustable weights can never learn a puzzle like XOR. Money and interest were already moving elsewhere, and neural networks go quiet for about fifteen years.</p>
+        <p class="tl-built"><strong>Your small version:</strong> {{ch:xor-fail}}, where you watched one neuron fail at exactly that puzzle.</p>
+      </li>
+      <li class="tl-item" data-year="1980" data-tag="neocognitron" data-chapters="convolution">
+        <div class="tl-when">1980</div>
+        <h4>The neocognitron</h4>
+        <p>Kunihiko Fukushima builds a network of small pattern detectors, reused across the whole picture and stacked in layers, inspired by the seeing part of a cat's brain. It has no good way to learn its filters yet.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the sliding filters and pooling of {{ch:convolution}}.</p>
+      </li>
+      <li class="tl-item" data-year="1986" data-tag="backprop" data-chapters="backprop hidden">
+        <div class="tl-when">1986</div>
+        <h4>Backpropagation teaches the hidden layer</h4>
+        <p>David Rumelhart, Geoffrey Hinton and Ronald Williams show that passing the blame backwards lets hidden neurons find useful jobs for themselves. The method had been worked out before, more than once, and mostly ignored.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the hidden neurons of {{ch:hidden}}, and the blame you passed back by hand in {{ch:backprop}}.</p>
+      </li>
+      <li class="tl-item" data-year="1989" data-end="1998" data-tag="handwriting" data-chapters="digits convolution">
+        <div class="tl-when">1989–1998</div>
+        <h4>Networks that read handwriting</h4>
+        <p>Yann LeCun and his colleagues train a convolutional network with backpropagation to read ZIP codes on real mail. By 1998 a system built around a network of that kind is reading several million bank checks a day, and the same group has put together the MNIST digits.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the digit reader you trained and drew for in {{ch:digits}}.</p>
+      </li>
+      <li class="tl-item" data-year="2012" data-tag="AlexNet" data-chapters="convolution scale">
+        <div class="tl-when">2012</div>
+        <h4>AlexNet</h4>
+        <p>Two graduate students, Alex Krizhevsky and Ilya Sutskever, and their professor Geoffrey Hinton train a convolutional network with about 60 million weights on two gaming graphics cards. In a contest to label photos it gets 15.3% wrong. The best other entry gets 26.2% wrong. Many people date the current boom in AI to that result.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the convolutional network of {{ch:convolution}}. {{Ch:scale}} explains the graphics cards.</p>
+      </li>
+      <li class="tl-item" data-year="2013" data-end="2016" data-tag="games" data-chapters="rl">
+        <div class="tl-when">2013–2016</div>
+        <h4>Learning games from the score alone</h4>
+        <p>DeepMind's deep Q-network learns Atari games from nothing but the screen and the score. In March 2016 the company's Go program, AlphaGo, beats Lee Sedol, one of the best players in the world, by four games to one.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the creature that learned a maze from rewards in {{ch:rl}}.</p>
+      </li>
+      <li class="tl-item" data-year="2017" data-tag="transformer" data-chapters="attention">
+        <div class="tl-when">2017</div>
+        <h4>The transformer</h4>
+        <p>Eight researchers, most of them at Google, publish "Attention Is All You Need". It describes a network built almost entirely out of attention. Every big chatbot today is a descendant.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the locker room that learned where to look in {{ch:attention}}.</p>
+      </li>
+      <li class="tl-item" data-year="2020" data-tag="diffusion" data-chapters="diffusion">
+        <div class="tl-when">2020</div>
+        <h4>Pictures from noise</h4>
+        <p>Jonathan Ho, Ajay Jain and Pieter Abbeel show that a network trained to guess the noise in a ruined picture can make new pictures that rival the best of any method at the time. The core idea dates from 2015.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the dots that un-ruined themselves into a picture in {{ch:diffusion}}.</p>
+      </li>
+      <li class="tl-item" data-year="2020" data-end="2021" data-tag="proteins">
+        <div class="tl-when">2020–2021</div>
+        <h4>The shapes of proteins</h4>
+        <p>Proteins are the tiny machines inside every living cell, and a protein's shape decides what it does. In November 2020 DeepMind's AlphaFold 2 predicts those shapes in a blind test far more accurately than anything before it. By mid-2022 its makers have published predicted shapes for around 200 million proteins, free for any scientist to use.</p>
+        <p class="tl-built tl-none"><strong>No small version in this book.</strong> Its main ingredient is one you know, though: the attention of {{ch:attention}}.</p>
+      </li>
+      <li class="tl-item" data-year="2022" data-tag="everyone" data-chapters="names chatbots">
+        <div class="tl-when">2022</div>
+        <h4>Out of the lab</h4>
+        <p>Image generators arrive within months of each other: DALL·E 2 in April, Stable Diffusion in August. On November 30, ChatGPT opens to the public. Two months later an estimated 100 million people are using it.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the name inventor of {{ch:names}}, which runs the same loop that {{ch:chatbots}} follows through a chatbot.</p>
+      </li>
+      <li class="tl-item" data-year="2024" data-tag="reasoning">
+        <div class="tl-when">2024</div>
+        <h4>Models that think before answering</h4>
+        <p>In September 2024 OpenAI releases o1-preview, a model trained to write out a long chain of working before it gives an answer. Other labs follow within months.</p>
+        <p class="tl-built tl-none"><strong>No small version yet.</strong> {{Ch:frontier}} explains it, and it is made from the loop in {{ch:chatbots}}.</p>
+      </li>
+      <li class="tl-item" data-year="2024" data-tag="Nobels">
+        <div class="tl-when">2024</div>
+        <h4>Two Nobel prizes</h4>
+        <p>In October the <a href="https://www.nobelprize.org/prizes/physics/2024/summary/" target="_blank" rel="noopener">physics prize</a> goes to John Hopfield and Geoffrey Hinton "for foundational discoveries and inventions that enable machine learning with artificial neural networks". Half of the <a href="https://www.nobelprize.org/prizes/chemistry/2024/summary/" target="_blank" rel="noopener">chemistry prize</a> goes to Demis Hassabis and John Jumper for AlphaFold 2. The other half goes to David Baker for designing new proteins by computer.</p>
+        <p class="tl-built tl-none"><strong>Nothing to build here.</strong> Look back along the line, though: it is the same Hinton as in 1986 and 2012.</p>
+      </li>
+      <li class="tl-item" data-year="2026" data-tag="deciding" data-chapters="decide">
+        <div class="tl-when">2026</div>
+        <h4>Models that decide instead of write</h4>
+        <p>The first System One models appear: Jev in September and Clef in October. You hand one some text and a typed question. It answers in a single pass, with a probability attached, and writes nothing.</p>
+        <p class="tl-built"><strong>Your small version:</strong> the headline sorter you trained in {{ch:decide}}.</p>
+      </li>
+    </ol>
+    <div class="tl-chips" id="tl-chips"></div>
+    <div class="stat-row">
+      <span>moments on the line: <strong id="tl-total">15</strong></span>
+      <span>with a small version in this book: <strong id="tl-built">12</strong></span>
+      <span id="tl-done-wrap" hidden>of those, chapters you have finished: <strong id="tl-done">0</strong></span>
+    </div>
+    <div class="tl-foot">
+      <button type="button" class="secondary" id="tl-all" aria-pressed="false">show the whole line at once</button>
+    </div>
+  </div>
+</div>
+
+<h3>What the line shows</h3>
+<p><strong>The idea is old.</strong> The neuron you played with in {{ch:neuron}} is recognizably the one from 1943, and the training loop from {{ch:training}} would not have surprised Rosenblatt.</p>
+<p><strong>The spacing is lopsided.</strong> The first 69 years of the line, from 1943 to 2012, hold seven of the fifteen moments. The 14 years since then hold the other eight. What changed around 2012 was mostly not the ideas. The neocognitron was 32 years old, and the famous backpropagation paper was 26. What arrived was enough data and enough computing power to make the old ideas work, which is the story {{ch:scale}} told.</p>
+<p><strong>You have been here before.</strong> For 12 of the 15 moments, this book had you build, train or take apart a small version. The three you have not built are the three that are hardest to shrink: a protein-shape predictor, a prize, and a reasoning model. {{Ch:frontier}} takes on the last of those.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: a timeline is somebody's choice of what to include, and this one leaves out far more than it keeps. Most of these steps were also the work of many more people than the two or three named on each card.</p>
+
+<div class="bigidea"><p>Almost every idea in modern AI is older than it looks. What arrived late was the data and the computing power to make the old ideas work, and you have now built a small version of nearly all of them.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Pick the moment on the line that surprised you most and find out one thing about it that is not on the card: who the people were, what machine they used, or what happened next. Then write a card for 2030. Put today's date on it and keep it somewhere you will find it again.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Convolutional networks were being trained to read handwriting in 1989. Why did it take until 2012 for one to win a big contest on real photos?</p>
+    <button data-opt="a">Backpropagation had not been invented yet</button>
+    <button data-opt="b">The idea was ready, but the data and the computing power to make it work on photos were not</button>
+    <button data-opt="c">Nobody had thought of stacking more than one layer</button>
+    <p class="why">Backpropagation and stacked layers were both in use by 1989. What AlexNet had that the earlier networks lacked was more than a million labelled photos and graphics cards fast enough to train on them.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>The 1969 book showed that a single layer of adjustable weights can never learn XOR. What did it take to get past that limit?</p>
+    <button data-opt="a">Training the single layer for much longer</button>
+    <button data-opt="b">Switching from neural networks to a different kind of program</button>
+    <button data-opt="c">A hidden layer, and a method that could train it</button>
+    <p class="why">More training can't fix a shape that doesn't fit the problem: that was {{ch:xor-fail}}. A hidden layer can, and backpropagation is the method that made hidden layers learn.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A friend says, "AI was invented a few years ago, when chatbots came out." What is the most accurate reply?</p>
+    <button data-opt="a">The main ideas are decades old. What is new is the scale, and that anyone can use the results</button>
+    <button data-opt="b">That's right. Nothing before 2022 was really a neural network</button>
+    <button data-opt="c">Chatbots run on ideas that have nothing to do with the earlier networks</button>
+    <p class="why">The neuron is from 1943, backpropagation became famous in 1986, and the transformer inside every big chatbot is from 2017. The chatbots of 2022 were those ideas, made enormous and opened to the public.</p>
+  </div>
+</div>
+
+<p>The newest dots on the line are still being drawn. {{Ch:frontier}} goes there next: models that think before they answer, models that use tools, what researchers find when they look inside, and the questions nobody has answered yet.</p>

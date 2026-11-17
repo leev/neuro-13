@@ -1,0 +1,127 @@
+<p class="lede">Neuro 13 is a hands-on book about how neural networks actually work, written for a curious 13-year-old to read alone. This page is for the adult nearby: what the book is, what it needs, what it does with a reader's data, and how to use it at home or with a class.</p>
+
+<h3>What this book is</h3>
+<p>Five parts and 37 chapters take a reader from a single artificial neuron to the ideas inside chatbots, image generators and game-playing programs. Almost every idea comes with something to operate: a widget that trains a real network in the browser, or a short Python program that can be run and edited on the page.</p>
+<p>It is written for a bright 13-year-old who has never seen any of this. Older teenagers and adults who want a straight answer about how AI works are just as welcome. The math is arithmetic and reading graphs, and {{title:basics}} covers the handful of symbols the book uses. No programming experience is needed to read it, and a reader who finishes will have read and changed a good deal of real code.</p>
+<p>It is not a guide to using chatbots, and it is not for or against AI. It explains the mechanism and lets the reader draw their own conclusions. {{title:mistakes}} is the chapter about using these tools with care.</p>
+
+<h3>What a reader needs</h3>
+<ul>
+  <li><strong>A modern web browser</strong> (a recent Chrome, Edge, Firefox or Safari) and an internet connection. A laptop is most comfortable. The pages are built to work on a tablet or a phone as well.</li>
+  <li><strong>Nothing to install.</strong> The networks train inside the browser, and so does the Python.</li>
+  <li><strong>No account.</strong> There is nothing to sign up for and nothing to pay for.</li>
+</ul>
+
+<h3>Privacy, precisely</h3>
+<p>The short version: the book runs on the reader's own device and sends nothing about the reader anywhere. The details:</p>
+<ul>
+  <li><strong>No account, no ads, no tracking.</strong> The book's pages contain no analytics or advertising scripts, and its code sets no cookies.</li>
+  <li><strong>Progress is stored only in the browser.</strong> The browser's local storage for this site holds: which chapters are finished, the best score on each chapter's quiz, the last chapter opened, the date the book was finished, the name typed for the certificate, which playground missions are ticked, and any word list pasted into the "your own list" box in {{ch:names}}. (That chapter suggests trying a list of classmates' names. Like everything else, the list stays in the browser.) None of this is sent anywhere. It does not follow the reader to another browser or device, and clearing the browser's data for the site erases it. Once there is progress to clear, the home page shows a "Reset my progress" link that wipes the finished chapters and quiz scores.</li>
+  <li><strong>Nothing typed, drawn or trained is uploaded.</strong> Headlines typed into a classifier, digits drawn with a finger, edits to the Python programs and the networks themselves all stay on the device.</li>
+  <li><strong>What the browser downloads, and from where.</strong> Pages, fonts and datasets come from the book's own site. Two things come from public code libraries. On a chapter with a Python program, the code editor (CodeMirror) is fetched from cdnjs.cloudflare.com when the page opens. The first time the reader presses <em>run</em>, the Python engine (Pyodide) and the packages a program uses (NumPy, and scikit-learn for one program) are fetched from cdn.jsdelivr.net. As with any web request, those servers and the book's own host see an IP address and the kind of browser asking. They are not sent the reader's code, typing or progress.</li>
+  <li><strong>Sharing is up to the reader.</strong> The Share button hands the page's address to the device's own share menu, or copies it. {{title:playground}} can copy a link that contains the settings of the network the reader built, so that a friend can open the same setup.</li>
+  <li><strong>Links lead elsewhere.</strong> Chapters link to outside sources such as Wikipedia, research papers and a few videos, and {{title:next}} is almost entirely outside links. Those sites have their own privacy rules. Outside links open in a new tab.</li>
+</ul>
+
+<h3>How long it takes</h3>
+<p>Every chapter shows its own reading time under its title, worked out from its word count at 180 words a minute. That covers the reading only. Operating the widgets, running the programs and doing the challenges comes on top. As a rule of thumb, allow about as long again.</p>
+<table>
+  <tr><th>Part</th><th>Chapters</th><th>Reading time for the part</th></tr>
+  <tr><td>1. One neuron</td><td>9</td><td>about 1 hour</td></tr>
+  <tr><td>2. How networks learn</td><td>10</td><td>1½ to 2 hours</td></tr>
+  <tr><td>3. Machines that read and write</td><td>7</td><td>2 to 2½ hours</td></tr>
+  <tr><td>4. Seeing, creating, playing</td><td>5</td><td>1½ to 2 hours</td></tr>
+  <tr><td>5. Your turn</td><td>6</td><td>1½ to 2 hours, plus the projects</td></tr>
+</table>
+<p>That is roughly eight to nine hours of reading, so plan on fifteen to twenty hours in all, before the three projects in {{title:projects}}, which run from an afternoon to a weekend each. The chapters get longer as the book goes on. Most chapters in Part 1 take under ten minutes to read. By Parts 3 and 4 a typical chapter is a twenty-minute read, and one chapter is a full sitting.</p>
+
+<h3>Three ways to use it</h3>
+<p><strong>Alone.</strong> This is what the book was built for. The reader works at their own pace, the sidebar ticks off finished chapters, and each of the first four parts ends with a checkpoint chapter: a recap, a mixed quiz and something to build. Twenty to forty minutes at a time works well. A <a href="certificate.html">certificate</a> appears when every chapter is done.</p>
+<p><strong>Alongside a parent.</strong> You do not need to know the subject. Sit beside the reader and let them drive. The most useful things you can do are ask them to commit to a guess at each "Predict first" box before pressing anything, and ask them to explain "what just happened" back to you in their own words. When they can't, go back together. Do the challenge at the end of a chapter as a pair. If you find yourself learning it too, that is the book working as intended.</p>
+<p><strong>In a classroom or club.</strong> Put a widget on the projector, take a show of hands on the "Predict first" question, then run it. After that, let pairs work at their own screens. Most widgets start from random numbers, so pairs will get slightly different results, and comparing them is a lesson in itself. Three practical notes:</p>
+<ul>
+  <li>Before the first session with Python, check that your network allows <code>cdn.jsdelivr.net</code> and <code>cdnjs.cloudflare.com</code>. If they are blocked, the widgets still work but the Python programs will not start.</li>
+  <li>The first press of <em>run</em> in a session downloads the Python engine, which takes a little while. Later runs are quick.</li>
+  <li>Progress is saved per browser, with no logins. On shared computers the next student will see the last student's ticks, unless each uses their own browser profile or resets progress from the home page.</li>
+</ul>
+
+<h3>A session plan</h3>
+<p>These sessions assume 40 to 50 minutes with time to play. Split or merge them to suit your reader.</p>
+<ul>
+  <li><strong>Part 1, One neuron: 3 sessions.</strong> {{Ch:basics}} to {{ch:neuron}}. Then {{ch:training}} to {{ch:tables-dots}}. Then {{ch:xor-fail}}, {{ch:hidden}} and the checkpoint.</li>
+  <li><strong>Part 2, How networks learn: 5 sessions.</strong> {{Ch:multi}} and {{ch:activations}}. Then {{ch:meals}} and {{ch:descent}}. Then {{ch:backprop}}, which needs a session to itself. Then {{ch:real-data}} and {{ch:overfitting}}. Then {{ch:depth}}, {{ch:scale}} and the checkpoint.</li>
+  <li><strong>Part 3, Machines that read and write: 5 sessions.</strong> {{Ch:tokens}}. Then {{ch:names}}. Then {{ch:attention}}. Then {{ch:chatbots}} and {{ch:decide}}. Then {{ch:mistakes}} and the checkpoint.</li>
+  <li><strong>Part 4, Seeing, creating, playing: 5 sessions.</strong> One chapter per session: {{ch:digits}}, {{ch:convolution}}, {{ch:diffusion}} and {{ch:rl}}, then the checkpoint and its project.</li>
+  <li><strong>Part 5, Your turn: 6 sessions or more.</strong> {{Ch:pytorch}}. Then {{ch:playground}}. Then {{ch:timeline}}, a short one that leaves time to go back to a favorite widget from earlier in the book. Then {{ch:frontier}}. Then as many sessions as the projects in {{ch:projects}} need, and {{ch:next}} to finish.</li>
+</ul>
+<p>That comes to about 24 sessions: a term or two of a weekly club, or a few weeks of evenings.</p>
+
+<h3>Questions worth talking about</h3>
+<p>None of these has one right answer. They are for the car, the dinner table or the last ten minutes of a class.</p>
+<p><strong>Part 1: One neuron</strong></p>
+<ul>
+  <li>After training, the neuron's whole "rule" is three numbers that nobody wrote. Where did the rule come from? Is that like or unlike the way you learned to ride a bike?</li>
+  <li>One neuron can never learn XOR, however long it trains. Can you think of a time when trying harder did not help and you needed a different approach?</li>
+  <li>In 1958 a newspaper reported that a machine like this would one day walk, talk and be conscious. Why do people over-promise about new technology? How would you tell a real result from hype?</li>
+</ul>
+<p><strong>Part 2: How networks learn</strong></p>
+<ul>
+  <li>A network aced its homework and failed the test. Have you ever memorized something without understanding it? How could a teacher tell the difference?</li>
+  <li>Why does the test data have to stay hidden until the end? What would "peeking at the test" look like in a science fair project?</li>
+  <li>The biggest models need enormous amounts of data, chips and electricity. Who can afford to build them, and does it matter who can't?</li>
+</ul>
+<p><strong>Part 3: Machines that read and write</strong></p>
+<ul>
+  <li>A chatbot works by predicting the next piece of text. Does that mean it understands what it writes? What would count as evidence either way?</li>
+  <li>A chatbot sounds exactly as sure when it is wrong. How do you decide what is worth checking? Which habit in the field guide in {{ch:mistakes}} is the hardest to keep?</li>
+  <li>The game in {{ch:mistakes}} failed kids because no kids were in its training data. Who might be missing from the data behind the tools you use?</li>
+</ul>
+<p><strong>Part 4: Seeing, creating, playing</strong></p>
+<ul>
+  <li>Image generators learned from pictures made by people, most of whom were never asked. What would be fair to those people?</li>
+  <li>The creature in {{ch:rl}} found a way to collect points that was not what anyone meant. Where have you seen a rule or a reward get "gamed" at school or in a sport?</li>
+  <li>The digit reader is right most of the time and falls apart when a digit is slid sideways. For which jobs is "right most of the time" good enough, and for which is it not?</li>
+</ul>
+<p><strong>Part 5: Your turn</strong></p>
+<ul>
+  <li>Most ideas on the timeline in {{ch:timeline}} waited decades for computers to catch up. Which of the open questions in {{ch:frontier}} do you think will be answered first, and which matters most to you?</li>
+  <li>A model's account of its own reasoning is not always what it actually did. Is that true of people too?</li>
+  <li>Who should decide how AI is used at your school: students, teachers, parents, the companies that make it, or the government?</li>
+</ul>
+
+<h3>Content notes</h3>
+<ul>
+  <li><strong>Real news from 2004.</strong> The model in {{ch:decide}} trains on 10,000 short news stories from a research collection called AG News, gathered in 2004. The script that builds the sample skips any story containing words about killing, death, bombs, sexual content and similar. What remains is still news from that year, including the war in Iraq: about 3 stories in every 100 mention Iraq, and words like "attack", "troops" and "kidnapped" do appear. The pages themselves show very few of the stories. A reader meets them mostly by opening the data file. The chapter treats the age of the data as a lesson in itself.</li>
+  <li><strong>Handwriting.</strong> The digit chapters use 10,000 images from MNIST, a public collection of digits written decades ago by American high-school students and Census Bureau workers. They are small gray pictures of numerals with no names attached.</li>
+  <li><strong>Names.</strong> {{Ch:names}} trains on first names from public United States baby-name records, with a few removed, and on dinosaur names. The model then invents new names letter by letter. The widget screens out a short list of unsuitable results, but nobody can promise what a random string of letters will happen to spell.</li>
+  <li><strong>Hard topics, plainly handled.</strong> {{Ch:mistakes}} covers made-up facts, unfair results for groups left out of the data, and a real court case in which lawyers were fined for trusting a chatbot. {{Ch:diffusion}} raises the question of training on artists' work. {{Ch:frontier}} covers electricity use and who makes the rules. The book describes these without taking a political side.</li>
+</ul>
+
+<h3>The book's honesty rules</h3>
+<p>You can hold the book to these, and so can your reader.</p>
+<ul>
+  <li><strong>The numbers are real.</strong> Every figure in the text came from running the code. Where a result changes from run to run, the text says so and gives the range.</li>
+  <li><strong>Training is live unless it says otherwise.</strong> When a widget says it is training a network, it is, from random numbers, in the reader's browser. The few places that load a network trained in advance say so.</li>
+  <li><strong>Illustrations are labelled.</strong> Where numbers were written by hand to show an idea, or a demonstration is scripted, a label on the widget says so in plain words.</li>
+  <li><strong>Simplifications are flagged.</strong> A short "Honesty note" appears wherever the real story is messier than the explanation.</li>
+  <li><strong>Claims have dates.</strong> Anything about the present state of AI says when it was true. This field changes quickly, and parts of {{ch:frontier}} will age.</li>
+</ul>
+
+<h3>The code, and running it yourself</h3>
+<p>Every Python program in the book, with the datasets they read, is in one download: <a href="neuro13-code.zip" download>neuro13-code.zip</a>, about 3 megabytes. To run the programs outside the browser:</p>
+<ol>
+  <li>Install Python 3 from <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>.</li>
+  <li>Unzip the download. It makes a folder called <code>neuro13</code>.</li>
+  <li>Open a terminal in that folder and install NumPy: <code>pip install numpy</code></li>
+  <li>Run a program: <code>python3 neuro1.py</code> (on Windows, <code>python neuro1.py</code>).</li>
+</ol>
+<p>NumPy is all that most of the programs need. <code>neuro7.py</code> also needs scikit-learn. Three programs (<code>neuro8.py</code>, <code>neuro9.py</code> and <code>convnet.py</code>) use PyTorch, which is a large install, and two of those download the MNIST digits the first time they run. {{title:pytorch}} explains them. The <code>tools</code> folder holds the scripts that built the datasets, for anyone who wants to check how the data was prepared.</p>
+
+<h3>Printing a chapter</h3>
+<p>Use the browser's own Print command (Ctrl+P, or ⌘P on a Mac) on any chapter. The top bar, the sidebar and the page-turn buttons are left out automatically. A few things to know:</p>
+<ul>
+  <li>Widgets print as they look at that moment. Run one before printing if you want its result on paper.</li>
+  <li>Turn on "Background graphics" in the print dialog (some browsers call it "Print backgrounds") to keep the colored boxes.</li>
+  <li>A Python program prints only as much as its editor shows on screen. The full programs are in the download above.</li>
+  <li>The quizzes print without their answers unless they have been answered on screen first.</li>
+</ul>

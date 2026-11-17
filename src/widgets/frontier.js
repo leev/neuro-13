@@ -1,192 +1,175 @@
-// ===== Interactive: rough digit recognizer =====
-(function() {
-  const canvas = document.getElementById('digit-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const bars = document.getElementById('digit-bars');
-  const predEl = document.getElementById('digit-pred');
-  const W = canvas.width;
-  const H = canvas.height;
-  let drawing = false;
-  let last = null;
+(function toolAppWidget() {
+  const win = document.getElementById('ta-window');
+  if (!win) return;
+  const byId = id => document.getElementById(id);
+  const goBtn = byId('ta-go'), note = byId('ta-note');
+  const WEEKS = 3;
+  const STALE_YEAR = 2020;
+  const LIBRARY = {
+    volcanoes: [
+      { title: 'Rivers of Fire', pages: 412, added: 2025 },
+      { title: 'The Sleeping Mountain', pages: 268, added: 2011 },
+      { title: 'Volcano Field Notes', pages: 156, added: 2017 },
+    ],
+    sharks: [
+      { title: 'The Quiet Hunters', pages: 198, added: 2009 },
+      { title: 'Shark Atlas', pages: 344, added: 2025 },
+      { title: 'Teeth of the Deep', pages: 230, added: 2016 },
+    ],
+    space: [
+      { title: 'A Night Sky Diary', pages: 144, added: 2014 },
+      { title: 'Next Stop, Saturn', pages: 301, added: 2019 },
+      { title: 'Every Planet We Know', pages: 520, added: 2025 },
+    ],
+  };
+  const SYSTEM = 'You help students at Maple Street School find books.\n' +
+    'You have two tools:\n' +
+    '  search_catalog: lists the library\'s books on a topic\n' +
+    '  calculator: works out a piece of arithmetic\n' +
+    'To use one, reply with only a request, like\n' +
+    '  {"tool": "calculator", "expression": "2 + 2"}';
 
-  const SIZE = 28;
-  const normCanvas = document.createElement('canvas');
-  normCanvas.width = SIZE;
-  normCanvas.height = SIZE;
-  const normCtx = normCanvas.getContext('2d');
+  let topic = 'volcanoes', catalog = 'fresh', turns = [], trips = 0, toolRuns = 0, pending = null, finished = false;
 
-  function inkValue(data, i) {
-    return Math.max(data[i], data[i + 1], data[i + 2]);
-  }
+  const spaced = value => JSON.stringify(value).replace(/":/g, '": ').replace(/,"/g, ', "');
 
-  function vectorFrom(sourceCtx, width, height) {
-    const img = sourceCtx.getImageData(0, 0, width, height);
-    const data = img.data;
-    let minX = width, minY = height, maxX = -1, maxY = -1;
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const i = (y * width + x) * 4;
-        if (inkValue(data, i) > 80) {
-          minX = Math.min(minX, x);
-          minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x);
-          maxY = Math.max(maxY, y);
-        }
-      }
+  const TOOLS = {
+    search_catalog(request) {
+      const books = LIBRARY[request.topic].filter(b => catalog === 'fresh' || b.added <= STALE_YEAR);
+      return '[' + books.map(b => spaced({ title: b.title, pages: b.pages })).join(',\n ') + ']';
+    },
+    calculator(request) {
+      const sum = /^(\d+) \/ (\d+)$/.exec(request.expression);
+      return String(+sum[1] / +sum[2]);
+    },
+  };
+
+  // The stand-in for the model is handed the window and nothing else, the
+  // same rule a real model lives by: whatever it "knows" it has to read there.
+  function scriptedModel(windowTurns) {
+    const question = windowTurns.find(t => t.tag === 'user').text;
+    const results = windowTurns.filter(t => t.tag === 'tool').map(t => t.text);
+    const days = 7 * +/(\d+) weeks/.exec(question)[1];
+    if (results.length === 0) {
+      return { call: { tool: 'search_catalog', topic: /book about (\w+)/.exec(question)[1] } };
     }
-    if (maxX < 0) return null;
-
-    const bw = maxX - minX + 1;
-    const bh = maxY - minY + 1;
-    const scale = Math.min(20 / bw, 20 / bh);
-    const dw = Math.max(1, Math.round(bw * scale));
-    const dh = Math.max(1, Math.round(bh * scale));
-    const dx = Math.round((SIZE - dw) / 2);
-    const dy = Math.round((SIZE - dh) / 2);
-
-    normCtx.fillStyle = '#000';
-    normCtx.fillRect(0, 0, SIZE, SIZE);
-    normCtx.imageSmoothingEnabled = true;
-    normCtx.drawImage(canvasFromImageData(img), minX, minY, bw, bh, dx, dy, dw, dh);
-
-    const small = normCtx.getImageData(0, 0, SIZE, SIZE).data;
-    const vec = [];
-    let mag = 0;
-    for (let i = 0; i < small.length; i += 4) {
-      const v = inkValue(small, i) / 255;
-      vec.push(v);
-      mag += v * v;
+    const longest = JSON.parse(results[0]).reduce((a, b) => (b.pages > a.pages ? b : a));
+    if (results.length === 1) {
+      return { call: { tool: 'calculator', expression: `${longest.pages} / ${days}` } };
     }
-    mag = Math.sqrt(mag) || 1;
-    return vec.map(v => v / mag);
+    const perDay = Math.ceil(+results[1]);
+    return { answer: `The longest book about ${/book about (\w+)/.exec(question)[1]} in the catalog is ${longest.title}, at ${longest.pages} pages. ` +
+      `Read ${perDay} pages a day and you will finish it inside your ${days} days.` };
   }
 
-  function canvasFromImageData(img) {
-    const c = document.createElement('canvas');
-    c.width = img.width;
-    c.height = img.height;
-    c.getContext('2d').putImageData(img, 0, 0);
-    return c;
+  function add(tag, who, text) {
+    turns.push({ tag, who, text, fresh: true });
   }
 
-  function makeTemplate(digit, fontSize, xShift, yShift) {
-    const c = document.createElement('canvas');
-    c.width = W;
-    c.height = H;
-    const tctx = c.getContext('2d');
-    tctx.fillStyle = '#111827';
-    tctx.fillRect(0, 0, W, H);
-    tctx.fillStyle = '#f9fafb';
-    tctx.textAlign = 'center';
-    tctx.textBaseline = 'middle';
-    tctx.font = `900 ${fontSize}px Arial, sans-serif`;
-    tctx.fillText(String(digit), W / 2 + xShift, H / 2 + yShift);
-    return vectorFrom(tctx, W, H);
+  function render() {
+    win.innerHTML = '';
+    turns.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'fr-turn' + (t.fresh ? ' fr-new' : '');
+      row.dataset.who = t.who;
+      const tag = document.createElement('span');
+      tag.className = 'fr-tag';
+      tag.textContent = `<${t.tag}>`;
+      const body = document.createElement('p');
+      body.textContent = t.text;
+      row.append(tag, body);
+      win.appendChild(row);
+      t.fresh = false;
+    });
+    byId('ta-trips').textContent = trips;
+    byId('ta-tools').textContent = toolRuns;
+    byId('ta-lines').textContent = turns.length;
+    goBtn.disabled = finished;
+    goBtn.textContent = finished ? 'the loop is finished' : pending ? `run the tool: ${pending.tool}` : 'send the window to the model';
   }
 
-  const templates = [];
-  for (let digit = 0; digit <= 9; digit++) {
-    for (const fontSize of [205, 225, 245]) {
-      for (const xShift of [-10, 0, 10]) {
-        templates.push({ digit, vec: makeTemplate(digit, fontSize, xShift, 8) });
-      }
-    }
+  function say(text, wrong) {
+    note.textContent = text;
+    note.classList.toggle('ta-wrong', !!wrong);
   }
 
-  function clear() {
-    ctx.fillStyle = '#111827';
-    ctx.fillRect(0, 0, W, H);
-    renderScores();
+  function reset() {
+    turns = [];
+    trips = 0;
+    toolRuns = 0;
+    pending = null;
+    finished = false;
+    add('system', 'app', SYSTEM);
+    add('user', 'student', `I have ${WEEKS} weeks to read the longest book about ${topic} in our library. How many pages a day is that?`);
+    turns.forEach(t => { t.fresh = false; });
+    say('The window holds two things: the app\'s instructions and the student\'s question. Nothing has run yet. You are the app, so send the window to the model.');
+    render();
   }
 
-  function point(evt) {
-    const rect = canvas.getBoundingClientRect();
-    const p = evt.touches ? evt.touches[0] : evt;
-    return {
-      x: (p.clientX - rect.left) * (W / rect.width),
-      y: (p.clientY - rect.top) * (H / rect.height),
-    };
-  }
-
-  function drawLine(a, b) {
-    ctx.strokeStyle = '#f9fafb';
-    ctx.lineWidth = 26;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  }
-
-  function start(evt) {
-    evt.preventDefault();
-    drawing = true;
-    last = point(evt);
-  }
-  function move(evt) {
-    if (!drawing) return;
-    evt.preventDefault();
-    const p = point(evt);
-    drawLine(last, p);
-    last = p;
-    renderScores();
-  }
-  function end() {
-    drawing = false;
-    last = null;
-    renderScores();
-  }
-
-  function cosine(a, b) {
-    let s = 0;
-    for (let i = 0; i < a.length; i++) s += a[i] * b[i];
-    return s;
-  }
-
-  function renderScores() {
-    const vec = vectorFrom(ctx, W, H);
-    if (!vec) {
-      predEl.textContent = '?';
-      bars.innerHTML = '<em style="color: var(--muted); font-size: 14px;">Draw a digit to see guesses.</em>';
+  function runModel() {
+    const out = scriptedModel(turns);
+    trips++;
+    if (out.call) {
+      pending = out.call;
+      add('assistant', 'model', spaced(out.call));
+      say(trips === 1
+        ? 'The model did not answer. It wrote a request, in the format the instructions asked for. That is all a tool call is: text. The model cannot open the catalog. You can.'
+        : 'The model read the whole window again, picked the longest book out of your search result, and now wants a division done. It is asking instead of guessing.');
       return;
     }
-    const best = new Map();
-    for (const t of templates) {
-      const score = cosine(vec, t.vec);
-      best.set(t.digit, Math.max(best.get(t.digit) || 0, score));
+    finished = true;
+    add('assistant', 'model', out.answer);
+    const truth = LIBRARY[topic].reduce((a, b) => (b.pages > a.pages ? b : a));
+    if (catalog === 'stale') {
+      say(`The model did everything right and the answer is wrong. The library's longest book about ${topic} is ${truth.title} (${truth.pages} pages), added in ${truth.added}. ` +
+        'The 2020 copy of the catalog does not list it, and nothing in the window could have told the model so.', true);
+    } else {
+      say(`No request this time. Everything the model needed was in the window, so it wrote an answer, and the loop is over. It ran ${trips} times and never touched the catalog or the calculator. Now try the 2020 catalog.`);
     }
-    const raw = Array.from(best.entries());
-    const maxScore = Math.max(...raw.map(([,s]) => s));
-    const exp = raw.map(([d, s]) => [d, Math.exp((s - maxScore) * 18)]);
-    const total = exp.reduce((sum, [,v]) => sum + v, 0) || 1;
-    const probs = exp.map(([d, v]) => [d, v / total]).sort((a, b) => b[1] - a[1]);
-    predEl.textContent = probs[0][0];
-    bars.innerHTML = probs.slice(0, 5).map(([d, p]) => (
-      `<div class="bar-container"><span class="label">digit ${d}</span><div class="bar-track"><div class="bar" style="width:${p * 100}%;"></div></div><span class="pct">${p.toFixed(2)}</span></div>`
-    )).join('');
   }
 
-  function demoTwo() {
-    clear();
-    const pts = [
-      {x: 82, y: 80}, {x: 140, y: 42}, {x: 202, y: 72},
-      {x: 190, y: 122}, {x: 142, y: 160}, {x: 92, y: 212},
-      {x: 210, y: 214},
-    ];
-    for (let i = 1; i < pts.length; i++) drawLine(pts[i-1], pts[i]);
-    renderScores();
+  function runTool() {
+    const result = TOOLS[pending.tool](pending);
+    toolRuns++;
+    add('tool', 'app', result);
+    say(pending.tool === 'calculator'
+      ? 'Your browser really did that division just now, and you pasted the result into the window. Send it one more time.'
+      : 'You searched the catalog with ordinary code (no neural network needed) and pasted what came back into the window. The model has not seen it yet. Send the window again.');
+    pending = null;
   }
 
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove', move, { passive: false });
-  window.addEventListener('touchend', end);
-  document.getElementById('digit-clear').addEventListener('click', clear);
-  document.getElementById('digit-demo').addEventListener('click', demoTwo);
-  clear();
+  goBtn.addEventListener('click', () => {
+    if (finished) return;
+    const before = goBtn.getBoundingClientRect().top;
+    if (pending) runTool(); else runModel();
+    render();
+    // The window grows above the button on every press. Scrolling by the same
+    // amount keeps the button under the finger, so five presses need no aiming.
+    window.scrollBy({ top: goBtn.getBoundingClientRect().top - before, behavior: 'instant' });
+  });
+  byId('ta-reset').addEventListener('click', reset);
+
+  function wire(groupId, key, apply) {
+    const group = byId(groupId);
+    const options = [...group.querySelectorAll('.toggle')];
+    const pick = el => {
+      options.forEach(o => {
+        o.classList.toggle('on', o === el);
+        o.setAttribute('aria-pressed', o === el);
+      });
+      apply(el.dataset[key]);
+      reset();
+    };
+    options.forEach(el => {
+      el.addEventListener('click', () => pick(el));
+      el.addEventListener('keydown', ev => {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        pick(el);
+      });
+    });
+  }
+  wire('ta-topic', 'topic', v => { topic = v; });
+  wire('ta-catalog', 'catalog', v => { catalog = v; });
+  reset();
 })();
-
