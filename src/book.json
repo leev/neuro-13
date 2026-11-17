@@ -1,0 +1,78 @@
+{
+  "title": "Neuro 13",
+  "tagline": "How a neural network actually works",
+  "description": "A hands-on book for curious 13-year-olds (and their grown-ups). Train real neural networks in your browser, from a single neuron to models that read, write, see and draw.",
+  "url": "https://neuro-13.leev.net",
+  "parts": [
+    {
+      "id": "neuron", "title": "One neuron", "color": "#2563eb", "tint": "#dbeafe",
+      "blurb": "Meet the tiny machine everything else is built from, teach it a rule, then find the puzzle it can't solve.",
+      "chapters": [
+        {"slug": "basics", "title": "Tiny math map", "hook": "The handful of symbols this whole book is written in."},
+        {"slug": "intro", "title": "The big picture", "hook": "What a neural network is, before any detail."},
+        {"slug": "neuron", "title": "One tiny neuron", "hook": "Multiply, add, squish. Drag the sliders and watch it decide."},
+        {"slug": "training", "title": "Training the neuron", "hook": "Show it examples, nudge the weights, repeat."},
+        {"slug": "what-changes", "title": "What training actually changes", "hook": "A trained model is its numbers and nothing else."},
+        {"slug": "tables-dots", "title": "Tables, dots, and lines", "hook": "Why a neuron's decision is always a straight line."},
+        {"slug": "xor-fail", "title": "When one neuron isn't enough", "hook": "The puzzle that stalled AI research for years."},
+        {"slug": "hidden", "title": "Hidden neurons fix it", "hook": "Add a middle layer and the impossible becomes easy."},
+        {"slug": "recap-neuron", "title": "Checkpoint: one neuron", "hook": "What to remember, a mixed quiz, and your first build-it project."}
+      ]
+    },
+    {
+      "id": "learning", "title": "How networks learn", "color": "#0d9488", "tint": "#ccfbf1",
+      "blurb": "More answers, more layers, real data, and the difference between learning a rule and memorizing the homework.",
+      "chapters": [
+        {"slug": "multi", "title": "Picking from a list", "hook": "From yes/no to choosing one of many."},
+        {"slug": "activations", "title": "What does that \"squish\" actually do?", "hook": "Sigmoid, ReLU, and why the bend matters."},
+        {"slug": "meals", "title": "Meal guesser", "hook": "A network that has to combine clues."},
+        {"slug": "descent", "title": "How learning actually works", "hook": "Rolling downhill on the loss landscape."},
+        {"slug": "backprop", "title": "Backpropagation: passing the blame backwards", "hook": "The one algorithm that trains every network, stepped through with real numbers."},
+        {"slug": "real-data", "title": "Training on a real dataset", "hook": "150 real flowers and the four habits of honest training."},
+        {"slug": "overfitting", "title": "Learning vs. memorizing", "hook": "Watch a network ace the homework and fail the test."},
+        {"slug": "depth", "title": "Stacking hidden layers", "hook": "Why deep beats wide: the spiral showdown."},
+        {"slug": "scale", "title": "Scaling this up", "hook": "What changes between 9 weights and 9 billion."},
+        {"slug": "recap-learning", "title": "Checkpoint: learning", "hook": "What to remember, a mixed quiz, and a project with your own data."}
+      ]
+    },
+    {
+      "id": "language", "title": "Machines that read and write", "color": "#7c3aed", "tint": "#ede9fe",
+      "blurb": "Turn text into numbers, train a model that invents words, and see what a chatbot is really doing.",
+      "chapters": [
+        {"slug": "tokens", "title": "Tokens: turning text into numbers", "hook": "Build a tokenizer's dictionary one merge at a time."},
+        {"slug": "names", "title": "A language model you can train", "hook": "Teach a network to invent names, one letter at a time."},
+        {"slug": "attention", "title": "Attention: a fuzzy lookup", "hook": "Watch a network learn where to look."},
+        {"slug": "chatbots", "title": "How AI chatbots actually write", "hook": "Next-token prediction, sampling, and the training that makes it polite."},
+        {"slug": "decide", "title": "A model that decides instead of writes", "hook": "Train a decision model on 10,000 real headlines."},
+        {"slug": "mistakes", "title": "When models go wrong", "hook": "Made-up facts, skewed data, and how to judge a model honestly."},
+        {"slug": "recap-language", "title": "Checkpoint: language", "hook": "What to remember, a mixed quiz, and a classifier for your own messages."}
+      ]
+    },
+    {
+      "id": "seeing", "title": "Seeing, creating, playing", "color": "#ea580c", "tint": "#ffedd5",
+      "blurb": "Networks that read handwriting, turn noise into pictures, and learn a game by trial and error.",
+      "chapters": [
+        {"slug": "digits", "title": "Read my handwriting", "hook": "Train a real digit reader, then draw for it."},
+        {"slug": "convolution", "title": "How networks see", "hook": "Slide a tiny filter over a picture and watch edges light up."},
+        {"slug": "diffusion", "title": "Pictures from noise", "hook": "The trick behind AI image generators, small enough to watch."},
+        {"slug": "rl", "title": "Learning by trial and error", "hook": "No right answers given: just rewards. Watch a creature learn a maze."},
+        {"slug": "recap-seeing", "title": "Checkpoint: seeing and creating", "hook": "What to remember, a mixed quiz, and a project you can show off."}
+      ]
+    },
+    {
+      "id": "builder", "title": "Your turn", "color": "#db2777", "tint": "#fce7f3",
+      "blurb": "The tools professionals use, a lab to experiment in, a map of the frontier, and projects of your own.",
+      "chapters": [
+        {"slug": "pytorch", "title": "What the professionals use", "hook": "Build your own mini-PyTorch in 60 lines, then read the real thing."},
+        {"slug": "playground", "title": "The playground", "hook": "Pick the data, the layers and the knobs. Break it. Fix it."},
+        {"slug": "frontier", "title": "The frontier", "hook": "Reasoning models, tools, looking inside, and the story so far."},
+        {"slug": "projects", "title": "Build your own", "hook": "Three capstone projects, from an afternoon to a weekend."},
+        {"slug": "next", "title": "Where to go next", "hook": "The best videos, courses and books for after this one."}
+      ]
+    }
+  ],
+  "pages": [
+    {"slug": "certificate", "title": "Your certificate", "description": "Finished the book? Make it official."},
+    {"slug": "grown-ups", "title": "For parents and teachers", "description": "How to use this book with a young reader or a class."}
+  ]
+}

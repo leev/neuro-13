@@ -1,0 +1,129 @@
+<p>Let's teach our one neuron to decide "<strong>can I have screen time?</strong>"</p>
+<p>Rule: screen time is allowed if you practiced piano <strong>OR</strong> you finished your homework. Here are the examples we'll feed it:</p>
+<table>
+  <tr><th>piano done?</th><th>homework done?</th><th>screen time allowed?</th></tr>
+  <tr><td>0 (no)</td><td>0 (no)</td><td>0 (no)</td></tr>
+  <tr><td>1 (yes)</td><td>0 (no)</td><td>1 (yes)</td></tr>
+  <tr><td>0 (no)</td><td>1 (yes)</td><td>1 (yes)</td></tr>
+  <tr><td>1 (yes)</td><td>1 (yes)</td><td>1 (yes)</td></tr>
+</table>
+<p>The training loop is the same idea every time:</p>
+<ol>
+  <li>Start with random weights (the neuron has no clue)</li>
+  <li>Run all 4 examples through the neuron, see what it predicts</li>
+  <li>For each one, figure out how wrong it was</li>
+  <li>Nudge every weight a tiny bit in whichever direction would have made the answer slightly more right</li>
+  <li>Repeat 10,000 times</li>
+</ol>
+
+<h3>Watch one nudge happen, with real numbers</h3>
+<p>"Nudge every weight in the right direction" sounds like magic until you watch a single nudge happen. So let's do one, slowly, by hand.</p>
+<p>Say the neuron just started, with random numbers: weight 1 (piano) = <code>−0.5</code>, weight 2 (homework) = <code>0.2</code>, bias = <code>−0.1</code>. We show it the example <em>piano = 1, homework = 0, right answer = YES</em>:</p>
+<pre>total      = (−0.5 × 1) + (0.2 × 0) + (−0.1)  =  −0.6
+prediction = sigmoid(−0.6)                    ≈   0.35
+truth      = 1
+error      = 1 − 0.35                         =  +0.65   (too low!)</pre>
+<p>The prediction is too low, so we want the total to come out <em>bigger</em> next time. Go through the knobs one at a time:</p>
+<ul>
+  <li><strong>Weight 1 (piano):</strong> piano was ON (1), so this weight took part in the total. Prediction too low → nudge it <strong>UP</strong>. (It was −0.5, dragging the answer down — exactly the wrong job for it. The nudge starts fixing that.)</li>
+  <li><strong>Weight 2 (homework):</strong> homework was OFF (0), so this weight got multiplied by zero — it had <em>no effect at all</em> on this prediction. It gets <strong>no nudge</strong>. You can't blame a weight that wasn't involved.</li>
+  <li><strong>Bias:</strong> the bias is always involved (it gets added every single time, like an input that's stuck at 1). Prediction too low → nudge it <strong>UP</strong>.</li>
+</ul>
+<p>And if the prediction had been too <em>high</em>? Same logic, flipped: every weight whose input was on gets nudged <strong>DOWN</strong>. That's the whole secret. The recipe for one weight is just:</p>
+<pre>nudge = small step × error × that weight's input</pre>
+<p>The <strong>error</strong> sets the direction (too low → up, too high → down). The <strong>input</strong> decides who participates (an input of 0 wipes its weight's nudge out). And the <strong>small step</strong> keeps each change tiny, so no single example can yank the network around. The real scripts in this book multiply in one extra factor — how "squishy" sigmoid is at the current value, which {{ch:descent}} explains — but the direction logic is exactly what you just did.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Do one nudge yourself</h3>
+  <p>This is the same neuron, starting with the same numbers as above. Pick a training example, read the error, then press "nudge" and watch each weight move — or refuse to move — for exactly the reasons listed. Keep nudging (and switch examples between nudges, which is what real training does) and watch all four predictions crawl toward the truth. Keep an eye on the dark panel below the buttons too: that's the model itself — the actual data structure the computer stores — being rewritten live.</p>
+  <div class="toggle-row" id="nd-picker" style="font-size: 13px;">
+    <div class="toggle" data-ex="0">piano=0, homework=0 → NO</div>
+    <div class="toggle on" data-ex="1">piano=1, homework=0 → YES</div>
+    <div class="toggle" data-ex="2">piano=0, homework=1 → YES</div>
+    <div class="toggle" data-ex="3">piano=1, homework=1 → YES</div>
+  </div>
+  <div class="math-panel">
+    <h4>What the neuron says right now</h4>
+    <div id="nd-math" class="prediction-line"></div>
+  </div>
+  <div class="math-panel">
+    <h4>The nudge this example asks for</h4>
+    <div id="nd-weights" class="prediction-line"></div>
+  </div>
+  <div style="margin-top: 12px;">
+    <button id="nd-nudge">nudge the weights</button>
+    <button id="nd-cycle">nudge once on each example</button>
+    <button class="secondary" id="nd-reset">start over</button>
+  </div>
+  <div class="math-panel">
+    <h4>The model itself, as the computer stores it</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">This is the <em>entire</em> model — three numbers in a data structure. Every nudge rewrites it in place; freshly changed numbers light up. When someone says "I downloaded a model," they mean a file holding a much, much longer list like this.</p>
+    <pre class="model-dump" id="nd-model"></pre>
+  </div>
+  <div class="prediction-line" id="nd-preds" style="margin-top: 14px;"></div>
+  <div class="stat-row">
+    <span>nudges so far: <strong id="nd-count">0</strong></span>
+    <span>w1: <strong id="nd-w1">-0.50</strong></span>
+    <span>w2: <strong id="nd-w2">0.20</strong></span>
+    <span>bias: <strong id="nd-b">-0.10</strong></span>
+  </div>
+</div>
+
+<p>The trainer below does exactly what you just did — it just applies the nudge for all four examples at once, then repeats thousands of times.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train the neuron yourself</h3>
+  <p>Press "step once" to do a single round of training. Or "train 1000" to fast-forward. Watch the predictions on each of the four examples crawl toward the right answer.</p>
+  <div>
+    <button id="t-step">step once</button>
+    <button id="t-fast">train 1,000 steps</button>
+    <button class="secondary" id="t-reset">reset weights</button>
+  </div>
+  <div class="prediction-line" id="t-predictions" style="margin-top: 14px;"></div>
+  <div class="math-panel">
+    <h4>The model being rewritten</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Training never touches the four examples — it only rewrites these three stored numbers, over and over, until they encode the rule.</p>
+    <pre class="model-dump" id="t-model"></pre>
+  </div>
+  <div class="stat-row">
+    <span>epoch: <strong id="t-epoch">0</strong></span>
+    <span>w1: <strong id="t-w1">?</strong></span>
+    <span>w2: <strong id="t-w2">?</strong></span>
+    <span>bias: <strong id="t-b">?</strong></span>
+  </div>
+</div>
+
+<p>After a few thousand nudges, the neuron has learned the rule. Nobody told it "if piano OR homework is done then yes". It figured that out by being slightly less wrong over and over.</p>
+<p>That's the trick. Everything from here on is "do this same thing, but much bigger." If you want a parallel walkthrough where every step is animated, the second video in <a href="https://www.youtube.com/watch?v=IHZwWFHWa-w" target="_blank" rel="noopener">3Blue1Brown's neural networks series</a> covers exactly this — gradient descent on a single neuron, with pictures.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Draw the line yourself</h3>
+  <p>The neuron's whole job is to draw one straight line that puts <span style="color: var(--accent); font-weight: 600;">YES dots</span> on one side and <span style="color: var(--bad); font-weight: 600;">NO dots</span> on the other. Drag the sliders. The dashed line is the neuron's current decision boundary. The number tells you how many of the 4 dots are on the right side.</p>
+  <p>Try to get all 4 correct. Hint: weight 1 = <code>1.0</code>, weight 2 = <code>1.0</code>, bias = <code>-0.5</code> is one good answer.</p>
+  <div id="sep-or"></div>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the actual script — in your browser</h3>
+  <p>This is <code>neuro1.py</code> from the folder, real Python with real numpy. First click downloads Python (takes a few seconds). Edit anything you like, then click run.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro1.py</span>
+      <span class="code-status" id="py-status-1">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-1" spellcheck="false" rows="20" data-src="neuro1.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="1">▶ run</button>
+    <button class="secondary" data-py-reset="1">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-1"><span class="dim">(click "run" to execute)</span></div>
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Edit the code so screen time is allowed only when both piano and homework are done. Then predict what the weights should do.</p>
+</div>

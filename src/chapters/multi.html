@@ -1,0 +1,68 @@
+<p>So far the neuron has just answered yes or no. What if the question is "<strong>which snack should I grab?</strong>" with several options?</p>
+
+<table>
+  <tr><th>hungry?</th><th>after school?</th><th>weekend?</th><th>snack</th></tr>
+  <tr><td>0</td><td>0</td><td>0</td><td>fruit</td></tr>
+  <tr><td>1</td><td>0</td><td>0</td><td>fruit</td></tr>
+  <tr><td>0</td><td>1</td><td>0</td><td>chips</td></tr>
+  <tr><td>1</td><td>1</td><td>0</td><td>chips</td></tr>
+  <tr><td>0</td><td>0</td><td>1</td><td>cookie</td></tr>
+  <tr><td>1</td><td>0</td><td>1</td><td>cookie</td></tr>
+  <tr><td>0</td><td>1</td><td>1</td><td>cookie</td></tr>
+  <tr><td>1</td><td>1</td><td>1</td><td>cookie</td></tr>
+</table>
+
+<p>Three options now: <strong>fruit</strong>, <strong>chips</strong>, <strong>cookie</strong>. The fix is small: have <strong>one output neuron per option</strong>. Each outputs a score for its option. A function called <strong>softmax</strong> turns the scores into probabilities that always add up to 1.</p>
+
+<p>The math is small enough you could do it on paper. For three scores <code>z₁, z₂, z₃</code>, softmax is:</p>
+
+<pre>softmax_i = e^(z_i) / (e^(z_1) + e^(z_2) + e^(z_3))</pre>
+
+<p>(Haven't met <code>e</code> yet? It's just a famous fixed number, about <strong>2.718</strong> — math's favorite constant after π. And <code>e^z</code> means "e raised to the power z": <code>e^2 = e × e ≈ 7.4</code>, <code>e^0 = 1</code>, and e to a negative power is a small positive fraction. Only two things matter here: <code>e^z</code> is <em>always positive</em>, and it <em>grows fast</em> as z grows.)</p>
+<p>The <code>e^</code> part makes everything positive and exaggerates the differences (a bigger score becomes <em>way</em> more likely than a slightly smaller one). The dividing makes them add up to 1, so they're proper probabilities. Quick example:</p>
+
+<pre>softmax([2.0, 1.0, 0.1])  →  [0.66, 0.24, 0.10]</pre>
+
+<p>The model might output <code>[0.10, 0.85, 0.05]</code> meaning "10% chance fruit, 85% chance chips, 5% chance cookie". You pick the highest one (chips).</p>
+<p>The labels we feed in for training look like <code>[1,0,0]</code> for fruit, <code>[0,1,0]</code> for chips, <code>[0,0,1]</code> for cookie. Exactly one slot is 1 (the right answer) and the rest are 0. That's called <strong>one-hot encoding</strong> — we'll meet it again in {{ch:meals}}'s meal guesser and use the name more often.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>The trained snack picker</h3>
+  <p>This network was actually trained for you when this page loaded. Toggle the inputs and watch the probabilities update.</p>
+  <div class="toggle-row">
+    <div class="toggle" id="s-hungry">hungry</div>
+    <div class="toggle" id="s-school">after school</div>
+    <div class="toggle" id="s-weekend">weekend</div>
+  </div>
+  <div class="bar-container"><span class="label">🍎 fruit</span><div class="bar-track"><div class="bar" id="s-fruit-bar" style="background:#22c55e; width:80%"></div></div><span class="pct" id="s-fruit-pct">0.80</span></div>
+  <div class="bar-container"><span class="label">🥔 chips</span><div class="bar-track"><div class="bar" id="s-chips-bar" style="background:#eab308; width:15%"></div></div><span class="pct" id="s-chips-pct">0.15</span></div>
+  <div class="bar-container"><span class="label">🍪 cookie</span><div class="bar-track"><div class="bar" id="s-cookie-bar" style="background:#ec4899; width:5%"></div></div><span class="pct" id="s-cookie-pct">0.05</span></div>
+  <div class="stat-row">
+    <span>recommended: <strong id="s-pick">fruit</strong></span>
+  </div>
+</div>
+
+<p>This same pattern — output one neuron per class, softmax to get probabilities — is how a network can recognize handwritten digits (10 classes: 0 through 9), pick a song to recommend, or pick the next word in a sentence (about <strong>100,000</strong> possible classes — one per possible word/word-piece). Same idea, just more output neurons. If you want the deeper "why" of softmax (where it comes from in statistics), Wikipedia's <a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener">softmax function</a> page is a solid first stop.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the real multi-class snack picker</h3>
+  <p>This is <code>neuro4.py</code>. 3 inputs, 6 hidden neurons, 3 output classes with softmax. Trains in a couple of seconds and prints a table with the right snack for each combination.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro4.py</span>
+      <span class="code-status" id="py-status-4">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-4" spellcheck="false" rows="28" data-src="neuro4.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="4">▶ run</button>
+    <button class="secondary" data-py-reset="4">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-4"><span class="dim">(click "run" to execute)</span></div>
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Add a fourth snack class in your notebook: smoothie. What new output neuron and labels would the network need?</p>
+</div>

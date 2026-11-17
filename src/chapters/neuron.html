@@ -1,0 +1,85 @@
+<p>Imagine a little machine. It has some inputs and one output. Each input is a number — could be the brightness of a pixel, or "did I practice piano? 1 for yes, 0 for no".</p>
+<p>The machine does three things in order:</p>
+<ol>
+  <li>Multiply each input by its own "importance number" (a <strong>weight</strong>)</li>
+  <li>Add them all together (plus one extra fudge factor called a <strong>bias</strong>)</li>
+  <li>Squish the answer into a number between 0 and 1 using a curve called <strong>sigmoid</strong></li>
+</ol>
+
+<svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
+  <line x1="20" y1="60" x2="180" y2="100" stroke="#9ca3af" stroke-width="2"/>
+  <line x1="20" y1="140" x2="180" y2="100" stroke="#9ca3af" stroke-width="2"/>
+  <line x1="100" y1="180" x2="180" y2="100" stroke="#9ca3af" stroke-width="2"/>
+  <text x="60" y="78" font-size="13" fill="#374151">w₁</text>
+  <text x="60" y="135" font-size="13" fill="#374151">w₂</text>
+  <text x="135" y="172" font-size="13" fill="#374151">bias</text>
+  <text x="10" y="55" font-size="14" fill="#1f2937">input 1</text>
+  <text x="10" y="155" font-size="14" fill="#1f2937">input 2</text>
+  <circle cx="200" cy="100" r="22" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="194" y="106" font-size="20" fill="#2563eb">Σ</text>
+  <line x1="222" y1="100" x2="260" y2="100" stroke="#9ca3af" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="265" y="80" width="80" height="40" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="6"/>
+  <text x="278" y="106" font-size="14" fill="#2563eb">sigmoid</text>
+  <line x1="345" y1="100" x2="420" y2="100" stroke="#9ca3af" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="375" y="92" font-size="13" fill="#374151">output</text>
+  <text x="375" y="118" font-size="11" fill="#6b7280">(0 to 1)</text>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L6,3 z" fill="#9ca3af"/>
+    </marker>
+  </defs>
+</svg>
+
+<p>That output between 0 and 1 is how strongly the neuron "fires." It's basically how confident the neuron is that the answer is yes. That's one <strong>neuron</strong>. Yes, that's the whole thing.</p>
+
+<h3>What does sigmoid actually look like?</h3>
+<p>Sigmoid is just a curve that turns "any number" into "a number between 0 and 1". Feed it a very negative number and out comes nearly 0. Feed it a very positive number and out comes nearly 1. Feed it exactly 0 and out comes exactly <strong>0.5</strong> — the perfectly-unsure middle.</p>
+
+<svg viewBox="0 0 460 215" xmlns="http://www.w3.org/2000/svg" aria-label="the sigmoid curve: an S shape from 0 up to 1">
+  <line x1="40" y1="170" x2="420" y2="170" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="40" y1="30" x2="420" y2="30" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="230" y1="20" x2="230" y2="180" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="40" y1="100" x2="420" y2="100" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <polyline fill="none" stroke="#2563eb" stroke-width="3" points="40,169.7 71.7,169.1 103.3,167.5 135,163.4 166.7,153.3 182.5,144.5 198.3,132.3 214.2,117.1 230,100 245.8,82.9 261.7,67.7 277.5,55.5 293.3,46.7 325,36.6 356.7,32.5 388.3,30.9 420,30.3"/>
+  <circle cx="103.3" cy="167.5" r="5" fill="#dc2626"/>
+  <circle cx="230" cy="100" r="5" fill="#dc2626"/>
+  <circle cx="356.7" cy="32.5" r="5" fill="#dc2626"/>
+  <text x="103" y="190" text-anchor="middle" font-size="12" fill="#374151">−4 → 0.02</text>
+  <text x="244" y="92" font-size="12" fill="#374151">0 → 0.5</text>
+  <text x="356" y="22" text-anchor="middle" font-size="12" fill="#374151">+4 → 0.98</text>
+  <text x="426" y="174" font-size="11" fill="#6b7280">0</text>
+  <text x="426" y="34" font-size="11" fill="#6b7280">1</text>
+  <text x="426" y="104" font-size="11" fill="#ea580c">0.5</text>
+  <text x="230" y="210" text-anchor="middle" font-size="12" fill="#6b7280">what goes in (the weighted total)</text>
+</svg>
+
+<p>That middle point clears up something from {{ch:basics}}. There, the neuron's question was "is the total bigger than <strong>0</strong>?" In this chapter, the decision is "is the output bigger than <strong>0.5</strong>?" Those are the <em>same question</em>, because sigmoid turns a total of exactly 0 into an output of exactly 0.5 — a total above 0 always lands above 0.5, and a total below 0 always lands below it. Two costumes, one rule.</p>
+<p>For the playground below, we'll use two simple yes/no inputs: <strong>piano done?</strong> and <strong>homework done?</strong> A value of <code>1</code> means yes, and <code>0</code> means no. The neuron is pretending to answer: <em>"should screen time be allowed?"</em> {{Ch:training}} will teach it that rule for real; here we are just moving the parts by hand so you can see what a neuron does.</p>
+<p>So what does the bias actually <em>do</em>? The weights decide how much each input matters; the bias is the neuron's built-in <em>lean</em> — how eager it is to fire before any input arrives. Picture it as the neuron's mood. A big positive bias is an optimist: it leans YES and needs the inputs to talk it out of firing. A negative bias is a skeptic: it leans NO and needs the inputs to push it over the line. In fact, if every input were 0, the bias is the <em>only</em> thing left, so it alone decides which way the neuron leans. That's why setting the bias to <code>-0.5</code> below turns the neuron into an OR gate: it starts off leaning NO, and it takes a high input to drag it past the 0.5 line.</p>
+<p>One more thing the sliders below let you do: make a weight <strong>negative</strong>. A positive weight means "this input is evidence <em>for</em> YES." A negative weight means "this input argues <em>against</em> YES" — when that input switches on, it drags the total <em>down</em>, toward NO. The screen-time rule doesn't need any negative weights, but keep the idea in your pocket: it becomes the secret ingredient when we hit the XOR puzzle in {{ch:xor-fail}}.</p>
+<p style="font-size: 14px; color: var(--muted);">Why <em>sigmoid</em> and not some other shape? Hold that question — we'll meet sigmoid's modern replacement (ReLU) in a few chapters and show why the choice of "squisher" actually matters. If you want the full zoo right now, Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page lists every common one.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Play with a neuron</h3>
+  <p>Drag the sliders. The output bar reacts live. Try setting both weights to <code>+1</code> and the bias to <code>-0.5</code> — now the neuron acts like an "OR" gate. Try setting them all to <code>0</code> — the neuron gives up and just outputs 0.5.</p>
+  <div class="slider-row"><label>input 1 (piano done)</label><input type="range" id="n-x1" min="0" max="1" step="0.01" value="1"><span class="value" id="n-x1-v">1.00</span></div>
+  <div class="slider-row"><label>input 2 (homework done)</label><input type="range" id="n-x2" min="0" max="1" step="0.01" value="0"><span class="value" id="n-x2-v">0.00</span></div>
+  <div class="slider-row"><label>weight 1</label><input type="range" id="n-w1" min="-3" max="3" step="0.01" value="1"><span class="value" id="n-w1-v">1.00</span></div>
+  <div class="slider-row"><label>weight 2</label><input type="range" id="n-w2" min="-3" max="3" step="0.01" value="1"><span class="value" id="n-w2-v">1.00</span></div>
+  <div class="slider-row"><label>bias</label><input type="range" id="n-b" min="-3" max="3" step="0.01" value="-0.5"><span class="value" id="n-b-v">-0.50</span></div>
+  <svg id="n-viz" viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg" style="background: #f9fafb; border-radius: 8px; margin-top: 16px;"></svg>
+  <div class="bar-container" style="margin-top: 16px;">
+    <span class="label">output:</span>
+    <div class="bar-track"><div class="bar" id="n-out-bar" style="width: 62%;"></div></div>
+    <span class="pct" id="n-out-pct">0.62</span>
+  </div>
+  <div class="stat-row">
+    <span>weighted sum: <strong id="n-z">0.50</strong></span>
+    <span>decision: <strong id="n-decision">YES</strong></span>
+  </div>
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Make the neuron behave like AND instead of OR. Hint: both inputs should need to be high before the output crosses 0.5.</p>
+</div>

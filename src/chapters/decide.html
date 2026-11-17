@@ -1,0 +1,137 @@
+<p>The chatbot in {{ch:chatbots}} <em>writes</em>. But a huge amount of software doesn't want an essay. It wants a <strong>decision</strong>: is this email spam? Which team should get this support ticket? How urgent is this message, from 0 to 1? Asking a chatbot those questions is like asking a novelist to tick a box. You get a paragraph back, and then your program has to dig the answer out of it.</p>
+<p>In 2026 a new kind of model showed up built for exactly this job. The companies making them call them <strong>System One models</strong>. The name is borrowed from the psychologist Daniel Kahneman, who described two ways people think: System 1 is the fast gut reaction ("that's a dog"), System 2 is the slow, careful working-out ("what's 17 × 24?"). The first two well-known ones are <a href="https://geotoolbox.ai/blog/what-is-jev-ai" target="_blank" rel="noopener"><strong>Jev</strong></a>, from a company called TypeSafe AI (September 2026), and <a href="https://betterstack.com/community/guides/ai/jev-vs-clef-decision-model/" target="_blank" rel="noopener"><strong>Clef</strong></a>, from Cloudflare (October 2026).</p>
+<p>You don't chat with a System One model. You hand it some text plus a list of <em>typed questions</em>, and it hands back numbers. There are three kinds of question:</p>
+<table>
+  <tr><th>Question type</th><th>Example</th><th>What comes back</th></tr>
+  <tr><td><strong>yes / no</strong></td><td>Is this spam?</td><td><code>{"spam": 0.88}</code></td></tr>
+  <tr><td><strong>choice</strong></td><td>Which topic: world, sports, business or scitech?</td><td><code>{"choice": "sports", "confidence": 0.97}</code></td></tr>
+  <tr><td><strong>score</strong></td><td>How urgent is this, 0 to 1?</td><td><code>{"urgency": 0.31}</code></td></tr>
+</table>
+<p>Compare that with how {{ch:chatbots}} described a chatbot:</p>
+<ul>
+  <li><strong>No writing loop.</strong> A chatbot runs its whole network once per token, over and over, until the story is finished. A decision model runs <em>once</em> and it's done. That's most of why it is so much faster and cheaper.</li>
+  <li><strong>It can't ramble.</strong> Every possible answer is listed in the question. The model can be <em>wrong</em>, but it can't wander off and invent something that wasn't on the list.</li>
+  <li><strong>The doubt is part of the answer.</strong> You don't get "spam". You get "88% spam", and your program decides what to do with an 88.</li>
+  <li><strong>It can't do anything else.</strong> No stories, no code, no explanations. It is a box-ticker, and proud of it.</li>
+</ul>
+
+<h3>Jev vs. Clef</h3>
+<table>
+  <tr><th></th><th>Jev</th><th>Clef</th></tr>
+  <tr><td>Reads</td><td>text only</td><td>text and pictures</td></tr>
+  <tr><td>Can you download the weights?</td><td>no — you rent it over the internet</td><td>yes — the weights are public, so you can run it on your own computers</td></tr>
+  <tr><td>Size</td><td>secret</td><td>27 billion weights, made by re-training an existing chatbot-style model</td></tr>
+  <tr><td>Speed and price</td><td>faster and cheaper</td><td>slower and pricier</td></tr>
+</table>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: these models are brand new, and most of what's known comes from the companies themselves and from early reviewers, not from independent scientists. Treat the details as "reported", not "proven".</p>
+
+<h3>Let's build one</h3>
+<p>Here's the good news: you already know every part. A decision model is <strong>{{ch:multi}}'s snack picker, fed by {{ch:tokens}}'s lookup tables</strong>. We'll train one on <strong>10,000 real news headlines</strong> stored in a plain file called <code>headlines.csv</code> — one news story per row (its headline plus the first sentence or two), each labelled with one of four topics (world, sports, business, scitech). The headlines come from a famous research collection called AG News, gathered in 2004.</p>
+<p>The whole pipeline, start to finish:</p>
+<ol>
+  <li><strong>Chop the headline into words</strong> and look each one up in a dictionary to get its id number. The dictionary is built from the training headlines: any word seen at least 3 times gets an id.</li>
+  <li><strong>Each id grabs its row</strong> of the embedding table — 16 learned numbers per word.</li>
+  <li><strong>Average the rows</strong> into a single list of 16 numbers. That's the headline's "fingerprint".</li>
+  <li><strong>One layer turns 16 numbers into 4 scores</strong>, one per topic. Softmax turns the scores into probabilities. Done.</li>
+</ol>
+<p>So is a token "just a dictionary word turned into a number"? In <em>this</em> model, yes, exactly — and you're about to see why real models don't do it that way. Our dictionary has about 8,750 words. Type a word that isn't in it and the model simply can't see it. That's the problem {{ch:tokens}}'s word-<em>pieces</em> solve: with pieces, nothing is ever missing.</p>
+<p>The other thing to hold on to: the id number itself means nothing. Word 3,365 isn't "bigger" than word 483. The id is only a row number. All the meaning lives in the 16 numbers in that row — and those start out random and get nudged into place by the same training you've used since {{ch:training}}.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train a decision model on 10,000 headlines</h3>
+  <p>Press the button. Your browser downloads the headlines (about 2 MB), builds the dictionary, and trains the model right here: 8,000 headlines to learn from, 2,000 held back for an honest test. Nothing is pre-baked.</p>
+  <div>
+    <button id="dm-train">load 10,000 headlines &amp; train</button>
+  </div>
+  <div class="stat-row">
+    <span>epoch: <strong id="dm-epoch">0</strong> / 15</span>
+    <span>train accuracy: <strong id="dm-train-acc">?</strong></span>
+    <span>test accuracy: <strong id="dm-test-acc">?</strong></span>
+    <span>dictionary: <strong id="dm-vocab">?</strong> words</span>
+    <span>stored numbers: <strong id="dm-params">?</strong></span>
+  </div>
+  <canvas id="dm-curve" width="600" height="190" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border);"></canvas>
+  <p style="font-size: 13px; color: var(--muted);"><span style="color: var(--accent); font-weight: 600;">Blue</span> = accuracy on the headlines it trains on. <span style="color: var(--warn); font-weight: 600;">Orange</span> = accuracy on the 2,000 it has never seen. The gap between the lines is <strong>overfitting</strong>: the part it memorized instead of learned.</p>
+
+  <div class="math-panel">
+    <h4>Ask it something</h4>
+    <input id="dm-input" type="text" value="Striker scores twice as United win the cup final" autocomplete="off" spellcheck="false" disabled style="width: 100%; padding: 10px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+    <div style="margin-top: 8px;" id="dm-examples">
+      <button class="secondary" data-text="New phone chip makes laptops faster">phone chip</button>
+      <button class="secondary" data-text="Oil prices fall as markets slide">oil prices</button>
+      <button class="secondary" data-text="President meets prime minister for peace talks">peace talks</button>
+      <button class="secondary" data-text="Apple shares jump after record iPod sales">tricky one</button>
+      <button class="secondary" data-text="My dog ate my homework">dog ate homework</button>
+    </div>
+    <div class="token-row" id="dm-pills"></div>
+    <div class="toggle-row" id="dm-question" style="font-size: 13px;">
+      <div class="toggle on" data-q="choice">choice: which topic?</div>
+      <div class="toggle" data-q="world">yes/no: is it world news?</div>
+      <div class="toggle" data-q="sports">yes/no: is it sports?</div>
+      <div class="toggle" data-q="business">yes/no: is it business?</div>
+      <div class="toggle" data-q="scitech">yes/no: is it scitech?</div>
+    </div>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">The model's entire reply:</p>
+    <pre class="model-dump" id="dm-json">(train the model first)</pre>
+    <div id="dm-bars"></div>
+  </div>
+
+  <div class="math-panel">
+    <h4>Should you believe its confidence?</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">We split the 2,000 test headlines into four groups by how sure the model said it was, then checked how often each group was actually right. If "90% sure" really means right about 9 times in 10, the model is <strong>calibrated</strong>.</p>
+    <div id="dm-calib"><span style="font-size: 13px; color: var(--muted);">(train the model first)</span></div>
+  </div>
+
+  <div class="math-panel">
+    <h4>You're the boss: set the "sure enough" line</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Real programs don't act on every answer. They pick a line: above it, the computer decides alone; below it, a human takes a look.</p>
+    <div class="slider-row"><label>act only when at least</label><input type="range" id="dm-thresh" min="25" max="99" step="1" value="70" disabled><span class="value" id="dm-thresh-v">70%</span></div>
+    <div class="stat-row">
+      <span>computer decides: <strong id="dm-auto">?</strong></span>
+      <span>and gets right: <strong id="dm-auto-acc">?</strong></span>
+      <span>sent to a human: <strong id="dm-human">?</strong></span>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>Watch the two lines on the chart again. At the start the model is barely better than 25% — pure guessing, one in four. Then the embedding rows start to carry meaning and both lines take off. By the end it gets roughly 82 out of 100 unseen headlines right, using about 140,000 weights. Clef has 27 <em>billion</em>. Same idea, about two hundred thousand times bigger.</p>
+<p>Three things worth poking at:</p>
+<ul>
+  <li><strong>The grey pills.</strong> Words the dictionary has never seen are invisible to the model. Try a headline full of modern words — <em>TikTok</em>, <em>ChatGPT</em>, <em>Fortnite</em>. The training headlines are from 2004, so the model has never heard of any of them. A model only knows the world its data showed it.</li>
+  <li><strong>"My dog ate my homework."</strong> None of the four topics fits. Sometimes the model shrugs and gives a low confidence, which is the right thing to do. Sometimes it's confidently wrong. Press "train again from scratch" a few times and watch the answer change — each run starts from different random weights. The lesson: the calibration bars only hold for headlines <em>like the ones it was tested on</em>. Show a model something unlike anything in its data and its confidence stops meaning much.</li>
+  <li><strong>The "sure enough" slider.</strong> Slide it up: the computer handles fewer headlines but makes fewer mistakes. Slide it down: it handles more and gets more wrong. There's no correct setting. A spam filter can afford mistakes; a hospital can't. Choosing the line is a human's job.</li>
+</ul>
+
+<h3>What our toy can't do</h3>
+<p>Our model shares the <em>shape</em> of a System One answer — typed, one pass, with a probability — but it's a long way from Jev or Clef:</p>
+<ul>
+  <li><strong>Its questions are baked in.</strong> Ours can only ever answer "which of these four topics?" because that's what it was trained on. The real ones read your question fresh each time, so you can ask about spam today and urgency tomorrow without re-training.</li>
+  <li><strong>It ignores word order.</strong> We <em>average</em> the word rows, so "dog bites man" and "man bites dog" look identical to it. Real models keep the order, using the attention from {{ch:attention}}.</li>
+  <li><strong>It only knows four boxes.</strong> Everything in the universe has to be world, sports, business or scitech. It will file your homework excuse under one of them.</li>
+</ul>
+<p>None of that changes the big idea. A chatbot and a decision model are the same kind of machine pointed at different jobs: one predicts the next token, again and again; the other predicts the answer, once.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the decision model</h3>
+  <p>This is <code>neuro10.py</code>: the same model as the widget above, in about 150 lines of numpy. It reads <code>headlines.csv</code>, trains, checks its own calibration, makes some decisions, and finishes by listing which words ended up with similar embedding rows — nobody told it that <em>football</em> belongs near <em>league</em>.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro10.py</span>
+      <span class="code-status" id="py-status-10">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-10" spellcheck="false" rows="30" data-src="neuro10.py" data-files="headlines.csv"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="10">▶ run</button>
+    <button class="secondary" data-py-reset="10">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-10"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Change <code>LR = 1.0</code> to <code>LR = 4.0</code> and run it again. Training accuracy climbs faster — but look at the test accuracy and at the "how honest is its confidence?" table. What happened to the model's honesty? Then try <code>EMBED = 2</code>: how well can it do with only two numbers per word?</p>
+</div>

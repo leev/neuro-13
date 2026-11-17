@@ -1,0 +1,71 @@
+<p>You've been hearing about <strong>sigmoid</strong> — the function that squishes any number into the range 0-1. Time to actually look at what it does, and meet its modern replacement, <strong>ReLU</strong>.</p>
+
+<p>Here's what these functions look like when you plot them on graph paper. The horizontal axis is what goes INTO the neuron (the weighted sum). The vertical axis is what comes OUT.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Drag the dot. Watch the curve.</h3>
+  <p>Slide the input left/right. The <span style="color: var(--bad); font-weight: 600;">red dot</span> is where the neuron sits right now. The <span style="color: #f97316; font-weight: 600;">orange dashed line</span> is the slope at that exact point — the <strong>derivative</strong>.</p>
+  <div class="toggle-row">
+    <div class="toggle on" data-act="sigmoid">sigmoid</div>
+    <div class="toggle" data-act="relu">ReLU</div>
+  </div>
+  <svg id="act-plot" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" style="background: #f9fafb; border-radius: 8px;"></svg>
+  <div class="slider-row">
+    <label>input</label>
+    <input type="range" id="act-x" min="-6" max="6" step="0.01" value="0">
+    <span class="value" id="act-x-v">0.00</span>
+  </div>
+  <div class="stat-row">
+    <span>output (y): <strong id="act-y">0.50</strong></span>
+    <span>slope (derivative): <strong id="act-d">0.25</strong></span>
+  </div>
+</div>
+
+<h3>What does the derivative tell us?</h3>
+<p>The derivative is the <strong>slope of the curve at that point</strong>. Why this matters: during training, the network uses the slope to figure out which way to nudge the weights.</p>
+<ul>
+  <li><strong>Steep slope</strong> = "big push, learn fast here"</li>
+  <li><strong>Flat slope (close to 0)</strong> = "stuck, weights barely move"</li>
+</ul>
+
+<p>Look at sigmoid's slope by dragging the slider:</p>
+<ul>
+  <li>At <code>x = 0</code>, slope is <strong>0.25</strong> — the biggest it ever gets. The neuron is most "unsure" here and learns fastest.</li>
+  <li>At <code>x = +5</code> or <code>x = −5</code>, slope is <strong>almost zero</strong>. The neuron is super confident — learning has basically stopped.</li>
+</ul>
+
+<h3>Now switch to ReLU and compare</h3>
+<p>Toggle "ReLU" above. The curve becomes a straight line: zero below x=0, then a 45° ramp upward. Its slope is either <strong>exactly 1</strong> (positive input) or <strong>exactly 0</strong> (negative input). No squishing. No flat tails.</p>
+
+<h3>Why we replaced sigmoid in deep networks</h3>
+<p>The slope of sigmoid is <em>at best</em> 0.25, usually way less. When you stack 80 layers of sigmoid, backpropagation multiplies all the slopes together as the error travels backward. Picture it:</p>
+
+<pre>0.25 × 0.25 × 0.25 × ... (80 times) ≈ 0.0000000... (about 10⁻⁴⁹)</pre>
+
+<p>That's a 1 with 49 zeros in front of it. Smaller than the number of atoms in a teaspoon of water. The signal vanishes long before it reaches the early layers. Those layers stop learning. This is the famous <a href="https://en.wikipedia.org/wiki/Vanishing_gradient_problem" target="_blank" rel="noopener"><strong>vanishing gradient problem</strong></a> — a major reason deep networks didn't work for years even after backpropagation was rediscovered.</p>
+
+<p>ReLU fixed it. Its slope of 1 keeps the signal alive through many layers. You'll find ReLU (and modern relatives like <strong>GELU</strong>, used in BERT and most LLMs; <strong>SiLU</strong> / Swish, used in some Google models; and <strong>LeakyReLU</strong>, which lets a tiny bit of signal through on the negative side to avoid "dead" neurons) inside every recent neural network: image recognition, voice assistants, ChatGPT, all of them. Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page has them all in one place.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the ReLU version</h3>
+  <p>This is <code>neuro5.py</code>. It keeps the snack picker but swaps the hidden activation from sigmoid to ReLU. The learning rate is smaller because ReLU can move faster.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro5.py</span>
+      <span class="code-status" id="py-status-5">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-5" spellcheck="false" rows="28" data-src="neuro5.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="5">▶ run</button>
+    <button class="secondary" data-py-reset="5">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-5"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>In the ReLU script, try changing <code>lr = 0.1</code> to <code>0.5</code>. (<code>lr</code> is the <strong>learning rate</strong> — the "small step" from {{ch:training}}'s nudge recipe. {{Ch:descent}} digs into it properly.) If training gets worse, you have found why the size of that step matters.</p>
+</div>

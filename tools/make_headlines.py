@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Build headlines.csv (10,000 rows: topic,text) from the AG News training set.
+Build py/headlines.csv (10,000 rows: topic,text) from the AG News training set.
 
     curl -LO https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/train.csv
-    python3 tools/make_headlines.py train.csv headlines.csv
+    python3 tools/make_headlines.py train.csv py/headlines.csv
 
 The sample is balanced (2,500 per topic), pre-shuffled with a fixed seed, and
 skips stories whose wording is too grim for a book aimed at 13-year-olds.

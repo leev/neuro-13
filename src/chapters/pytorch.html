@@ -1,0 +1,59 @@
+<p>So far you've written every line yourself: <code>x @ w1 + b1</code>, sigmoid, manual gradients, weight updates. That's the right way to learn. But nobody works that way in real life. They use a framework called <a href="https://pytorch.org/" target="_blank" rel="noopener"><strong>PyTorch</strong></a> (or its cousin <a href="https://www.tensorflow.org/" target="_blank" rel="noopener">TensorFlow</a>; for production work on Google hardware, also <a href="https://jax.readthedocs.io/" target="_blank" rel="noopener">JAX</a>). The framework does the bookkeeping. You just describe the network shape.</p>
+
+<p>The whole iris training loop in PyTorch looks like this:</p>
+
+<pre>hidden = 16
+model = nn.Sequential(
+nn.Linear(4, hidden),
+nn.ReLU(),
+nn.Linear(hidden, 3),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+for epoch in range(200):
+for xb, yb in batches:
+    logits = model(xb)
+    loss = loss_fn(logits, yb)
+
+    optimizer.zero_grad()
+    loss.backward()       # autograd computes every gradient
+    optimizer.step()      # applies them</pre>
+
+<p>Every piece replaces something you wrote by hand:</p>
+
+<table>
+  <tr><th>Hand-rolled</th><th>PyTorch</th></tr>
+  <tr><td><code>np.maximum(0, x)</code></td><td><code>nn.ReLU()</code></td></tr>
+  <tr><td>softmax + cross-entropy by hand</td><td><code>nn.CrossEntropyLoss()</code></td></tr>
+  <tr><td>Manual forward (<code>h = ...</code>, <code>o = ...</code>)</td><td><code>model(x)</code></td></tr>
+  <tr><td>Manual backward (<code>d_o</code>, <code>d_h</code>)</td><td><code>loss.backward()</code> (autograd)</td></tr>
+  <tr><td><code>w -= lr * grad</code></td><td><code>optimizer.step()</code></td></tr>
+  <tr><td>Plain SGD</td><td><code>torch.optim.Adam</code> (smarter)</td></tr>
+</table>
+
+<p><strong>Autograd</strong> is the powerful bookkeeping part. PyTorch tracks every operation you do during the forward pass. When you call <code>loss.backward()</code>, it walks the chain backward and computes <em>every single gradient</em>, exactly as you did by hand in {{ch:hidden}}. You never write a chain-rule expression again.</p>
+
+<p><a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener"><strong>Adam</strong></a> is the optimizer used in almost every modern model. It's gradient descent with two upgrades: <em>momentum</em> (keep moving in directions that worked recently) and <em>per-weight learning rates</em> (slow down weights that bounce around, speed up ones that crawl). For training transformers specifically, people now usually use a tweaked version called <strong>AdamW</strong> (the W stands for "weight decay") — but it's still recognizably the same algorithm.</p>
+
+<p>Run <code>neuro8.py</code> locally (after <code>pip install torch</code>) to see this exact loop train iris in seconds. The <a href="https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html" target="_blank" rel="noopener">official PyTorch 60-minute blitz</a> is the most-recommended next tutorial. After that, the natural next step for everyone reading this book is Andrej Karpathy's <a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">"Neural Networks: Zero to Hero"</a> YouTube series — he rebuilds backprop, micrograd, and a working GPT from scratch in real code. It's basically a more advanced version of this book.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run locally</div>
+  <h3>Run the PyTorch version</h3>
+  <p>This is <code>neuro8.py</code>. PyTorch is too large for this single-file browser runner, so this panel keeps the code synced and gives the exact local command.</p>
+  <div class="run-note"><code>pip install torch scikit-learn</code><br><code>python3 neuro8.py</code></div>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro8.py</span>
+      <span class="code-status ready" id="py-status-8">local Python script</span>
+    </div>
+    <textarea class="code-editor" id="py-code-8" spellcheck="false" rows="30" data-src="neuro8.py"></textarea>
+  </div>
+  <div class="terminal" id="py-out-8"><span class="dim">Run locally with: python3 neuro8.py</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Change the hidden layer from 16 neurons to 4. Does PyTorch still train fast? Then try 64 and compare train accuracy to test accuracy.</p>
+</div>

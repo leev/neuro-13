@@ -1,0 +1,10 @@
+<p>A neural network is a very large pile of tiny math equations. Together they turn an input (like a picture, or a sentence) into an output (like "this is a cat" or the next word in a story).</p>
+<p>Why is it called a <em>neural</em> network? The name is borrowed from the brain. Your brain is a web of cells called <strong>neurons</strong> that pass tiny signals to each other, and each one "fires" when the signals arriving at it add up to enough. The math version you're about to meet was loosely inspired by that — <em>loosely</em> is the key word. What's inside ChatGPT is not a simulated brain; it's arithmetic. But the name stuck.</p>
+<p>Each tiny equation has some adjustable numbers called <strong>weights</strong>. At the start the weights are random and the network is terrible. You show it lots of examples where you already know the right answer. Each time it gets one wrong, you nudge every weight a tiny bit in the direction that would have made it slightly less wrong. (How does it know which direction is "less wrong"? In {{ch:training}} you'll do one of these nudges yourself, with real numbers — and {{ch:descent}} and {{ch:backprop}} explain how the network works the direction out for millions of weights at once.)</p>
+<p>Do this millions or billions of times and the weights end up encoding a surprising amount of knowledge about the world.</p>
+<p>That's the main idea. The rest of the book shows how far that idea can stretch.</p>
+<p style="font-size: 14px; color: var(--muted);">If you like watching things move while you read, the <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown neural networks series</a> on YouTube animates almost every idea in this book. It's the single best companion to what you're reading now.</p>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Before moving on, name three problems that could be turned into "input goes in, prediction comes out." Try one from school, one from a game, and one from real life.</p>
+</div>

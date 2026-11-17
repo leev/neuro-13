@@ -1,0 +1,21 @@
+<p>If you remember nothing else from the first fourteen chapters, remember this:</p>
+<ol>
+  <li>A <strong>neuron</strong> is a tiny math equation: multiply, add, squish.</li>
+  <li>A <strong>network</strong> is a bunch of neurons stacked into layers.</li>
+  <li><strong>Weights</strong> are the adjustable numbers inside each neuron. A trained model is its weights and nothing else.</li>
+  <li><strong>Training</strong> means showing examples and nudging weights (via gradient descent + backpropagation) to reduce mistakes, often millions or billions of times.</li>
+  <li><strong>Deep networks</strong> (lots of layers) can learn complicated patterns that single neurons can't. The XOR fail from {{ch:xor-fail}} is the small version of why.</li>
+  <li><strong>LLMs like ChatGPT</strong> use the same training idea at enormous scale, with a <em>transformer</em> architecture (covered in the "going deeper" chapters) built around next-token prediction plus a second RLHF stage that shapes the model into an assistant.</li>
+  <li>There is no single magic ingredient. The power comes from simple math, lots of examples, lots of computer power, and clever engineering working together.</li>
+</ol>
+<p>The same training idea that solved the screen-time puzzle in {{ch:training}} is part of what powers ChatGPT. The real systems are much bigger and add specialized architecture and engineering.</p>
+
+<div class="callout">
+  <strong>Don't stop here — there's more.</strong> The next five chapters are the "going deeper" sections. They cover training on real datasets (the iris flowers), using PyTorch (the framework every real ML project uses), stacking hidden layers (watch a deep network crack a puzzle a shallow one can't), building a model that makes decisions instead of writing (trained on 10,000 real headlines), and the architectures behind image models and LLMs (CNNs and transformers). They include some of the strongest material in the book. Keep going.
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Explain neural networks to someone else using only these words: input, weight, mistake, nudge, layer, prediction.</p>
+</div>
+<p style="margin-top: 36px; color: var(--muted); font-size: 14px; text-align: center;">If you want to build the real toy version in Python, look at <code>neuro1.py</code> through <code>neuro10.py</code> in this folder. Each one adds one new idea on top of the previous. The later chapters cover the more advanced topics — real datasets, frameworks, and networks for images and language. For a free, deeper textbook when you're ready, the Goodfellow / Bengio / Courville <em>Deep Learning</em> book is available online at <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">deeplearningbook.org</a>.</p>

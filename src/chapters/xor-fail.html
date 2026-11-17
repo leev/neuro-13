@@ -1,0 +1,97 @@
+<p>Let's try a harder rule. Imagine a secret door with two buttons:</p>
+<div class="callout">
+  The door opens if EITHER the left button OR the right button is pressed. But if both buttons are pressed at the same time, the door stays shut.
+</div>
+<p>This rule is called "exactly one." Here's the data:</p>
+<table>
+  <tr><th>left button?</th><th>right button?</th><th>door opens?</th></tr>
+  <tr><td>0</td><td>0</td><td>0 (no buttons)</td></tr>
+  <tr><td>1</td><td>0</td><td>1 (left only)</td></tr>
+  <tr><td>0</td><td>1</td><td>1 (right only)</td></tr>
+  <tr><td>1</td><td>1</td><td>0 (both buttons)</td></tr>
+</table>
+
+<p>Try to teach a single neuron this. It will fail. Forever. Doesn't matter how many times you train it.</p>
+<p>Why? A single neuron is like drawing <strong>one straight line</strong> on a piece of graph paper to separate the "yes" answers from the "no" answers. Look at our problem on paper:</p>
+
+<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <line x1="40" y1="30" x2="40" y2="200" stroke="#374151" stroke-width="2"/>
+  <line x1="40" y1="200" x2="290" y2="200" stroke="#374151" stroke-width="2"/>
+  <text x="6" y="35" font-size="11" fill="#374151">right</text>
+  <text x="14" y="48" font-size="11" fill="#374151">button=1</text>
+  <text x="14" y="205" font-size="11" fill="#374151">=0</text>
+  <text x="55" y="222" font-size="11" fill="#374151">left=0</text>
+  <text x="200" y="222" font-size="11" fill="#374151">left=1</text>
+  <circle cx="90" cy="60" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="84" y="65" font-size="14" fill="#2563eb">YES</text>
+  <circle cx="240" cy="60" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="237" y="65" font-size="14" fill="#dc2626">NO</text>
+  <circle cx="90" cy="170" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="87" y="175" font-size="14" fill="#dc2626">NO</text>
+  <circle cx="240" cy="170" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="234" y="175" font-size="14" fill="#2563eb">YES</text>
+</svg>
+
+<h3>Why only one line?</h3>
+<p>A single neuron always does the same kind of math: it takes the inputs, multiplies them by weights, adds a bias, and then asks, "is the answer big enough?"</p>
+<p>For two inputs, that question looks like this:</p>
+<pre><code>weight1 × left + weight2 × right + bias > 0</code></pre>
+<p>The place where the answer changes from <strong>NO</strong> to <strong>YES</strong> is always a straight line. The neuron can move the line around, tilt it, or flip which side means YES, but it still only gets one straight line.</p>
+<p>So <strong>linearly separable</strong> just means: "Can one straight line split the YES examples from the NO examples?"</p>
+<p>OR can. AND can. XOR can't, because the YES answers are on opposite corners. No matter where you put one line, at least one corner ends up on the wrong side.</p>
+<p>Can you draw ONE straight line that puts both <span style="color: var(--accent); font-weight: 600;">YES</span>es on one side and both <span style="color: var(--bad); font-weight: 600;">NO</span>s on the other? Try it on paper. <strong>You can't.</strong> A single neuron can only draw one line, so it has no shape that fits this problem. If you remember one piece of jargon from this book, make it <strong>linearly separable</strong> — it'll come up everywhere.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Watch a single neuron fail</h3>
+  <p>Same trainer as before, new data. Click "train 1,000 steps" and watch — the predictions get stuck at 0.5 forever. The neuron literally gives up and guesses the average.</p>
+  <div>
+    <button id="x-step">step once</button>
+    <button id="x-fast">train 1,000 steps</button>
+    <button class="secondary" id="x-reset">reset weights</button>
+  </div>
+  <div class="prediction-line" id="x-predictions" style="margin-top: 14px;"></div>
+  <div class="math-panel">
+    <h4>The model that can't win</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Same three stored numbers as the screen-time model. Watch them wander and then sink toward zero — that's the neuron giving up and settling for "answer 0.5 to everything." No values of these three numbers can solve XOR.</p>
+    <pre class="model-dump" id="x-model"></pre>
+  </div>
+  <div class="stat-row">
+    <span>epoch: <strong id="x-epoch">0</strong></span>
+    <span>avg error: <strong id="x-err">?</strong></span>
+  </div>
+</div>
+
+<p>This isn't a small detail. This is one of the most famous moments in the whole history of AI.</p>
+<p>In 1969, two MIT researchers — <strong>Marvin Minsky</strong> and <strong>Seymour Papert</strong> — wrote a book called <a href="https://en.wikipedia.org/wiki/Perceptrons_(book)" target="_blank" rel="noopener"><em>Perceptrons</em></a>. The whole point of the book was to prove, in math, that a single-layer neural network (called a perceptron at the time) cannot solve XOR. The problem you just played with for 5 minutes.</p>
+<p>This landed badly. People had been hyping perceptrons as the future of artificial intelligence. <em>Perceptrons</em> made the field look like a dead end. Funding dried up. Most researchers moved to other things. We now call this period the <a href="https://en.wikipedia.org/wiki/AI_winter" target="_blank" rel="noopener">first AI winter</a> — about 15 years where neural networks were considered a curiosity, not a serious tool.</p>
+<p>Here's the twist: Minsky and Papert <em>knew</em> a multi-layer network could probably solve XOR. The actual problem was that nobody had a good way to train multi-layer networks yet. That training algorithm (called backpropagation — we'll explain it in {{ch:descent}}) wasn't worked out clearly until <strong>1986</strong>, when <a href="https://www.nature.com/articles/323533a0" target="_blank" rel="noopener">Rumelhart, Hinton, and Williams published a paper</a> showing how to do it. That paper is essentially why everything you read about today — ChatGPT, self-driving cars, image generators — exists. Almost two decades of progress had been stalled by one missing algorithm.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Try to draw a line — you can't</h3>
+  <p>Same line-drawing widget as before, but with the secret-door labels. Drag the sliders. The <span style="color: var(--accent); font-weight: 600;">YES dots</span> are on opposite corners now. <strong>The best you can do is 3 out of 4 correct.</strong> Try as long as you want — no straight line will get all 4 right.</p>
+  <div id="sep-xor"></div>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Watch a real single-layer perceptron give up</h3>
+  <p>This is <code>neuro2.py</code>. Same code as neuro1.py, just XOR data. The output will plateau at MSE ≈ 0.25 and every prediction ends up ≈ 0.5. (MSE is <strong>mean squared error</strong>: square each example's error, then average them. It's the script's single score for "how wrong am I overall?" Training is supposed to shrink it — and here it refuses to shrink.)</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro2.py</span>
+      <span class="code-status" id="py-status-2">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-2" spellcheck="false" rows="22" data-src="neuro2.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="2">▶ run</button>
+    <button class="secondary" data-py-reset="2">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-2"><span class="dim">(click "run" to execute)</span></div>
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Try to beat XOR with one line anyway. Change the sliders, then explain why your best answer still misclassifies at least one corner.</p>
+</div>

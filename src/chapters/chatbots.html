@@ -1,0 +1,140 @@
+<p>Here's the leap from "neuron picks a snack" to "writes a whole story." The underlying model class is called a <strong>transformer</strong>, introduced in the 2017 paper <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">"Attention Is All You Need"</a>. Every modern LLM is some descendant of that paper.</p>
+
+<h3>The tokens trick</h3>
+<p>ChatGPT doesn't see letters or words. Before anything happens, your message gets chopped into chunks called <strong>tokens</strong>. A token is usually a piece of a word (sometimes a whole short word, sometimes a single character). The chopping algorithm is called <a href="https://en.wikipedia.org/wiki/Byte_pair_encoding" target="_blank" rel="noopener">byte-pair encoding</a> (BPE) — it learns which letter combinations are common in text and bundles them into single tokens. Common words like "the" become one token; rare words get split into pieces.</p>
+<p>Each token has an ID number from a fixed list. The size of that list varies by model: GPT-2 had about <strong>50,000</strong> tokens; GPT-4's tokenizer has about <strong>100,000</strong>; Llama-3 has <strong>128,000</strong>. So when this chapter says "about 100,000 tokens," picture a frontier-model-sized vocabulary.</p>
+
+<h3>So… is there a lookup table? (Yes — two.)</h3>
+<p>The <strong>tokenizer</strong> is, at heart, a giant two-way lookup table plus a chopping rule. Going <em>in</em>: your text gets chopped into chunks the table knows, and each chunk is swapped for its id number. Going <em>out</em>: the model hands back an id number, and the very same table is read in reverse to turn it back into text. This table is built once, before training ever starts, and never changes.</p>
+<p>The second lookup is the <strong>embedding table</strong> (next heading): the id picks a row, and that row of numbers is what the network actually computes with. So the full input path is <em>text → chunks → ids → rows of numbers</em>, and the output path is the mirror image: <em>a score for every id → pick one → look its text up backwards → glue it onto the story</em>. The model never sees letters at any point. It lives entirely in id-land.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Tokenize anything — watch text become numbers (and come back)</h3>
+  <p>Type anything. This toy tokenizer has a vocabulary of only <strong><span id="tk-vsize">70</span> chunks</strong> (a real model's has ~100,000), but it works the same way: at every spot it grabs the <em>longest chunk it knows</em>. Common words are a single token; anything unusual gets built out of smaller pieces — try <code>playing</code>, <code>happiest</code>, or <code>pterodactyl</code>.</p>
+  <input id="tk-input" type="text" value="tell me a story about a dragon who likes pizza" autocomplete="off" spellcheck="false" style="width: 100%; padding: 10px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+  <div class="token-row" id="tk-pills" style="margin-top: 12px;"></div>
+  <div class="math-panel">
+    <h4>Lookup #1 — what the model actually receives</h4>
+    <pre class="model-dump" id="tk-ids"></pre>
+  </div>
+  <div class="math-panel">
+    <h4>Lookup #2 — each id grabs its row of the embedding table</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each id is a row number in a giant table of learned numbers. Showing the first 16 numbers of each row as colors: <span style="color: var(--accent); font-weight: 600;">blue</span> = positive, <span style="color: var(--bad); font-weight: 600;">red</span> = negative. (These rows are random in this toy; in a real model they're weights, learned by the same nudging as everything else.)</p>
+    <div id="tk-embeds"></div>
+  </div>
+  <div class="math-panel">
+    <h4>And backwards — output is the same table, read the other way</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">When the model writes, it never outputs letters. It outputs one id, and the tokenizer table turns it back into text. Pretend you're the model — output an id:</p>
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px;">id</span>
+      <input id="tk-rev" type="number" min="0" value="11" style="width: 90px; padding: 8px; font: inherit; border: 1px solid var(--border); border-radius: 6px;">
+      <span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px;" id="tk-rev-out"></span>
+    </div>
+    <p style="font-size: 13px; color: #374151; margin: 10px 0 0;" id="tk-roundtrip"></p>
+  </div>
+  <div style="margin-top: 12px;">
+    <button class="secondary" id="tk-vocab-toggle">show the whole lookup table</button>
+  </div>
+  <div id="tk-vocab" hidden style="margin-top: 10px; max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px;"></div>
+  <p style="font-size: 13px; color: var(--muted); margin: 12px 0 0;">Toy shortcuts to know about: we lowercase everything and treat spaces as separators, while real tokenizers bake capital letters and spaces right into the tokens. And a real tokenizer has a byte-level fallback, so nothing is ever truly "not in the table" — type an emoji or a digit here to see what our toy can't handle.</p>
+</div>
+
+<h3>Each token becomes a long list of numbers</h3>
+<p>The model looks each token's ID up in a giant table and grabs a <strong>vector</strong> of numbers — and "vector" is just math-speak for <em>a list of numbers</em>, like <code>[0.2, −1.4, 0.7, …]</code>. That list is the token's <strong>embedding</strong>. How long that vector is depends on the model: GPT-2 small used <strong>768</strong> numbers per token; GPT-3 (175B) used <strong>12,288</strong>; smaller models use less, frontier models use more. Call it "thousands of numbers per token" and you're in the right ballpark.</p>
+<p>Words with similar meanings have similar embeddings, because the model figured that out from reading huge amounts of text. The fingerprint for "dragon" is closer to "monster" than to "broccoli."</p>
+<p>Here's the connection back to everything you've read so far: <strong>the embedding table is just learned weights.</strong> Same as the weights in {{ch:neuron}}'s neuron. Same as the weights in <code>neuro4.py</code>. It's <em>one giant matrix</em> — and a "matrix" is just a grid of numbers, a list of lists — with one row per token ID, each row holding that token's embedding numbers. During training, the same gradient descent that learns the OR rule also slowly nudges the embedding numbers until "king − man + woman" lands near "queen" and "dragon" lands near "monster." Nothing new in the algorithm; just a much bigger matrix.</p>
+
+<h3>The model's only job (during pre-training): predict the next token</h3>
+<p>Given the tokens so far, what's the most likely next token? That's literally the entire pre-training task. It's the snack-picker from {{ch:multi}}, but with about <strong>100,000 classes</strong> instead of 3 — every possible token is one of the choices.</p>
+<p>(We say "pre-training" because for products like ChatGPT and Claude there's a <em>second</em> training stage after this — covered below — that turns the raw next-token predictor into a polite assistant. The next-token prediction is the foundation everything else is built on, but it's not the whole story.)</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Walk through the full pipeline</h3>
+  <p>This shows what happens <em>inside</em> the model when it reads your prompt: <em>"tell me a story about a dragon who likes pizza"</em>. Click "next stage" to step through it.</p>
+
+  <div style="display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap;">
+    <div class="stage-pill active" id="pipe-pill-1">1. Tokenize</div>
+    <div class="stage-pill" id="pipe-pill-2">2. Embed</div>
+    <div class="stage-pill" id="pipe-pill-3">3. Attention</div>
+    <div class="stage-pill" id="pipe-pill-4">4. Predict</div>
+  </div>
+
+  <div class="stage-content" id="pipe-stage-1">
+    <h4>Stage 1 — chop the text into tokens</h4>
+    <p>The model can't read letters. Your sentence gets chopped into chunks called tokens. Each one has an ID number from a list of about 100,000.</p>
+    <div class="token-row" id="pipe-tokens-1"></div>
+  </div>
+
+  <div class="stage-content" id="pipe-stage-2" hidden>
+    <h4>Stage 2 — look up each token's "fingerprint"</h4>
+    <p>Each token ID gets looked up in a giant table. The result is a vector of thousands of numbers — for GPT-3 it was 12,288 numbers per token; smaller models use fewer. This is the token's coded fingerprint. Words with similar meanings have similar fingerprints. Each row below is a tiny preview of one token's fingerprint (only 32 of the thousands of numbers, picked for display). <span style="color: var(--bad); font-weight: 600;">red</span> = negative number, <span style="color: var(--accent); font-weight: 600;">blue</span> = positive number, brightness = how strong.</p>
+    <div id="pipe-embeds"></div>
+  </div>
+
+  <div class="stage-content" id="pipe-stage-3" hidden>
+    <h4>Stage 3 — tokens look at each other (attention)</h4>
+    <p>In every layer of the model, each token can look at every other token and pull info from the ones that matter. Below is the attention pattern for the LAST token, "<strong>pizza</strong>". The big bars show which earlier tokens "pizza" ends up paying the most attention to — in this case <em>dragon</em> and <em>likes</em>. (The model isn't <em>choosing</em> anything; the bars are a deterministic output of multiplying learned matrices together. But the pattern that pops out really does match what a human would say is relevant — that's the surprising part.)</p>
+    <p style="font-size: 13px; color: var(--muted);">How the bars actually get computed: each token produces three new vectors called <strong>query</strong>, <strong>key</strong>, and <strong>value</strong> (each one is just another <code>x @ W</code> matrix multiply — same machinery as everywhere else in this book). The attention weight of token A looking at token B is essentially the <strong>dot product</strong> of A's query with B's key: multiply the matching entries of the two lists, then add it all up — the same multiply-then-add a neuron does with its inputs and weights. A big result means the two lists "agree". Those scores get passed through softmax to make the bars. The model then mixes the value vectors together using those weights. That's it. Dozens of these attention blocks stacked on top of each other is what makes a transformer.</p>
+    <div id="pipe-attn"></div>
+  </div>
+
+  <div class="stage-content" id="pipe-stage-4" hidden>
+    <h4>Stage 4 — score every possible next token</h4>
+    <p>After dozens of layers of attention + feed-forward blocks (the number varies by model: GPT-2 has 12–48, GPT-3 has 96, Llama-2-70B and Llama-3-70B have 80, and GPT-4 / Claude don't publish theirs), the model produces a score for every possible next token in its vocabulary (about 100,000 options for a frontier model). Softmax turns those scores into probabilities. The top 5 are shown below — the model samples one (more on sampling further down — it's <em>not</em> always the highest one).</p>
+    <div id="pipe-predict"></div>
+  </div>
+
+  <div style="margin-top: 18px;">
+    <button id="pipe-next">next stage →</button>
+    <button class="secondary" id="pipe-reset">restart</button>
+  </div>
+</div>
+
+<p>Once the model has picked the first token, it sticks it on the end of your prompt and runs the whole pipeline AGAIN to pick the next one. And again. And again. That's how a whole story comes out one token at a time.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Watch a story get written one token at a time</h3>
+  <p>Your message: <em>"tell me a story about a dragon who likes pizza"</em>. Click "next token" to see what the model picks. Each time you'll see its top 5 guesses with probabilities — then it picks one and adds it to the story.</p>
+  <p style="font-size: 13px; color: var(--muted);">(The probabilities below are illustrative — they show roughly what a real LLM's distribution looks like at each step, but they're hand-written for this widget, not live model output. Also, the top 5 you see is a slice from the full distribution over ~100,000 tokens; the rest of the mass is spread across thousands of tokens with tiny individual probabilities.)</p>
+  <div class="story-box" id="cg-story"></div>
+  <div id="cg-candidates" style="margin: 12px 0;"></div>
+  <div>
+    <button id="cg-next">next token</button>
+    <button id="cg-fast">next 5 tokens</button>
+    <button class="secondary" id="cg-reset">restart</button>
+  </div>
+</div>
+
+<p>The model does not keep a human-style outline with a fixed ending. At each step it picks a next token from the context so far, very fast, using patterns it learned from huge amounts of text, code, and conversations.</p>
+<p>The surprising thing is that this simple-looking loop — "pick the next token, then pick the one after that" — can produce essays, code, math steps, and full conversations. To be genuinely good at "what's the next token", the model has to absorb deep patterns in language and the world.</p>
+
+<h3>Sampling: why the same prompt gives different answers</h3>
+<p>You may have noticed: if you ask ChatGPT the same question twice, you don't always get the same answer. That's on purpose. The model produces a probability for every possible next token, and then it <strong>samples</strong> — picks one at random, with higher-probability tokens being more likely. It doesn't always pick the top one.</p>
+<p>The sampling has a few knobs:</p>
+<ul>
+  <li><strong>Temperature.</strong> A number, usually 0 to 2. Low temperature (near 0) makes the model very predictable — it almost always picks the most likely token. High temperature (above 1) flattens out the probabilities, so it's willing to pick unusual tokens. Default for chat is often around 0.7 — a balance between coherent and creative.</li>
+  <li><strong>Top-k.</strong> Only consider the top k candidates and ignore the rest. Top-5 means "only ever pick from the 5 most likely next tokens, no matter what" — useful for stopping the model from suddenly veering into a low-probability weird token.</li>
+  <li><strong>Top-p</strong> (also called nucleus sampling). Like top-k but adaptive: keep the most likely tokens until their probabilities add up to <em>p</em> (say 0.9), then sample from that group. This adjusts to context — sometimes the model is sure (one token gets 99% of the mass) and sometimes it's spread out (it considers many).</li>
+</ul>
+<p>So when the pipeline above showed "model picks <strong>Once</strong> (highest probability)" — that's a simplification. With temperature 0 it would always pick Once. With temperature 0.7 it would <em>usually</em> pick Once but sometimes pick Sure, In, or There. This is also why "regenerate" produces different answers and why the same prompt twice doesn't have to match.</p>
+
+<h3>Pre-training vs. ChatGPT-the-product (RLHF)</h3>
+<p>One more important wrinkle. Everything above describes a model trained to predict the next token in random text from the internet. That's the <strong>pre-trained base model</strong>. If you talked to a raw base model — and you can, lots of them are public on <a href="https://huggingface.co/" target="_blank" rel="noopener">Hugging Face</a> — it wouldn't act like an assistant. You'd type "What's 2+2?" and it might continue your text as if it were a math worksheet ("What's 2+2? ___ What's 3+3? ___") instead of answering you.</p>
+<p>ChatGPT acts like an assistant because of a <em>second</em> training stage on top of pre-training. The most common technique is called <strong>RLHF</strong> — Reinforcement Learning from Human Feedback. The recipe:</p>
+<ol>
+  <li>Show the base model a prompt. Have it generate several different answers.</li>
+  <li>Have humans rate which answer was better.</li>
+  <li>Train a smaller "reward model" to predict the human ratings.</li>
+  <li>Use that reward model as a stand-in for human preferences, and nudge the original model's weights to produce answers the reward model rates highly.</li>
+</ol>
+<p>RLHF is why ChatGPT acts polite, follows instructions, refuses harmful requests, and structures its replies. Without RLHF the underlying math is the same — it's still next-token prediction — but the model is "shaped" by examples of what humans liked into a conversational assistant. Anthropic's <a href="https://www.anthropic.com/research/claude-character" target="_blank" rel="noopener">work on Claude's character</a> is a good read on what this shaping looks like in practice.</p>
+
+<p>If you want to see this whole pipeline built from scratch in real code, Andrej Karpathy's <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">"Let's build GPT"</a> video (about 2 hours) is the gold standard. He starts from numpy primitives much like ours and ends with a working tiny transformer. For the longer view, Stephen Wolfram's <a href="https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/" target="_blank" rel="noopener">"What Is ChatGPT Doing… and Why Does It Work?"</a> is the most-respected long-form pop-sci explainer of LLMs.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Use the candidate bars to make a different story in your head. What would change if the model picked "In" instead of "Once" as the first token? Then think about what would happen at temperature 0 (always pick the top one) vs temperature 2 (almost flat probabilities).</p>
+</div>

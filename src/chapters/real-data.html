@@ -1,0 +1,43 @@
+<p>Everything so far has used hand-picked toy examples — 4 rows for the screen-time rule, 8 for the snack picker. Real machine learning trains on much bigger datasets. A classic benchmark called <a href="https://archive.ics.uci.edu/dataset/53/iris" target="_blank" rel="noopener"><strong>iris</strong></a> (collected by the statistician Ronald Fisher in 1936) has 150 flowers with 4 measurements each. <a href="http://yann.lecun.com/exdb/mnist/" target="_blank" rel="noopener"><strong>MNIST</strong></a> (handwritten digits, curated by Yann LeCun) has 60,000 training images. <a href="https://www.image-net.org/" target="_blank" rel="noopener"><strong>ImageNet</strong></a> has 1.2 million labelled training images (14 million across all the variants). The text used to train GPT-3 was over 300 billion tokens — somewhere around 500 million pages of writing.</p>
+
+<p>Once you stop being your own dataset author, four disciplines kick in. None are hard, but each matters.</p>
+
+<h3>1. Train / test split</h3>
+<p>You can't measure how well a network learned by testing it on the same data you trained on. That's like marking your own homework. Hold back, say, 20% of the data, train on the other 80%, and only check accuracy on the held-out portion. That number is the only honest measure.</p>
+<p>If your network gets 100% on training data and 60% on held-out test data, you're <strong>overfitting</strong> — it memorized the answers instead of learning the rule.</p>
+
+<h3>2. Feature scaling</h3>
+<p>Iris flowers' petal length is in centimeters (1–7 cm range). Sepal width is also centimeters but a different range (0.1–4.5). If one input column has values 10× bigger than another, its weight update will dominate training. Standardize each column to mean 0, standard deviation 1 — compute the average and spread on the training set only, then apply the same shift to both train and test.</p>
+
+<h3>3. Mini-batches</h3>
+<p>Toy networks could feed all 4 (or 8) examples through at once each epoch. With 60,000 examples you'd run out of memory. Solution: slice the dataset into small batches (say, 16 or 128 rows). Run forward + backward + weight update on one batch. Move to next batch. After all batches, that's one epoch.</p>
+<p>Mini-batches also make training smoother — many small updates beat one huge swing.</p>
+
+<h3>4. Watch loss AND accuracy</h3>
+<p>Loss is what the math optimizes. Accuracy is what humans care about. Print both. When training accuracy keeps climbing but test accuracy plateaus or drops — that's overfitting happening in real time.</p>
+
+<p>Run <code>neuro7.py</code> in this folder to train iris for real (requires <a href="https://scikit-learn.org/" target="_blank" rel="noopener">scikit-learn</a> — install with <code>pip install scikit-learn</code>). After 200 epochs of mini-batch training, expect ~97% accuracy on the held-out test set. Same network shape as the snack picker (just <code>4 → 16 → 3</code> instead of <code>3 → 6 → 3</code>), same math you already know, now eating real flower measurements. Iris is also a <em>very easy</em> dataset — pretty much any model gets above 95%, so don't read this as evidence you've built something amazing. It's the warm-up.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run iris training</h3>
+  <p>This is <code>neuro7.py</code>. It uses numpy plus <a href="https://scikit-learn.org/stable/auto_examples/datasets/plot_iris_dataset.html" target="_blank" rel="noopener">scikit-learn's built-in iris dataset</a>.</p>
+  <p style="font-size: 13px; color: var(--muted);">Heads up: in the browser, the first time you click "run" here, the page downloads scikit-learn through Pyodide. That's roughly 10 megabytes and takes 20–40 seconds on a typical home connection. Later runs are fast.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro7.py</span>
+      <span class="code-status" id="py-status-7">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-7" spellcheck="false" rows="30" data-src="neuro7.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="7">▶ run</button>
+    <button class="secondary" data-py-reset="7">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-7"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Change <code>test_size=0.2</code> to <code>0.5</code>. Does the test accuracy become noisier when the model has fewer training examples?</p>
+</div>

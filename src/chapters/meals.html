@@ -1,0 +1,100 @@
+<p>The snack picker had three choices. Real classifiers often have more classes and messier inputs. So here is the snack picker's big sibling: a tiny network that guesses <em>what meal you're describing</em> from menu-style clues.</p>
+
+<p>You met <strong>one-hot encoding</strong> back in {{ch:multi}} (the snack labels). This time we'll do it on the <em>inputs</em> too. A neural network wants numbers, not words. So a word choice like <code>course = dessert</code> becomes a few yes/no inputs:</p>
+
+<pre>course_main = 0
+course_snack = 0
+course_dessert = 1</pre>
+
+<p>Same for temperature, taste, diet, and base. The network does not receive the word "pastry"; it receives <code>base_pastry = 1</code> and the other base inputs set to <code>0</code>. None of these clues is enough by itself; the network has to combine them.</p>
+
+<table>
+  <tr><th>meal</th><th>course</th><th>temperature</th><th>taste</th><th>diet</th><th>base</th></tr>
+  <tr><td>apple pie</td><td>dessert</td><td>hot</td><td>sweet</td><td>vegetarian</td><td>pastry</td></tr>
+  <tr><td>sausage roll</td><td>snack</td><td>hot</td><td>savory</td><td>meat</td><td>pastry</td></tr>
+  <tr><td>cottage pie</td><td>main</td><td>hot</td><td>savory</td><td>meat</td><td>potato</td></tr>
+  <tr><td>baked potato</td><td>main</td><td>hot</td><td>savory</td><td>vegetarian</td><td>potato</td></tr>
+  <tr><td>spaghetti</td><td>main</td><td>hot</td><td>savory</td><td>meat</td><td>pasta</td></tr>
+  <tr><td>mac &amp; cheese</td><td>main</td><td>hot</td><td>savory</td><td>vegetarian</td><td>pasta</td></tr>
+  <tr><td>ice cream</td><td>dessert</td><td>cold</td><td>sweet</td><td>vegetarian</td><td>dairy</td></tr>
+  <tr><td>fruit salad</td><td>dessert</td><td>cold</td><td>sweet</td><td>vegetarian</td><td>fruit</td></tr>
+</table>
+
+<p>Look closely at the table before training: it's full of <strong>near-misses</strong>. Cottage pie and baked potato match on everything except diet. Spaghetti and mac &amp; cheese — same thing (the spaghetti is bolognese, that's where the meat is). Ice cream and fruit salad differ only on base. And apple pie and sausage roll share a pastry crust while disagreeing about everything else. No single clue gives the answer away; the network <em>must</em> combine them.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train a meal guesser</h3>
+  <p>Click train, then change the traits. The network will show probability bars for each meal. Try normal combinations, then weird ones like a cold sweet pastry that contains meat.</p>
+  <p style="font-size: 13px; color: var(--muted);">Best trick: set course = main, temperature = hot, taste = savory, base = pasta — and leave diet unknown. Watch spaghetti and mac &amp; cheese split the vote almost 50/50. Then pick a diet and watch the tie break instantly. That's a network weighing evidence.</p>
+
+  <div class="guesser-tool">
+    <div class="guesser-controls">
+      <div>
+        <button id="a-step">train 1 epoch</button>
+        <button id="a-fast">train 1,000</button>
+        <button class="secondary" id="a-reset">reset</button>
+      </div>
+      <h4>Traits</h4>
+      <div class="select-row"><label>course</label><select id="a-course"><option value="" selected>unknown</option><option>main</option><option>snack</option><option>dessert</option></select></div>
+      <div class="select-row"><label>temperature</label><select id="a-temp"><option value="" selected>unknown</option><option>hot</option><option>cold</option></select></div>
+      <div class="select-row"><label>taste</label><select id="a-taste"><option value="" selected>unknown</option><option>sweet</option><option>savory</option></select></div>
+      <div class="select-row"><label>diet</label><select id="a-diet"><option value="" selected>unknown</option><option>vegetarian</option><option>meat</option></select></div>
+      <div class="select-row"><label>base</label><select id="a-base"><option value="" selected>unknown</option><option>pastry</option><option>potato</option><option>pasta</option><option>dairy</option><option>fruit</option></select></div>
+      <h4>Network shape</h4>
+      <div class="select-row"><label>hidden</label><select id="a-hidden-count"><option>2</option><option>4</option><option selected>8</option><option>12</option></select></div>
+      <div class="stat-row">
+        <span>epoch: <strong id="a-epoch">0</strong></span>
+        <span>train accuracy: <strong id="a-acc">?</strong></span>
+      </div>
+    </div>
+    <div class="guesser-prediction">
+      <h4>Prediction</h4>
+      <div id="a-bars"></div>
+    </div>
+    <div class="guesser-wide">
+      <svg id="meal-net-svg" class="guesser-network" viewBox="0 0 620 360" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="math-panel">
+        <h4>How the clues become numbers</h4>
+        <div id="a-features"></div>
+      </div>
+      <div class="math-panel">
+        <h4>What training saved — the model itself, live</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px;">The trained model is just learned numbers — and this is <em>all</em> of them: <strong><span id="a-param-count">200</span> numbers</strong> for the current network shape. Press the train buttons and watch them get rewritten; freshly changed numbers light up. The grey <code>// notes</code> aren't part of the model — they're labels so you can find your way around the grid.</p>
+        <button class="secondary" id="a-dump-toggle">show learned numbers</button>
+        <pre class="weight-dump model-dump" id="a-weight-dump" hidden></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p><strong>Why this is useful:</strong> the network can learn clue-combinations. One hidden neuron might become useful for <em>cold + sweet</em>, another for <em>pastry</em>, another for <em>main + pasta</em>. We did not name those hidden neurons ourselves. Training nudged the weights until useful patterns appeared. (When researchers try to read what hidden neurons learned in <em>real</em> models, the field they're working in is called <a href="https://www.anthropic.com/research#interpretability" target="_blank" rel="noopener">interpretability</a>. It's hard, and it's some of the most interesting research in AI right now.)</p>
+
+<div class="callout">
+  <strong>How many hidden neurons?</strong> That number is a choice the builder makes before training. Training changes the weights, biases, and probabilities, but it does not grow new neurons in this tiny model. Try 2, 4, 8, and 12 hidden neurons: too few can run out of pattern space, while more gives the model more room to <em>memorize</em> the 8 training meals exactly instead of learning the rule. That's called <strong>overfitting</strong>, and it's a problem real machine learning has to fight constantly. We'll come back to it when we move to real datasets.
+</div>
+
+<p>One more thing while you're here: hit the <strong>"show learned numbers"</strong> button further down. The trained model is just a bag of numbers — that button literally prints them out, the grown-up sibling of the dark "model" panels you've been watching since {{ch:training}}. This is what's saved when someone says "the model weighs 10 GB" or "I downloaded the weights." A model is its weights and nothing else.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the meal guesser</h3>
+  <p>This is <code>neuro6.py</code>. It trains the same idea in numpy and prints predictions for the training meals plus one mixed-up custom meal.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro6.py</span>
+      <span class="code-status" id="py-status-6">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-6" spellcheck="false" rows="30" data-src="neuro6.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="6">▶ run</button>
+    <button class="secondary" data-py-reset="6">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-6"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Add lasagna in your notebook. Write out its traits — they come out <em>identical</em> to spaghetti's row. What happens to a network when two different answers have the exact same clues? What new trait group would fix it?</p>
+</div>

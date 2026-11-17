@@ -1,0 +1,75 @@
+<p>Same machinery scales up. Two big architectural ideas you'll meet from here:</p>
+
+<h3>Convolutional networks (CNNs) — for images</h3>
+<p>The "hello world" of deep learning is <a href="http://yann.lecun.com/exdb/mnist/" target="_blank" rel="noopener"><strong>MNIST</strong></a> — 60,000 handwritten digit images (28×28 pixels, 10 classes). A plain fully-connected network like the snack picker can hit ~97% accuracy on MNIST. State of the art with convolutional networks is ~99.8%.</p>
+
+<p>The change: replace <code>nn.Linear</code> in the early layers with <code>nn.Conv2d</code>. Each neuron only looks at a small spatial patch of the image (say, 3×3 pixels) and <strong>shares its weights</strong> across all positions. This means the same edge detector gets applied everywhere in the image — a great fit for pictures, which are translation-invariant (a cat is a cat whether it's in the top-left or bottom-right of the photo).</p>
+
+<p>Pattern: <code>Conv → ReLU → Pool → Conv → ReLU → Pool → ... → Linear</code>. CNNs are everywhere images are: medical scans, face recognition, self-driving car perception, photo classification. The 1998 paper that started it all is LeCun et al.'s <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf" target="_blank" rel="noopener">LeNet-5</a>. The 2012 paper that proved CNNs could win the open competition for general image recognition is <a href="https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html" target="_blank" rel="noopener">AlexNet</a>. If you want to <em>see</em> what conv filters actually look like, Chris Olah's <a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">distill.pub feature visualization</a> is a masterpiece.</p>
+
+<h3>Transformers — for sequences (and now everything)</h3>
+<p>You already met the basic idea in {{ch:chatbots}}. For sequences (text, audio, code), replace fully-connected hidden layers with <strong>attention blocks</strong>. Each token gets to look at every other token and pull a weighted blend of their values into its own representation. The output is still a softmax over a vocabulary, one token at a time.</p>
+
+<p>Every modern LLM (GPT, Claude, Gemini, Llama) is a stack of transformer blocks. Plus a few practical tricks (positional embeddings, layer normalization, mixture of experts), but the core is just stacked attention + feed-forward layers, with softmax at the end. The original paper is <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Vaswani et al., "Attention Is All You Need" (2017)</a>. The kid-friendly walkthrough is Jay Alammar's <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">"The Illustrated Transformer"</a>.</p>
+
+<h3>The honest summary</h3>
+<p>Whether you're building a snack classifier, a digit recognizer, or a frontier LLM, the same primitives keep showing up:</p>
+<ul>
+  <li><strong>Weighted sums</strong> (matrix multiplies)</li>
+  <li><strong>Non-linearities</strong> (ReLU and its cousins)</li>
+  <li><strong>Softmax</strong> at the output</li>
+  <li><strong>Backpropagation</strong> through everything</li>
+</ul>
+<p>The math you wrote by hand in {{ch:hidden}} still shows up inside GPT-class models. The advanced systems add a lot of scale, data, architecture, and engineering, but the basic training idea should feel recognizable now.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it — comparison: how a <em>not</em>-neural-network does it</div>
+  <h3>Draw a digit (template matcher, not a neural net)</h3>
+  <p><strong>Important:</strong> this widget is <em>not</em> a trained neural network. It's a "template matcher" — a much older, simpler trick where we hand-make a few example pictures of each digit and find the closest match to your drawing using cosine similarity. We've left it here as a <em>comparison</em>: drawing a few digits will show you exactly how brittle hand-coded matching is. The real MNIST neural network is the next script (<code>neuro9.py</code>) — to run it you'll need PyTorch locally.</p>
+  <div class="digit-tool">
+    <div>
+      <canvas id="digit-canvas" width="280" height="280"></canvas>
+      <div style="margin-top: 10px;">
+        <button id="digit-clear">clear</button>
+        <button class="secondary" id="digit-demo">draw demo 2</button>
+      </div>
+    </div>
+    <div>
+      <div class="digit-result" id="digit-pred">?</div>
+      <div id="digit-bars"></div>
+      <p style="font-size: 13px; color: var(--muted);">Try drawing the same digit skinny, wide, tilted, or off-center. The score changes because the template matcher is brittle. A trained neural network learns many versions of each digit.</p>
+    </div>
+  </div>
+</div>
+
+<p>To run the bigger example yourself: <code>neuro9.py</code> in this folder trains a real MNIST classifier with PyTorch. Needs <code>pip install torch torchvision</code> and a few minutes of CPU (or seconds on a GPU). After 5 epochs you'll see ~98% test accuracy. That's your network classifying handwritten digits well — which, when you remember that we started this story with a single neuron deciding "screen time: yes or no", is a pretty good place to stop.</p>
+
+<h3>If you finished this book and want to go further</h3>
+<p>The short list of places to go next:</p>
+<ul>
+  <li>Watch <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown's neural networks series</a>. Same ideas, animated beautifully.</li>
+  <li>Do Andrej Karpathy's <a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">"Neural Networks: Zero to Hero"</a>. From-scratch backprop in Python, building up to a working GPT. Direct continuation of this book.</li>
+  <li>Read Karpathy's older essay <a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">"The Unreasonable Effectiveness of Recurrent Neural Networks"</a> — written before GPT existed but it's the essay that made a lot of people fall in love with the field.</li>
+  <li>If you want a real textbook: <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">Goodfellow, Bengio, and Courville's <em>Deep Learning</em></a> is free online.</li>
+  <li>If you want a course: <a href="https://course.fast.ai/" target="_blank" rel="noopener">fast.ai's "Practical Deep Learning for Coders"</a> is the most-recommended hands-on next step.</li>
+</ul>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run locally</div>
+  <h3>Train the real MNIST model</h3>
+  <p>This is <code>neuro9.py</code>. It downloads MNIST on first run and trains a real PyTorch digit classifier.</p>
+  <div class="run-note"><code>pip install torch torchvision</code><br><code>python3 neuro9.py</code></div>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro9.py</span>
+      <span class="code-status ready" id="py-status-9">local Python script</span>
+    </div>
+    <textarea class="code-editor" id="py-code-9" spellcheck="false" rows="30" data-src="neuro9.py"></textarea>
+  </div>
+  <div class="terminal" id="py-out-9"><span class="dim">Run locally with: python3 neuro9.py</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Run <code>neuro9.py</code>, then reduce the first hidden layer from 128 neurons to 16. Watch how the test accuracy changes.</p>
+</div>

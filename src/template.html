@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+%%head%%
+</head>
+<body class="chapter-page" data-slug="%%slug%%" style="--part:%%part_color%%;--part-tint:%%part_tint%%">
+%%topbar%%
+<div class="layout">
+%%sidenav%%
+<main>
+  <article>
+    <header class="chapter-head">
+      <div class="chapter-kicker"><a href="index.html#part-%%part_id%%">Part %%part_number%% · %%part_title%%</a><span class="chapter-meta">%%minutes%% min read</span></div>
+      <div class="chapter-title-row"><span class="chapter-num" aria-hidden="true">%%number%%</span><h1>%%title%%</h1></div>
+      <p class="chapter-hook">%%hook%%</p>
+    </header>
+    <div class="chapter-body">
+%%body%%
+    </div>
+    <footer class="chapter-end">
+      <p class="chapter-done" hidden>✓ Chapter %%number%% complete</p>
+      <div class="pagers">%%prev%%%%next%%</div>
+    </footer>
+  </article>
+</main>
+</div>
+%%scripts%%
+</body>
+</html>

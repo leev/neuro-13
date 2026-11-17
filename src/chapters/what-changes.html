@@ -1,0 +1,19 @@
+<p>Before we make the network harder, it is worth being very clear about what training is allowed to change.</p>
+<p>Training does <strong>not</strong> change the examples. The input table stays the same. The right answers stay the same. If the row says <code>[1, 0] → YES</code>, training is not allowed to rewrite that row.</p>
+<p>Training also does <strong>not</strong> grow new neurons in these tiny programs. If the code says there is one neuron, training has to work with one neuron. If the code says there are 4 hidden neurons, training has to work with those 4. The network does not secretly add a fifth neuron because it gets stuck.</p>
+<p>The only things training changes are the <strong>weights</strong> and <strong>biases</strong> — the adjustable numbers inside the network. You can literally watch this: the dark "model" panels under {{ch:training}}'s trainers show the stored numbers being rewritten — and nothing else — while training runs.</p>
+<table>
+  <tr><th>Thing</th><th>Who changes it?</th></tr>
+  <tr><td>Input examples, like <code>[1, 0]</code></td><td>The human writing the dataset</td></tr>
+  <tr><td>Correct answers, like <code>YES</code></td><td>The human writing the dataset</td></tr>
+  <tr><td>Number of neurons</td><td>The human designing the network</td></tr>
+  <tr><td>Weights and biases</td><td>Training</td></tr>
+</table>
+<p>So when a later exercise says to change <code>hidden = 4</code> to <code>hidden = 2</code>, that is <em>you</em> changing the network design before training starts. After that, training tries to find weights and biases that make that chosen design work.</p>
+<div class="callout">
+  <strong>Short version:</strong> the human chooses the shape of the network. Training fills that shape with useful numbers.
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>If a one-neuron network cannot solve a puzzle, what is training allowed to try changing? What is it not allowed to change?</p>
+</div>

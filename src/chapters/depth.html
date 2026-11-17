@@ -1,0 +1,44 @@
+<p>Every network in this book so far has had exactly one hidden layer: input → hidden → output. Real networks stack more: <strong>input → hidden → hidden → output</strong>, and the big ones go dozens of layers deep. The wiring rule doesn't change at all — the outputs of hidden layer 1 simply become the <em>inputs</em> of hidden layer 2. Every neuron in layer 2 does the same multiply-add-squish from {{ch:neuron}}; it just chews on layer 1's answers instead of on the raw input.</p>
+<p>Why does that help? {{Ch:hidden}}'s network built its shape out of <em>straight lines</em>, because every hidden neuron looks at the raw inputs, and a single neuron's question is always a line. A second hidden layer builds shapes out of <em>those shapes</em>: layer 1 makes lines, layer 2 bends and combines them into curves and pockets. That's the "edges → shapes → objects" idea from {{ch:scale}}, shrunk down small enough to watch.</p>
+<p>Here's a puzzle that makes depth visible: <strong>two spirals</strong>, tangled around each other. Every dot is a training example — its position on the graph paper is the input (just two numbers, x and y), and its color is the right answer. This is {{ch:tables-dots}}'s dots-on-graph-paper all grown up. XOR needed one hidden layer; the spiral is XOR's final boss.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>One hidden layer vs two — fight</h3>
+  <p>Pick a brain, then train it. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. The shallow brains get as many (or more) neurons as the deep one — watch who actually learns the spiral.</p>
+  <div class="toggle-row" id="dp-arch" style="font-size: 13px;">
+    <div class="toggle" data-arch="8">1 hidden layer × 8</div>
+    <div class="toggle" data-arch="16">1 hidden layer × 16</div>
+    <div class="toggle on" data-arch="8,8">2 hidden layers × 8 + 8</div>
+  </div>
+  <canvas id="dp-canvas" width="280" height="280" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); max-width: 100%;"></canvas>
+  <div style="margin-top: 10px;">
+    <button id="dp-train1">train 500</button>
+    <button id="dp-train2">train 5,000</button>
+    <button class="secondary" id="dp-reset">reset</button>
+  </div>
+  <div class="stat-row">
+    <span>epochs: <strong id="dp-epoch">0</strong></span>
+    <span>accuracy: <strong id="dp-acc">?</strong></span>
+    <span>stored numbers: <strong id="dp-params">?</strong></span>
+  </div>
+  <div class="math-panel">
+    <h4>What each hidden neuron is looking for</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each little map shows where on the graph paper one hidden neuron gets excited (<span style="color: var(--accent); font-weight: 600;">blue</span>) or pushes back (<span style="color: var(--bad); font-weight: 600;">red</span>). After training, layer 1's maps are mostly stripes — straight-line questions. Layer 2's maps are bent: shapes built out of layer 1's stripes.</p>
+    <div id="dp-thumbs"></div>
+  </div>
+  <div class="math-panel">
+    <h4>The model, as stored</h4>
+    <button class="secondary" id="dp-dump-toggle">show the numbers</button>
+    <pre class="weight-dump model-dump" id="dp-model" hidden></pre>
+  </div>
+</div>
+
+<p>Train each brain for 5,000 epochs and compare. The shallow brains get stuck near coin-flip accuracy — more neurons in the same single layer barely helps, because one layer of lines, squished once, can't follow a curve that keeps curling. The two-layer brain finds the spiral. Then check the neuron maps: layer 1's stay stripey, while layer 2's are bent — each layer-2 neuron is a combination of layer-1 stripes, and bent stripes are exactly what a spiral is made of.</p>
+<p>One honesty note: in theory a single hidden layer can fit almost any shape <em>if you make it absurdly wide</em> — a famous result called the universal approximation theorem. But "possible in theory" and "actually findable by training" are very different things. Depth makes good solutions reachable with fewer neurons and less training, and that gap grows as problems get harder. That's the practical reason every serious network is deep.</p>
+<p style="font-size: 14px; color: var(--muted);">Two footnotes for the curious. First, the hidden squisher here is <strong>tanh</strong> — sigmoid's cousin that outputs −1 to +1 instead of 0 to 1. It trains more smoothly on this kind of puzzle, but it's the same "squish" idea. Second, you already own a real two-hidden-layer network: <code>neuro9.py</code> (784 → 128 → 64 → 10) is this widget's architecture scaled up to read handwritten digits. The spiral is the classic depth demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can build networks up to six layers deep in your browser.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>What's the smallest brain that gets above 95% on the spiral? And give the one-layer × 16 brain a truly fair shot: press "train 5,000" four times in a row. Does it ever escape?</p>
+</div>

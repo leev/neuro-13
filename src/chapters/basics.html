@@ -1,0 +1,24 @@
+<p>Before the neural-network stuff starts, here is the tiny bit of math language this book uses over and over. None of it is advanced; it is just a map for reading the examples.</p>
+<table>
+  <tr><th>What you see</th><th>What it means</th></tr>
+  <tr><td><code>0</code></td><td>no, off, false, absent</td></tr>
+  <tr><td><code>1</code></td><td>yes, on, true, present</td></tr>
+  <tr><td><code>[1, 0]</code></td><td>two inputs: the first one is on, the second one is off</td></tr>
+  <tr><td><code>(1, 0)</code></td><td>the same two numbers, drawn as a dot on graph paper</td></tr>
+  <tr><td><code>&gt;</code></td><td>"is bigger than?" — the question that turns a number into a yes/no answer</td></tr>
+</table>
+<p>One more thing before we start: this book keeps coming back to a single running example called the <strong>screen-time rule</strong>. The house rule is: <em>you get screen time if you practiced piano OR finished your homework.</em> In {{ch:training}} we'll teach a neuron that rule. For now, just notice how one example from it can be written three ways.</p>
+<p>A <strong>table row</strong>, a <strong>graph dot</strong>, and a <strong>line of code</strong> can all describe the same example. For the screen-time rule, this row:</p>
+<pre>piano = 1, homework = 0, answer = YES</pre>
+<p>can also be written as this input and label:</p>
+<pre>x = [1, 0]
+y = 1</pre>
+<p>and it can also be drawn as the dot <code>(1, 0)</code> with a YES label. Same information, three costumes.</p>
+<p>A <strong>weight</strong> is just "how much this input matters." A <strong>bias</strong> is just "how easy it is for the neuron to say yes before it sees the inputs." The neuron adds everything up, then asks one yes/no question: <em>is the total big enough?</em></p>
+<div class="callout">
+  <strong>Reading tip:</strong> whenever a formula looks scary, translate it back to words. <code>weight1 × input1 + weight2 × input2 + bias &gt; 0</code> means "input 1 gets a vote, input 2 gets a vote, the bias adds a built-in lean, and the neuron asks whether the total crosses the yes line."
+</div>
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Write the input <code>[0, 1]</code> in words for the screen-time example. Which thing is off? Which thing is on?</p>
+</div>

@@ -1,0 +1,50 @@
+<p>You've been hearing "nudge the weights in the right direction" for eleven chapters — and back in {{ch:training}} you even performed a nudge by hand. Time to pin down the full rule behind it. This is the math that powers every other chapter in this book.</p>
+
+<h3>The loss landscape</h3>
+<p>Imagine every weight in the network is a knob you can turn. A tiny network might have 20 knobs; ChatGPT has hundreds of billions. For each combination of knob positions, you can measure how wrong the network is on your training data. That single number is called the <strong>loss</strong> (sometimes "cost" or "error" — same idea).</p>
+<p>If you could plot loss against every possible knob setting, you'd get a <strong>landscape</strong> — bumpy, hilly terrain stretching out in millions of dimensions. High places are bad (the network gets stuff wrong); low places are good. Training a network is the search for a low spot in that landscape.</p>
+<p>Humans can't picture a 175-billion-dimensional landscape. Nobody can. But the rule for getting downhill is the same whether you're in 2 dimensions or 2 billion: at your current spot, figure out which direction goes <em>downward fastest</em>, take a small step that way, repeat.</p>
+
+<h3>The gradient is just the slope</h3>
+<p>The word <strong>gradient</strong> sounds fancy. It just means "slope, in every direction at once." If you're standing on a hillside, the gradient is the arrow that points straight downhill from where you're standing, along with how steep that direction is.</p>
+<p>For each weight in the network, the gradient says: <em>"if you increase this weight a tiny bit, the loss goes up (or down) by this much."</em> Calculus (specifically, the chain rule we met in {{ch:hidden}}) is the tool that computes the gradient for every weight at once. The algorithm that does this efficiently for a deep network is — you guessed it — <a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noopener">backpropagation</a>.</p>
+<p>Once you have the gradient, the update rule is comically simple:</p>
+<pre>new_weight = old_weight  −  (learning_rate × gradient)</pre>
+<p>That's it. Every line of "training" in every script in this book is doing some version of that. The minus sign is what makes it <em>descent</em> — you're moving the weight <em>against</em> the gradient, toward smaller loss. And compare it to {{ch:training}}'s hand-made recipe, <code>nudge = small step × error × input</code>: that was this exact formula in disguise. The "small step" is the learning rate, and "error × input" <em>is</em> the gradient for a one-neuron network.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Roll the ball downhill</h3>
+  <p>The curve is the loss. Horizontal position is the value of one weight. The red dot is where the network currently sits. Click "step" to take one gradient-descent step. Watch the dot find the bottom — and watch the steps get smaller as the slope flattens out, because the gradient itself shrinks near the minimum.</p>
+  <canvas id="gd-canvas" width="640" height="260" style="width:100%; max-width:640px; background:#f9fafb; border-radius:8px;"></canvas>
+  <div style="margin-top: 10px;">
+    <button id="gd-step">step downhill</button>
+    <button id="gd-fast">step 20 times</button>
+    <button class="secondary" id="gd-reset">put dot back on top</button>
+  </div>
+</div>
+
+<h3>Why we take small steps (learning rate)</h3>
+<p>That <code>learning_rate</code> in the update is the size of each step. It's one of the most important knobs in deep learning — and it's a knob <em>you</em> pick, not the network.</p>
+<ul>
+  <li><strong>Too small</strong> (say <code>0.0001</code>): the network learns, but excruciatingly slowly. It might take a million steps to get where a good learning rate would get in a thousand.</li>
+  <li><strong>Too big</strong> (say <code>10</code>): the network <em>overshoots</em> the minimum. Imagine rolling a ball down a hill so hard it flies up the other side, then back across, then up again. The loss bounces around and never settles. Sometimes it even explodes to infinity.</li>
+  <li><strong>Just right</strong> (often <code>0.001</code> to <code>0.1</code>, depending on the model): steady downhill progress.</li>
+</ul>
+<p>In <code>neuro1.py</code> the learning rate was implicitly 1 (we didn't write it — the toy data was friendly). In <code>neuro3.py</code> we wrote <code>lr = 0.5</code>. In <code>neuro5.py</code> we used <code>lr = 0.1</code> because ReLU is more sensitive. In real training people use schedules that <em>shrink</em> the learning rate over time — start big to make fast progress, end small to settle into a good minimum.</p>
+
+<h3>Local minima — why we don't usually care</h3>
+<p>The landscape isn't a simple bowl. It has lots of dips, valleys, plateaus, ridges. A "local minimum" is a dip that's lower than everything around it but not the lowest place in the whole landscape. For decades, people worried that gradient descent would get stuck in bad local minima.</p>
+<p>Here's the surprising empirical finding: in really high-dimensional landscapes (the kind real networks live in), most local minima turn out to be roughly as good as the global minimum. Bad minima are rare. There's also a lot of geometry where the network can wiggle around until it finds a path out. Modern networks just train, find a low spot, and the low spot is good enough. Nobody has a clean theory for why this works as well as it does — but it does.</p>
+
+<h3>Mini-batches: noisy descent</h3>
+<p>So far we've described "compute the loss on all your training data, then take a step." That's called <strong>full-batch gradient descent</strong>. With 60,000 training examples it's wildly expensive — every step requires running the entire network on the entire dataset.</p>
+<p>The fix everyone uses: shuffle the data, take a tiny chunk (say 32 or 128 examples — a <strong>mini-batch</strong>), compute the gradient on just that chunk, take a step, grab the next chunk, repeat. This is called <strong>stochastic gradient descent</strong> (SGD), or really mini-batch SGD.</p>
+<p>Picture-wise: instead of a smooth ball rolling cleanly downhill, imagine a slightly drunk ball wobbling downhill. Each step's direction is approximately correct but jittery, because it was computed from a small sample. The surprising thing is the noise actually <em>helps</em> — it shakes the ball out of small bad pockets and tends to find broader, flatter minima, which generalize better to new data. So mini-batching is faster AND finds better solutions. Win.</p>
+
+<p>That's gradient descent. Every learning algorithm you'll meet — Adam, RMSprop, momentum, AdamW — is the same loop with smarter rules about <em>how much to step</em> and <em>which direction to actually go</em> (often a smoothed blend of recent gradients). The core idea — "compute the slope, step against it" — has not changed since 1847.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Click "step downhill" slowly and watch the steps shrink near the bottom. Why do they shrink? (Hint: <code>step = lr × gradient</code>, and the gradient is the slope — what's the slope of a flat line?)</p>
+</div>

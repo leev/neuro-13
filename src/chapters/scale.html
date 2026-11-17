@@ -1,0 +1,34 @@
+<p>Everything so far has been with maybe a few dozen neurons total. Real networks are <strong>gigantic</strong>:</p>
+<table>
+  <tr><th>Network</th><th>Year</th><th>Roughly how many weights</th></tr>
+  <tr><td>The tiny examples above</td><td>—</td><td>~50</td></tr>
+  <tr><td>Meal guesser (this book, ch 11)</td><td>—</td><td>~200</td></tr>
+  <tr><td>MNIST classifier (this book, the MNIST script)</td><td>—</td><td>~110,000</td></tr>
+  <tr><td><a href="http://yann.lecun.com/exdb/lenet/" target="_blank" rel="noopener">LeNet-5</a> (digit recognizer)</td><td>1998</td><td>~60,000</td></tr>
+  <tr><td><a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">ResNet-50</a> (image classifier)</td><td>2015</td><td>~25 million</td></tr>
+  <tr><td><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">GPT-3</a> (the base model under early ChatGPT)</td><td>2020</td><td>175 billion</td></tr>
+  <tr><td>Frontier LLMs today (Claude, GPT-4, Gemini, Llama-405B)</td><td>2023–2026</td><td>Hundreds of billions to trillions (exact numbers usually not public)</td></tr>
+</table>
+
+<h3>What stays the same when you scale up</h3>
+<p>The math. Genuinely. The forward pass of a 175-billion-parameter model is still: multiply inputs by weights, add bias, apply a non-linearity, repeat. Backprop still computes gradients the same way. SGD still steps against the gradient. If you understand <code>neuro4.py</code>, you understand the inner loop of GPT.</p>
+<p>You'll see this for yourself in <code>neuro9.py</code> a few chapters from here — the MNIST classifier is the same shape as the iris classifier in <code>neuro8.py</code>, just with 784 inputs instead of 4 and two hidden layers instead of one.</p>
+
+<h3>What changes when you scale up</h3>
+<p><strong>More layers.</strong> Toy nets have 2 layers (input → hidden → output). Image models like ResNet-50 have 50. Modern LLMs have <strong>dozens</strong> of layers stacked on top of each other — GPT-2 has between 12 and 48 depending on size, GPT-3 has 96, Llama-2-70B has 80, Llama-3-405B has 126. (GPT-4 and Claude depths aren't public.) Why does depth help? Each layer can build a more sophisticated representation on top of the last. Early layers might learn edges or syllables; middle layers learn shapes or words; late layers learn objects or whole concepts. This is called <strong>compositionality</strong> and it's the whole reason "deep" learning is called "deep." (The "why depth" chapter near the end of this book lets you watch it happen, on a puzzle that defeats any one-hidden-layer network of similar size.)</p>
+<p><strong>More parameters.</strong> Going from 60,000 weights to 175 billion is a factor of 3 million. That's not a tweak. Each weight is a number stored in memory; each is updated every training step.</p>
+<p><strong>More data.</strong> Iris has 150 rows. MNIST has 60,000 images. ImageNet has 1.2 million images. GPT-3 was trained on roughly <a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">300 billion tokens</a> — about 500 million pages of text. Modern frontier models train on trillions of tokens. The rough empirical rule is: bigger models need proportionally more data to learn well. The <a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener">2020 Kaplan paper</a> and the 2022 <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">"Chinchilla" paper</a> worked out what those proportions are; people call those rules <strong>scaling laws</strong>.</p>
+<p><strong>More compute.</strong> Training GPT-3 took thousands of GPUs running for months and reportedly cost millions of dollars. A GPU (Graphics Processing Unit) is a chip originally built for video games, but it's <em>spectacularly</em> good at doing thousands of multiply-and-add operations in parallel — which is exactly what neural network forward and backward passes are. Specialized AI chips like Google's TPUs and NVIDIA's H100 / B200 take that idea further. The math is unchanged; the hardware that does the math billions of times per second is what changed.</p>
+
+<h3>What gets harder when you scale up</h3>
+<p><strong>Vanishing/exploding gradients.</strong> Remember the 10⁻⁴⁹ from the activations chapter? Stacking 100 layers of anything will misbehave unless you're careful. Modern networks use ReLU-family activations, careful weight initialization, and a trick called <strong>residual connections</strong> (shortcuts that let signal skip past layers) to keep gradients alive.</p>
+<p><strong>Overfitting.</strong> With 175 billion parameters, your network has plenty of capacity to memorize its training data instead of learning rules. People fight this with bigger datasets, dropout, weight decay, and early stopping.</p>
+<p><strong>Engineering.</strong> Training a model that doesn't fit on one GPU means splitting it across thousands. Failure becomes a daily fact of life. Saving checkpoints, restarting, monitoring loss curves, debugging numerical issues — most of a frontier ML team's work is engineering, not algorithm design.</p>
+
+<h3>Why bigger keeps working</h3>
+<p>Here's the unreasonably-effective fact at the heart of modern AI: when you make a model bigger and train it on more data, it just keeps getting better. Smoothly. Predictably. People expected diminishing returns around 1 billion parameters, then 10 billion, then 100 billion. Each time, scale kept paying off. Rich Sutton's <a href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html" target="_blank" rel="noopener">"The Bitter Lesson"</a> is the most-cited essay on why: clever human-engineered tricks tend to get beaten by simple, general algorithms that just consume more compute. It's bitter because researchers like cleverness. It's a lesson because it keeps happening.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Estimate the weights in a tiny network with 3 inputs, 5 hidden neurons, and 2 outputs. Count weights first, then remember each neuron also has a bias. Then look up how many seconds you'd need to type out all 175 billion of GPT-3's weights if you typed one per second. (Hint: that's about 5,500 years.)</p>
+</div>
