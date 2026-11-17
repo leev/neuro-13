@@ -274,3 +274,54 @@
   reset(FIRST_SEED);
 })();
 
+(function foldWidget() {
+  const canvas = document.getElementById('fd-canvas');
+  if (!canvas) return;
+  const { ctx, w: W, h: H } = Book.hidpi(canvas);
+  const slider = document.getElementById('fd-layers');
+  const SAMPLES = 1024, PAD = 16;
+  const relu = v => Math.max(0, v);
+
+  function zigzag(x, layers) {
+    let signal = x;
+    for (let l = 0; l < layers; l++) {
+      const a = relu(signal), b = relu(signal - 0.5);
+      signal = 2 * a - 4 * b;
+    }
+    return signal;
+  }
+
+  function render() {
+    const layers = +slider.value;
+    const ys = [];
+    for (let i = 0; i <= SAMPLES; i++) ys.push(zigzag(i / SAMPLES, layers));
+    let pieces = 1;
+    for (let i = 2; i <= SAMPLES; i++) {
+      if (Math.sign(ys[i] - ys[i - 1]) !== Math.sign(ys[i - 1] - ys[i - 2])) pieces++;
+    }
+
+    const toPx = i => PAD + (i / SAMPLES) * (W - 2 * PAD);
+    const toPy = y => H - PAD - y * (H - 2 * PAD);
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, toPy(0)); ctx.lineTo(W - PAD, toPy(0));
+    ctx.stroke();
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ys.forEach((y, i) => { if (i) ctx.lineTo(toPx(i), toPy(y)); else ctx.moveTo(toPx(i), toPy(y)); });
+    ctx.stroke();
+
+    document.getElementById('fd-layers-v').textContent = layers;
+    document.getElementById('fd-neurons').textContent = 2 * layers;
+    document.getElementById('fd-pieces').textContent = pieces;
+    document.getElementById('fd-wide').textContent = pieces;
+  }
+
+  slider.addEventListener('input', render);
+  render();
+})();
+

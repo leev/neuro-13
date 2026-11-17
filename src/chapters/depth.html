@@ -13,7 +13,7 @@
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Same neurons, one layer or two</h3>
-  <p>Pick a network and press "train 2,000" twice. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. Watch the boundary bend as training runs, and write down the accuracy after 2,000 and 4,000 epochs. Then try the next network.</p>
+  <p>Pick a network and press "train 2,000" twice. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. Watch the boundary bend as training runs, and write down the accuracy after 2,000 and 4,000 epochs. Then try the next network. (Training here uses Adam, the method from {{ch:descent}}.)</p>
   <div class="toggle-row" id="dp-arch" style="font-size: 13px;">
     <div class="toggle on" data-arch="8"><span>1 layer × 8</span></div>
     <div class="toggle" data-arch="4,4"><span>2 layers × 4 + 4</span></div>
@@ -45,7 +45,7 @@
   </div>
 </div>
 
-<h3>What just happened</h3>
+<h3>What layer 2 actually does</h3>
 <p>Each network begins from the same fixed set of "random" starting weights every time you select it, so your numbers should match these:</p>
 <table>
   <tr><th>network</th><th>stored numbers</th><th>after 2,000 epochs</th><th>after 4,000 epochs</th></tr>
@@ -55,22 +55,53 @@
   <tr><td>2 layers × 8 + 8</td><td>105</td><td>98%</td><td>99%</td></tr>
 </table>
 <p>Look at the first two rows. Both networks have 8 hidden neurons and nearly the same number of stored numbers. The one-layer network stalls, and more training barely helps: it is still at 83% after 8,000 epochs. The two-layer network finds the spiral.</p>
-<p>The little neuron maps show why. In the one-layer network every map is a stripe, and the output can only add eight stripes together. In the two-layer network, layer 1 makes four stripes and layer 2 turns them into four <em>bent</em> shapes, and bent shapes are what a spiral is made of.</p>
+<p>The little neuron maps show why. In the one-layer network every map is a stripe, and the output can only add eight stripes together. In the two-layer network, layer 1 makes four stripes and layer 2 turns them into four <em>bent</em> shapes. Bent shapes are what a spiral is made of, and only a second layer can make them.</p>
 
-<h3>Is deeper always better?</h3>
-<p>No, and the other two rows show it. Give a single layer 16 neurons and it solves the spiral too. That is a famous result called the <strong>universal approximation theorem</strong>: one hidden layer can fit almost any shape, as long as it is wide enough. Depth is not the only way to get there. It is a way to get there with fewer neurons.</p>
-<p>Luck matters too. Press "new random start" and train again, and the same network can end up somewhere different. To be fair to all four, we ran each one from 60 random starts, for 8,000 epochs each:</p>
+<h3>The honest scoreboard</h3>
+<p>One result in that table should surprise you: a <em>single</em> layer of 16 neurons solves the spiral too. That is a famous result called the <strong>universal approximation theorem</strong> at work: one hidden layer can fit almost any shape, as long as it is wide enough.</p>
+<p>And one run proves little, because the starting weights matter. Press "new random start" and train again, and the same network can end up somewhere different. So we ran each network from 60 random starts, for 8,000 epochs each:</p>
 <ul>
   <li><strong>1 layer × 8</strong> never reached 95%. Its best run got to 92%.</li>
   <li><strong>2 layers × 4 + 4</strong> reached 95% in 25 of its 60 starts.</li>
   <li><strong>1 layer × 16</strong> reached 95% every single time.</li>
   <li><strong>2 layers × 8 + 8</strong> reached 95% in 53 of its 60 starts. Most of the others got stuck near a coin flip and stayed there.</li>
 </ul>
-<p>So the honest summary has two halves. Stacking layers lets the same neurons do more. But deep networks are touchier to train, and more of them get stuck. Much of the engineering in modern deep learning (ReLU from {{ch:activations}}, and the tricks you will meet in {{ch:scale}}) exists to make deep networks train reliably.</p>
-<p>Then why is every serious network deep? Because the saving grows with the problem. On a small puzzle like this one, going wide costs a few extra neurons. On large problems with layers of structure, such as pictures made of objects made of parts made of edges, a shallow network can need impossibly many neurons to do what a deep one does with a modest number. A two-color spiral is too small to show that. It can only show you the start of it.</p>
-<p style="font-size: 14px; color: var(--muted);">Three footnotes for the curious. The hidden activation in this widget is <strong>tanh</strong>, sigmoid's cousin that outputs −1 to +1 instead of 0 to 1 (that is why the little maps have both blue and red). The training method is Adam from {{ch:descent}}; plain gradient descent fast enough to watch was so jumpy here that the result depended on which browser you used. And the spiral is the classic demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can stack up to six hidden layers. This book has its own version in {{ch:playground}}.</p>
+<p>Two things are true at once. Stacking lets the same eight neurons do something they could not do side by side. And deep networks are touchier: they are the only ones here that ever got properly stuck. A good share of modern deep learning (ReLU from {{ch:activations}}, and the tricks you will meet in {{ch:scale}}) exists to make deep networks train reliably.</p>
 
-<div class="bigidea"><p>Each layer builds on the one before it: lines, then shapes made of lines, then shapes made of shapes. That lets the same number of neurons go further. It is not magic: a wide enough single layer can do the same job, and deeper networks are harder to train.</p></div>
+<h3>So why is every serious network deep?</h3>
+<p>Because depth lets a network <em>reuse</em> what earlier layers built, and for some shapes that is enormously cheaper. The spiral is too small to show it. Here is the cleanest example there is.</p>
+<p>Take one input, a number between 0 and 1, and a layer of just two ReLU neurons. With the right weights, that pair turns a rising line into a tent: up, then back down. It has <em>folded</em> the number line in half, like folding a strip of paper. Now feed the tent into a second, identical pair. It folds everything it is given, so out come two tents. A third pair folds those. Every layer reuses all the folds made before it.</p>
+
+<div class="predict" data-answer="b">
+  <p>Each new layer adds just two neurons. What happens to the number of straight pieces in the zigzag every time you add a layer?</p>
+  <button data-opt="a">It goes up by two, one for each new neuron</button>
+  <button data-opt="b">It doubles</button>
+  <button data-opt="c">It stays the same, but the zigzag gets taller</button>
+  <p class="why">It doubles. The new layer folds every piece the earlier layers made, not just one of them. That is what "reuse" means here.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Fold the line</h3>
+  <p>Slide to add layers and watch the zigzag. Left to right is the input, from 0 to 1; up is the network's output. <strong>These weights were set by hand, not learned</strong>: in every layer, neuron A fires on its input, neuron B fires on its input minus 0.5, and the pair hands on 2 × A − 4 × B.</p>
+  <canvas id="fd-canvas" width="600" height="180" style="width:100%; max-width:600px; background:#f9fafb; border-radius:8px;"></canvas>
+  <div class="slider-row">
+    <label>layers</label>
+    <input type="range" id="fd-layers" min="1" max="7" step="1" value="1">
+    <span class="value" id="fd-layers-v">1</span>
+  </div>
+  <div class="stat-row">
+    <span>neurons in this network: <strong id="fd-neurons">2</strong></span>
+    <span>straight pieces it draws: <strong id="fd-pieces">2</strong></span>
+    <span>neurons one layer would need: <strong id="fd-wide">2</strong></span>
+  </div>
+</div>
+
+<p>Seven layers is 14 neurons, drawing 128 straight pieces. A single hidden layer of ReLU neurons can only put one bend in the line per neuron, so it needs about one neuron for every piece: 128 of them. Keep going and the gap gets absurd. Twenty layers is 40 neurons. One layer would need more than a million. This is a proven result, not a lucky run (<a href="https://arxiv.org/abs/1602.04485" target="_blank" rel="noopener">Telgarsky, 2016</a>).</p>
+<p><strong>Honesty note.</strong> The folding weights were chosen by a person. The widget shows what depth <em>can</em> express with very few neurons, and training does not always find answers this neat. But it is the real reason for depth. When a problem has structure that can be reused (edges into parts and parts into objects, or letters into words and words into meaning), each layer builds on everything below it, while a shallow network has to pay for every piece separately.</p>
+<p style="font-size: 14px; color: var(--muted);">Two footnotes for the curious. The hidden activation in the spiral widget is <strong>tanh</strong>, sigmoid's cousin that outputs −1 to +1 instead of 0 to 1 (that is why the little maps have both blue and red). And the spiral is the classic demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can stack up to six hidden layers. This book has its own version in {{ch:playground}}.</p>
+
+<div class="bigidea"><p>Each layer builds on the one before it, so a deep network can reuse what it has already made: lines, then shapes made of lines, then shapes made of shapes. A wide enough single layer can often do the same job, but for layered problems it pays for every piece separately, and the bill grows out of reach.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
@@ -93,10 +124,10 @@
     <p class="why">Same data, same training, same neuron count. The difference is the arrangement. And "always" is too strong: with 16 neurons, the one-layer network solved the spiral as well.</p>
   </div>
   <div class="q" data-answer="c">
-    <p>One hidden layer of 16 neurons solved the spiral without any help from depth. So why are big networks built deep instead of just wide?</p>
-    <button data-opt="a">Because a single layer cannot learn curved shapes</button>
-    <button data-opt="b">Because deep networks never get stuck during training</button>
-    <button data-opt="c">Because on hard problems a single layer would need far more neurons than a deep network does</button>
-    <p class="why">A single layer can learn curves, as you saw, and deep networks get stuck more often, not less. The case for depth is efficiency: the harder and more layered the problem, the more neurons depth saves.</p>
+    <p>In the folding widget, why does a deep network need so few neurons compared with a single layer?</p>
+    <button data-opt="a">Its neurons are a more powerful kind</button>
+    <button data-opt="b">It was trained for much longer</button>
+    <button data-opt="c">Each layer reuses every fold the earlier layers made, while a single layer has to build each piece separately</button>
+    <p class="why">The neurons are identical, and nothing in that widget was trained at all. The saving comes purely from reuse: every new layer doubles the work already done, and a single layer has nothing to reuse.</p>
   </div>
 </div>

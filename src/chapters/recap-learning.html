@@ -9,7 +9,7 @@
   <li>Learning is gradient descent: find the slope of the loss for every weight and move each one a small step downhill, with the learning rate setting the size of the step.</li>
   <li>Backpropagation finds all of those slopes in one sweep, by passing the blame for a mistake backward from the output with the chain rule.</li>
   <li>The only score that counts is the one on a test set the network never trained on, because a network can ace its training data just by memorizing it.</li>
-  <li>Depth lets each layer build on the one before, and scaling up changes how much there is of everything (layers, parameters, data, chips) but not the math.</li>
+  <li>Depth lets each layer reuse what the layers below it built, and scaling up changes how much there is of everything (layers, parameters, data, chips) but not the math.</li>
 </ol>
 
 <h3>Mixed quiz</h3>
