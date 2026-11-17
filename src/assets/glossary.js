@@ -44,11 +44,14 @@
   // Nodes a widget adds at runtime arrive here on their own, so the skip
   // rules have to look at ancestors too: an HTML <span> wrapped around a word
   // inside an SVG <text> simply makes the word disappear.
+  const SKIP_CLASSES = ['gloss', 'terminal', 'CodeMirror', 'toggle', 'token-pill'];
+  function skipped(el) {
+    return SKIP.has(el.tagName.toUpperCase()) || el.hasAttribute('data-no-gloss') ||
+      SKIP_CLASSES.some(c => el.classList.contains(c));
+  }
   function insideSkipped(el) {
     for (; el && el.nodeType === 1; el = el.parentElement) {
-      if (SKIP.has(el.tagName.toUpperCase())) return true;
-      if (el.hasAttribute('data-no-gloss')) return true;
-      if (['gloss', 'terminal', 'CodeMirror', 'toggle', 'token-pill'].some(c => el.classList.contains(c))) return true;
+      if (skipped(el)) return true;
     }
     return false;
   }
@@ -66,10 +69,7 @@
       for (let c = el.firstChild; c; c = c.nextSibling) {
         if (c.nodeType === 3) {
           textNodes.push(c);
-        } else if (c.nodeType === 1) {
-          const t = c.tagName.toUpperCase();
-          if (SKIP.has(t)) continue;
-          if (c.classList && c.classList.contains('gloss')) continue;
+        } else if (c.nodeType === 1 && !skipped(c)) {
           walk(c);
         }
       }

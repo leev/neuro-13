@@ -1,0 +1,269 @@
+<p>The model you trained in {{ch:names}} had one hard limit: it could only see the last three letters. Anything before that was gone. For inventing names, three letters is enough. For reading a sentence it is hopeless, and it only takes one sentence to see why.</p>
+
+<h3>Why a fixed window is not enough</h3>
+<p>Read this: <em>The trophy didn't fit in the suitcase because it was too big.</em></p>
+<p>What was too big? The trophy. You knew without thinking. Now swap the last word and read it again.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Who is "it"?</h3>
+  <p>Switch the ending. The word <strong>it</strong> is asking a question: <em>what am I standing in for?</em> The dark orange word is where the answer is.</p>
+  <div class="toggle-row" id="wi-ending">
+    <div class="toggle on" data-end="big" role="button" tabindex="0" aria-pressed="true">…because it was too big</div>
+    <div class="toggle" data-end="small" role="button" tabindex="0" aria-pressed="false">…because it was too small</div>
+  </div>
+  <div class="wi-sentence" id="wi-words" data-no-gloss></div>
+  <p class="wi-note" id="wi-note" data-no-gloss></p>
+  <div class="wi-legend">
+    <span><i class="asker"></i>the word asking</span>
+    <span><i class="strong"></i>the answer</span>
+    <span><i class="weak"></i>the other candidate</span>
+    <span><i class="clue"></i>the clue</span>
+  </div>
+  <p class="fine-print">This picture is drawn by hand to show the idea. It is not measured from a real model.</p>
+</div>
+
+<p>Notice what you did. Standing at <em>it</em>, you looked back across the sentence, found the two things <em>it</em> could be, and used a clue at the far end to choose between them. You skipped straight over <em>in</em>, <em>the</em> and <em>because</em>, even though they were closer. You didn't look at the nearest words. You looked at the useful ones, wherever they were.</p>
+<p>A model with a three-token window can't do that. By the time it gets to <em>it</em>, all it can see is "suitcase because it". The trophy slid out of view long before. You could widen the window to ten tokens, or a hundred, but every extra slot costs more weights, and the word you need can always be one place further back.</p>
+<p>(Sentences like this one have a name: Winograd schemas. For years, researchers used them to test whether a computer was following the meaning of a sentence or only matching up nearby words.)</p>
+<p>What we want is a model where any token can look at any other token and decide for itself which ones matter. That idea is called <strong>attention</strong>: each token gathers information from the others, taking a lot from the useful ones and almost nothing from the rest. It is the central idea inside every modern chatbot, and you already own all the parts.</p>
+
+<h3>A question, a label and a payload</h3>
+<p>In attention, every token carries three lists of numbers. Each list has a job.</p>
+<ul>
+  <li>The <strong>query</strong> is the token's question: <em>here is what I am looking for.</em></li>
+  <li>The <strong>key</strong> is the token's label: <em>here is what I have to offer.</em></li>
+  <li>The <strong>value</strong> is the token's payload: <em>here is what you get if you listen to me.</em></li>
+</ul>
+<p>The token that is looking holds its query up against every other token's key and gets a <strong>match score</strong> for each one. Then it collects the values, taking the most from the tokens with the highest scores.</p>
+<p>How do you score a match between two lists of numbers? With a <strong>dot product</strong>: multiply the first numbers together, multiply the second numbers together, keep going to the end of the lists, then add up the results. You have been doing this since {{ch:neuron}}. It is exactly what a neuron does with its inputs and its weights.</p>
+<p>When a list has just two numbers you can draw it as an arrow: the first number says how far right, the second says how far up. For arrows, the dot product means something you can see.</p>
+<ul>
+  <li>Arrows pointing the <strong>same way</strong> give a big positive score.</li>
+  <li>Arrows at a <strong>right angle</strong> give zero.</li>
+  <li>Arrows pointing <strong>opposite ways</strong> give a negative score.</li>
+</ul>
+<p>Last step. The scores go through softmax, the function from {{ch:multi}} that turns any list of scores into shares that add up to 1. Here the shares are called <strong>attention weights</strong>. The output is a <strong>weighted blend</strong> of the values: multiply each value by its share, then add them all together.</p>
+<p>That is the whole operation. Score, softmax, blend. Try it by hand before we let a network learn it.</p>
+
+<div class="predict" data-answer="c">
+  <p>In the widget below, the red token's key is the arrow (2, 1). You aim a short query arrow the same way, then stretch it to three times the length without turning it. What happens to red's share of the attention?</p>
+  <button data-opt="a">It stays the same, because the direction hasn't changed</button>
+  <button data-opt="b">It shrinks, because a longer arrow reaches the other keys too</button>
+  <button data-opt="c">It grows, because every score gets multiplied by three</button>
+  <p class="why">A longer query multiplies every score by the same amount, and softmax cares about the gaps between the scores. Bigger gaps mean a more lopsided split. In the widget, a query of (0.4, 0.2) gives red 0.65 of the attention. Stretch it to (1.2, 0.6) and red gets 0.95.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Aim the query</h3>
+  <p>Three tokens. Each one has a key, drawn as a colored arrow, and a value, which is a color. A color makes a handy value because it is a list of three numbers (how much red, green and blue light to mix), and you can see what a blend of colors looks like.</p>
+  <p>The black arrow is the query. Drag its round handle, or use the sliders. Watch the three scores, the three shares and the blended color.</p>
+  <div class="ah-layout">
+    <div>
+      <canvas id="ah-canvas" width="300" height="300" aria-label="A grid with three colored key arrows and a black query arrow you can drag"></canvas>
+      <div class="ah-sliders">
+        <div class="ah-head">the query's two numbers</div>
+        <div class="slider-row"><label for="ah-qx">first</label><input type="range" id="ah-qx" min="-3" max="3" step="0.1" value="1"><span class="value" id="ah-qx-v">1.0</span></div>
+        <div class="slider-row"><label for="ah-qy">second</label><input type="range" id="ah-qy" min="-3" max="3" step="0.1" value="1"><span class="value" id="ah-qy-v">1.0</span></div>
+      </div>
+    </div>
+    <div data-no-gloss>
+      <div class="ah-head">score = key · query, then its share after softmax</div>
+      <div id="ah-rows"></div>
+      <div class="ah-blend">
+        <div class="ah-head">the blend: each color times its share, added up</div>
+        <div id="ah-blend-swatch"></div>
+        <div class="ah-blend-text"><span id="ah-blend-sum"></span><br><span id="ah-blend-rgb"></span></div>
+      </div>
+    </div>
+  </div>
+  <div id="ah-presets" style="margin-top: 12px;">
+    <button class="secondary" data-q="2,1">aim at red</button>
+    <button class="secondary" data-q="-1,2">aim at yellow</button>
+    <button class="secondary" data-q="-1,-2">aim at blue</button>
+    <button class="secondary" data-q="0.5,1.5">between red and yellow</button>
+    <button class="secondary" data-q="0,0">shrink to nothing</button>
+  </div>
+</div>
+
+<p>Four things to take away from that:</p>
+<ul>
+  <li><strong>Direction picks the winner.</strong> The token whose key points most nearly the same way as the query gets the biggest score.</li>
+  <li><strong>Length sets how sharp the choice is.</strong> A short query gives a mushy blend of everything. A long one hands nearly all the attention to a single token.</li>
+  <li><strong>Zero means flat.</strong> With the handle at the center every score is 0, softmax hands out equal shares of 0.33, and the blend is a muddy brown. Remember that picture. The next model starts there.</li>
+  <li><strong>Nobody ever gets exactly nothing.</strong> Softmax never produces a true zero. Even when the screen says 0.00 there is a sliver left. Attention is a soft choice, not a switch.</li>
+</ul>
+
+<h3>The locker room: a network that learns where to look</h3>
+<p>In that widget you aimed the query yourself, and we made up the keys. In a real network nobody aims anything. The queries, keys and values all come out of weights, and the weights are learned. Let's watch that happen.</p>
+<p>The task is a locker room. Each example is a short row of lockers, each with an owner and one item inside, followed by a question that names an owner. The right answer is that owner's item.</p>
+<pre>sam:hat   mia:ball   leo:book   ? mia   →   ball</pre>
+<p>There are 8 owners and 8 items, shuffled for every example, so nothing can be learned by heart: mia has a ball here and a kite next time. The only way to be right is to find mia's locker and read what's in it. That is a lookup.</p>
+<p>Here is the model, start to finish:</p>
+<ol>
+  <li><strong>Embeddings.</strong> Every owner and every item gets its own row of 16 learned numbers, like the embedding rows in {{ch:tokens}}. A locker is its owner's row plus its item's row, added number by number. So each locker is one list of 16 numbers with <em>who</em> and <em>what</em> mixed together.</li>
+  <li><strong>Query.</strong> The row for the owner named in the question is multiplied by a grid of weights. Out comes the query.</li>
+  <li><strong>Keys and values.</strong> Each locker's 16 numbers are multiplied by a second grid of weights to make its key, and by a third grid to make its value.</li>
+  <li><strong>Attention.</strong> Dot product of the query with each key, softmax, then a weighted blend of the values. It is what you just did by hand, with 16 numbers in each arrow instead of 2.</li>
+  <li><strong>Answer.</strong> One last layer turns the blend into 8 scores, one for each item, and softmax turns those into probabilities.</li>
+</ol>
+<p>That comes to 1,160 weights, and every one of them starts as a small random number. Training is what it has been all book: show examples in mini-batches of 16 ({{ch:descent}}), measure how wrong the answers are, and let backpropagation ({{ch:backprop}}) work out a nudge for every weight. Nobody tells the model which locker to look at. It is only ever told the right answer.</p>
+
+<div class="predict" data-answer="b">
+  <p>The weights start as tiny random numbers. Before any training, how will the model spread its attention over three lockers?</p>
+  <button data-opt="a">Nearly all on one locker, picked at random</button>
+  <button data-opt="b">Almost exactly a third on each</button>
+  <button data-opt="c">Nearly all on the right locker, but with a wrong answer anyway</button>
+  <p class="why">Tiny weights make tiny queries and tiny keys, so every match score is close to zero. You saw what softmax does with equal scores: equal shares. The model starts out staring at every locker equally.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train the locker room</h3>
+  <p>Press <strong>train</strong> and watch the orange bars above the lockers. They show how much attention the question is paying to each one. The locker with the green outline holds the right answer.</p>
+  <p>The chart tracks 500 test examples that the model never trains on: how often its answer is right, and how much of its attention lands on the right locker. Training takes about 8 seconds. You can pause it at any point and poke at the example.</p>
+  <div>
+    <button id="lk-train">train</button>
+    <button class="secondary" id="lk-reset">start over with new random weights</button>
+  </div>
+  <div class="stat-row">
+    <span>examples seen: <strong id="lk-seen">0</strong> of 24,000</span>
+    <span>answers right: <strong id="lk-acc">?</strong></span>
+    <span>attention on the right locker: <strong id="lk-focus">?</strong></span>
+    <span>weights: <strong id="lk-weights">?</strong></span>
+  </div>
+  <canvas id="lk-chart" width="600" height="200" aria-label="Chart of accuracy and attention on the right locker as training goes on"></canvas>
+
+  <div class="math-panel">
+    <h4>One example, live</h4>
+    <div class="lk-room" id="lk-room"></div>
+    <div class="lk-legend">
+      <span><i class="beam"></i>attention on this locker</span>
+      <span><i class="door"></i>the locker with the right answer</span>
+    </div>
+    <div class="lk-question"><span>Question: what is in the locker of</span><select id="lk-asked" aria-label="whose locker to ask about"></select><span>?</span></div>
+    <p class="lk-verdict" id="lk-verdict" data-no-gloss></p>
+    <div id="lk-guesses" data-no-gloss></div>
+    <div style="margin-top: 10px;">
+      <button class="secondary" id="lk-new">new example</button>
+      <button class="secondary" id="lk-add">add a locker</button>
+      <button class="secondary" id="lk-remove">remove a locker</button>
+      <button class="secondary" id="lk-shuffle">shuffle the lockers</button>
+    </div>
+    <p class="fine-print">Every menu works. Change an owner, an item or the question and the model answers again at once.</p>
+  </div>
+
+  <div class="math-panel">
+    <h4>Peek inside: which question matches which locker?</h4>
+    <p class="fine-print" style="margin: 0 0 10px;">Each row is a question. Each square is a match score: the darker the orange, the higher the score. Gray is below zero and white is about zero. Hover over a square to read its number.</p>
+    <div class="lk-grids" data-no-gloss>
+      <figure>
+        <figcaption>against the name on the door</figcaption>
+        <div class="lk-grid" id="lk-grid-owner"></div>
+      </figure>
+      <figure>
+        <figcaption>against the item inside</figcaption>
+        <div class="lk-grid" id="lk-grid-item"></div>
+      </figure>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>The run goes through three stages, in the same order every time.</p>
+<ol>
+  <li><strong>Guessing.</strong> At the start the model is right about 1 time in 8, which is what you'd get by picking an item out of a hat. Attention is flat.</li>
+  <li><strong>Stuck near one in three.</strong> Accuracy creeps up to around 30% and stalls, and the orange line doesn't move at all. The model has worked out that the answer is always one of the items in the room, which beats guessing from all 8. But with flat attention the blend is an even mix of three lockers, and nothing in it says whose item is whose. One in three is the best anybody could do without looking.</li>
+  <li><strong>The click.</strong> Somewhere between about 13,000 and 18,000 examples (it varies from run to run) the orange line lifts off, the bars pile onto the green locker, and accuracy shoots up to 100%. The model has learned where to look.</li>
+</ol>
+<p>We ran this exact training 200 times outside the browser. Every run finished at 100% on its 500 test examples, with between 94% and 98% of the attention on the right locker.</p>
+<p>Why the long stall? The nudges that shape the query and key weights are tiny while those weights are tiny, and they only start to mean something once the rest of the model can read an item out of the blend. So for a while nothing seems to happen. Then a little extra attention on the right locker makes the answer a little better, which makes the next nudge stronger, which sharpens the attention some more. It snowballs.</p>
+<p>Now look at the two grids under "peek inside". A locker is its owner's row plus its item's row, so its key has two parts: one that comes from the owner and one that comes from the item. The left grid scores each question against the owner part. Before training it is blank. After training, the darkest orange square in every row sits on the diagonal: mia's query matches mia's key best, sam's matches sam's. Nobody programmed that pairing. The weights found it.</p>
+<p>The right grid scores the same questions against the item part, and it stays almost blank. The model has learned that what is <em>inside</em> a locker is no help in deciding <em>where to look</em>, so the keys carry the owner and all but ignore the item. The values do the opposite job. We checked the trained weights of 40 models: in every one, the item's part of the value decided the answer and the owner's part barely counted. A label and a payload, pulled apart, just as the names promise.</p>
+
+<h3>Try to break it</h3>
+<div class="predict" data-answer="b">
+  <p>The model has only ever seen rooms with exactly 3 lockers. You are about to hand it a room with 8. What will happen?</p>
+  <button data-opt="a">It will fall apart, because it has never seen that many</button>
+  <button data-opt="b">It will still find the right locker, with its attention spread a little thinner</button>
+  <button data-opt="c">It will only be right when the answer is in one of the first three lockers</button>
+  <p class="why">Nothing in the model counts lockers. Every locker gets its own score from the same weights, and softmax works on a list of any length. In our 200 test runs, every trained model scored 100% on rooms of 8. The price is focus: with more lockers competing, the share of attention on the right one typically fell from about 96% to about 87%.</p>
+</div>
+<p>Scroll back up to the widget (train it first if you started over) and try these:</p>
+<ul>
+  <li><strong>More lockers.</strong> Press <em>add a locker</em> until there are 8, then press <em>new example</em> a few times.</li>
+  <li><strong>Shuffle.</strong> Press <em>shuffle the lockers</em>. The bars travel with their lockers and the answer does not change at all. The model has no idea what order the lockers are in. Hold that thought.</li>
+  <li><strong>Swap the item.</strong> Use the second menu on the green locker to put something else inside. The bars barely move, and the answer follows the new item.</li>
+  <li><strong>Ask about someone who isn't there.</strong> In the question menu, pick a name marked <em>no locker here</em>. There is no right answer. The model gives one anyway, and it is usually very sure of itself. Softmax has to hand out shares that add up to 1, so attention has no way to say "nobody matches". It settles on whichever key is the least bad match and reports what is in that locker. {{Ch:mistakes}} is about what happens when much bigger models answer confidently with nothing to go on.</li>
+</ul>
+
+<h3>Why "query", "key" and "value"?</h3>
+<p>The names are borrowed from databases. Programs store things in pairs: a <em>key</em> to look things up by, and a <em>value</em> that comes back. The contact list in a phone works this way (name in, number out). So does a Python dictionary:</p>
+<pre>lockers = {"sam": "hat", "mia": "ball", "leo": "book"}
+lockers["mia"]   →   "ball"</pre>
+<p>The thing you ask with, <code>"mia"</code>, is the query. An ordinary lookup like this is all or nothing. The query matches one key exactly and you get that key's value, whole. Ask for <code>lockers["zoe"]</code> and the program stops with an error.</p>
+<p>Attention is the same lookup with soft edges. Every key matches every query a little, and what comes back is a blend. That is why this chapter calls it a <em>fuzzy</em> lookup.</p>
+<p>The fuzziness is not sloppiness. It is what makes attention trainable. Backpropagation works by asking, "if I nudge this weight a hair, does the answer get a hair better?" With a blend, a small nudge always changes the mix a little, so there is always an answer. With an all-or-nothing lookup, a small nudge changes nothing at all, right up until the moment the choice jumps to a different locker. No slope, nothing to roll down. A soft lookup can start out flat, as ours did, and slide smoothly toward a sharp one. You just watched it happen.</p>
+
+<h3>Inside a real transformer</h3>
+<p>In 2017, eight researchers, most of them at Google, published a paper with a cheeky title: <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">"Attention Is All You Need"</a>. It described a network built almost entirely out of the operation you just trained, and named it the <strong>transformer</strong>. Every big chatbot today is a descendant. Here is what a transformer adds to the locker room.</p>
+<ul>
+  <li><strong>Every token asks at once.</strong> In the locker room only the question sent out a query. In a transformer every token does, all at the same moment, and each one gets back its own blend. (In a chatbot, a token may only look at the tokens before it. Its job is to predict what comes next, so peeking ahead would be cheating.)</li>
+  <li><strong>Several heads.</strong> One set of query, key and value weights is called an <strong>attention head</strong>, and one head can only ask one kind of question. So each layer runs several heads side by side, each with its own weights, each free to look for something different. When researchers open up real models they do find some heads with a job you can name, like linking a word such as <em>it</em> back to the thing it stands for. Most heads are much harder to read.</li>
+  <li><strong>Many layers.</strong> The blends that come out of one layer are the inputs to the next, so later layers can ask questions about what earlier layers found. The smallest version of GPT-2, from 2019, has 12 layers with 12 heads each: 144 heads. GPT-3, a year later, has 96 layers with 96 heads each: 9,216 heads.</li>
+  <li><strong>A small ordinary network after every attention step.</strong> Attention only moves information around. So after each attention step, every token is passed through a small network of the kind you built in {{ch:hidden}}, weights and a bias and a squish, to do some work on what it has gathered.</li>
+</ul>
+<p>And one fix, for a problem you have already seen. <strong>A blend ignores order.</strong> You shuffled the lockers and nothing changed. For lockers that is fine. For language it would be a disaster, because <em>dog bites man</em> and <em>man bites dog</em> are the same three tokens. So before the first layer, a transformer adds a <strong>position signal</strong> to every token: a second list of numbers, added onto the token's embedding, that depends only on where the token sits in the text. First, second, third and so on each get a different list. Now a key can say "I am a noun, in fifth place", and a query from the seventh token can ask for "a noun, two places before me". The 2017 paper built its position lists out of wave patterns. Newer models mix position in other ways. The job is always the same: give attention a way to tell first from last.</p>
+<p class="fine-print">Honesty note: we left out some plumbing. Real transformers also rescale the numbers between steps and add shortcut connections so that gradients survive dozens of layers, and they divide every match score by a fixed number before the softmax to keep the scores from growing too large. None of that changes the idea.</p>
+<p>{{Ch:chatbots}} puts the whole machine together: tokens in, embeddings, layer after layer of attention, and at the end a probability for every possible next token.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the locker room in Python</h3>
+  <p>This is <code>attention.py</code>: the same model, the same task and the same training as the widget, in one short numpy script. The function <code>gradients()</code> is backpropagation written out by hand. Look for four things in the output: the attention on one example before and after training, the two test scores stalling and then jumping together, how the model copes with rooms of other sizes, and what it says about someone who has no locker. Give it a little while. The progress lines arrive one at a time as it trains.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">attention.py</span>
+      <span class="code-status" id="py-status-attention">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-attention" spellcheck="false" rows="30" data-src="attention.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="attention">▶ run</button>
+    <button class="secondary" data-py-reset="attention">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-attention"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="bigidea"><p>Attention is a lookup with soft edges. Each token asks a question (its query), every token wears a label (its key), a dot product scores each match, softmax turns the scores into shares, and what comes back is a blend of payloads (the values). All three are made by ordinary weights, learned by the same backpropagation as everything else.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>In the Python above, change <code>LOCKERS = 3</code> to <code>LOCKERS = 2</code>, so the model only ever trains on rooms with two lockers. Before you run it, predict what the table at the end will say about rooms of 8. Then put it back to 3, change <code>SIZE = 16</code> to <code>SIZE = 8</code>, and watch when the click comes. If it hasn't finished by the last step, give it <code>STEPS = 3000</code>.</p>
+  <p>And one with no code. Our model could never learn to answer "what is in the <em>second</em> locker?" Why not, and what would you have to add?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>What decides how much one token listens to another?</p>
+    <button data-opt="a">How close together they are in the text</button>
+    <button data-opt="b">How well the listener's query matches the other token's key</button>
+    <button data-opt="c">How big the numbers in the other token's value are</button>
+    <p class="why">The match score is the dot product of a query and a key. Distance plays no part unless a position signal has been mixed in, and the value is only what gets handed over once the shares are decided.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Two lockers end up with exactly the same match score, far above all the others. What does attention pass along?</p>
+    <button data-opt="a">The value of whichever locker comes first</button>
+    <button data-opt="b">Nothing: a tie is an error, like a failed database lookup</button>
+    <button data-opt="c">An even blend of the two values</button>
+    <p class="why">Equal scores get equal shares from softmax, so the output is half of one value plus half of the other. Attention never has to pick just one. That is the "fuzzy" in fuzzy lookup.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>After training, the question "mia?" puts nearly all of its attention on mia's locker. Where did that behavior come from?</p>
+    <button data-opt="a">From weights that were nudged by backpropagation until the answers came out right</button>
+    <button data-opt="b">From a rule in the code that compares the two names</button>
+    <button data-opt="c">From the softmax, which always favors the right locker</button>
+    <p class="why">The code never compares names and never says where to look. Queries and keys come out of weights that start random. Training only scores the final answer, and the nudges flow back through the blend to the weights that make the queries and keys.</p>
+  </div>
+</div>

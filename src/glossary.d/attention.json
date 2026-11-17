@@ -1,0 +1,11 @@
+{
+  "attention": "How a token gathers information from other tokens: it scores each one for how useful it looks, then takes a blend that leans toward the highest scorers.",
+  "query": "In attention, the list of numbers a token uses to ask its question: here is what I am looking for.",
+  "key (in attention)": "The list of numbers a token wears as its label. When a query points the same way as a key, the match score is high.",
+  "value (in attention)": "The list of numbers a token hands over when it is listened to. The output of attention is a weighted blend of values.",
+  "match score": "In attention, the dot product of one token's query with another token's key. Higher means listen more.",
+  "attention weight": "How much one token listens to another, from 0 to 1. A token's attention weights over all the others add up to 1.",
+  "weighted blend": "A mix where each ingredient is multiplied by its share and the results are added up. The shares add up to 1.",
+  "attention head": "One set of query, key and value weights. A transformer layer runs several heads side by side, each free to look for something different.",
+  "position signal": "Extra numbers added to each token that say where it sits in the text, because attention on its own ignores order. Engineers call it a positional encoding."
+}
