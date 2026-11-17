@@ -18,6 +18,14 @@ window.Book = (function () {
 
   const done = new Set(store.get('done', []));
   const quizzes = store.get('quiz', {});
+  const root = document.documentElement;
+  const fonts = getComputedStyle(root);
+  const bodyFont = fonts.getPropertyValue('--font-body').trim() || 'system-ui, sans-serif';
+
+  BOOK.parts.forEach((part, i) => {
+    root.style.setProperty(`--p${i + 1}`, part.color);
+    root.style.setProperty(`--t${i + 1}`, part.tint);
+  });
 
   function paintProgress() {
     document.querySelectorAll('a[data-slug]').forEach(a => {
@@ -25,12 +33,21 @@ window.Book = (function () {
       const q = quizzes[a.dataset.slug];
       a.classList.toggle('starred', !!q && q.right === q.total);
     });
-    document.querySelectorAll('[data-progress-count]').forEach(el => { el.textContent = done.size; });
+    const finished = BOOK.chapters.filter(c => done.has(c.slug)).length;
+    document.querySelectorAll('[data-progress-count]').forEach(el => { el.textContent = finished; });
+    root.style.setProperty('--progress', BOOK.chapters.length ? finished / BOOK.chapters.length : 0);
     for (const part of BOOK.parts) {
       const chapters = BOOK.chapters.filter(c => c.part === part.id);
       const n = chapters.filter(c => done.has(c.slug)).length;
-      document.querySelectorAll(`[data-part-count="${part.id}"]`).forEach(el => { el.textContent = n ? `${n}/${chapters.length}` : ''; });
+      const complete = n === chapters.length;
+      document.querySelectorAll(`[data-part-count="${part.id}"]`).forEach(el => {
+        el.textContent = n ? `${n}/${chapters.length}` : '';
+        const group = el.closest('details');
+        if (group) group.classList.toggle('complete', complete);
+      });
       document.querySelectorAll(`[data-part-bar="${part.id}"]`).forEach(el => { el.style.width = (100 * n / chapters.length) + '%'; });
+      const card = document.getElementById('part-' + part.id);
+      if (card) card.classList.toggle('complete', complete);
     }
     document.dispatchEvent(new CustomEvent('book:progress'));
   }
@@ -114,23 +131,23 @@ window.Book = (function () {
     const Y = v => top + (1 - (v - yMin) / (yMax - yMin)) * (h - top - bottom);
 
     ctx.clearRect(0, 0, w, h);
-    ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.font = '12px ' + bodyFont;
     ctx.textBaseline = 'middle';
     for (let t = 0; t <= 4; t++) {
       const v = yMin + (yMax - yMin) * t / 4;
-      ctx.strokeStyle = t === 0 ? '#cbd5e1' : '#eef0f3';
+      ctx.strokeStyle = t === 0 ? '#cfc5ae' : '#ece6d8';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(left, Math.round(Y(v)) + 0.5);
       ctx.lineTo(w - right, Math.round(Y(v)) + 0.5);
       ctx.stroke();
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = '#5c6274';
       ctx.textAlign = 'right';
       ctx.fillText(fmt(v), left - 6, Y(v));
     }
     if (opts.xLabel) {
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = '#5c6274';
       ctx.fillText(opts.xLabel, (left + w - right) / 2, h - 10);
     }
     ctx.lineJoin = 'round';
@@ -156,10 +173,11 @@ window.Book = (function () {
       if (!s.label) continue;
       ctx.fillStyle = s.color;
       ctx.fillRect(lx, top + 2, 12, 3);
-      ctx.fillStyle = '#374151';
+      ctx.fillStyle = '#3b4157';
       ctx.fillText(s.label, lx + 17, top + 4);
       lx += 17 + ctx.measureText(s.label).width + 16;
     }
+    return { ctx, w, h, left, right, top, bottom, X, Y };
   }
 
   function scoreQuiz(quiz) {
@@ -174,6 +192,7 @@ window.Book = (function () {
       quiz.appendChild(result);
     }
     const perfect = right === questions.length;
+    result.classList.toggle('perfect', perfect);
     result.innerHTML = `<strong>${right} of ${questions.length}</strong> ${perfect ? '— nailed it.' : '— have another go?'} `;
     const retry = document.createElement('button');
     retry.type = 'button';
@@ -195,6 +214,17 @@ window.Book = (function () {
     }
   }
 
+  function setMenu(open) {
+    const was = document.body.classList.contains('menu-open');
+    document.body.classList.toggle('menu-open', open);
+    document.querySelectorAll('[data-menu]').forEach(b => b.setAttribute('aria-expanded', String(open)));
+    if (open === was) return;
+    const target = open
+      ? document.querySelector('.sidebar a.active, .sidebar [data-menu-close]')
+      : document.querySelector('[data-menu]');
+    if (target && target.offsetParent !== null) target.focus({ preventScroll: !open });
+  }
+
   document.addEventListener('click', e => {
     const btn = e.target.closest('.q button[data-opt], .predict button[data-opt]');
     if (btn) {
@@ -213,12 +243,11 @@ window.Book = (function () {
       return;
     }
     if (e.target.closest('[data-menu]')) {
-      const open = document.body.classList.toggle('menu-open');
-      document.querySelectorAll('[data-menu]').forEach(b => b.setAttribute('aria-expanded', String(open)));
+      setMenu(!document.body.classList.contains('menu-open'));
       return;
     }
     if (e.target.closest('[data-menu-close]')) {
-      document.body.classList.remove('menu-open');
+      setMenu(false);
       return;
     }
     if (e.target.closest('[data-share]')) {
@@ -234,7 +263,7 @@ window.Book = (function () {
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') document.body.classList.remove('menu-open');
+    if (e.key === 'Escape') setMenu(false);
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
     if (e.target.closest('input, textarea, select, button, [contenteditable], .CodeMirror, canvas')) return;
     const rel = e.key === 'ArrowRight' ? 'next' : e.key === 'ArrowLeft' ? 'prev' : null;
@@ -268,6 +297,20 @@ window.Book = (function () {
     a.href = target.slug + '.html';
     a.textContent = `Continue: ${target.number}. ${target.title}`;
   });
+
+  const readBar = document.querySelector('.read-progress');
+  if (chapter && readBar) {
+    let queued = false;
+    const measure = () => {
+      queued = false;
+      const room = root.scrollHeight - window.innerHeight;
+      readBar.style.setProperty('--read', room > 0 ? Math.min(1, window.scrollY / room).toFixed(4) : 0);
+    };
+    window.addEventListener('scroll', () => {
+      if (!queued) { queued = true; requestAnimationFrame(measure); }
+    }, { passive: true });
+    measure();
+  }
 
   paintProgress();
 

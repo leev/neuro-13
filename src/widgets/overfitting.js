@@ -11,7 +11,7 @@
   const VIEW = 1.08, GRID = 64;
   const ORANGE = [234, 88, 12], BLUE = [37, 99, 235];
   const TRAIN_COLOR = '#475569', TEST_COLOR = '#0d9488';
-  const CHART = { left: 46, right: 12, top: 14, bottom: 34 }, Y_MIN = 0.6;
+  const Y_MIN = 0.6;
 
   const { ctx, w: SIZE } = Book.hidpi(field);
   const paint = document.createElement('canvas');
@@ -221,7 +221,7 @@
 
   function drawChart() {
     const canvas = $('of-chart');
-    Book.lineChart(canvas, {
+    const CHART = Book.lineChart(canvas, {
       series: [
         { label: 'training dots', color: TRAIN_COLOR, data: history.map(p => p.train) },
         { label: 'test dots', color: TEST_COLOR, data: history.map(p => p.test) },
@@ -229,9 +229,7 @@
       xMax: POINTS, yMin: Y_MIN, yMax: 1, yFormat: pct, xLabel: 'epochs of training (0 to ' + EPOCHS.toLocaleString() + ')',
     });
     if (!best || history.length < 2) return;
-    // Book.lineChart has no marker option, so the best-moment line is drawn on top using its plot margins.
-    const g = canvas.getContext('2d');
-    const w = +canvas.dataset.w, h = +canvas.dataset.h;
+    const g = CHART.ctx, w = CHART.w, h = CHART.h;
     const x = CHART.left + (best.index / (POINTS - 1)) * (w - CHART.left - CHART.right);
     const yOf = v => CHART.top + (1 - (Math.max(Y_MIN, v) - Y_MIN) / (1 - Y_MIN)) * (h - CHART.top - CHART.bottom);
     g.save();

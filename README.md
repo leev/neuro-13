@@ -98,7 +98,7 @@ Quiz questions test the idea, not recall of a number. Wrong options should be th
 - Train for real, in the browser, from random weights. Keep a run under about 15 seconds on a laptop, and yield to the page between epochs (`await new Promise(r => setTimeout(r, 0))`) so the display updates and the tab never freezes.
 - Use `Book.rng(seed)` when a demo must reproduce exactly; plain `Math.random()` when variety between runs is part of the lesson.
 - Canvases: declare logical size with `width`/`height` attributes, then `const { ctx, w, h } = Book.hidpi(canvas)` and draw in those logical units. Map pointer events with `Book.pointer(canvas, event)`.
-- Line charts: `Book.lineChart(canvas, { series: [{ label, color, data }], xMax, yMin, yMax, yFormat, xLabel })`.
+- Line charts: `Book.lineChart(canvas, { series: [{ label, color, data }], xMax, yMin, yMax, yFormat, xLabel })`. It returns `{ ctx, w, h, left, right, top, bottom, X, Y }` so you can draw markers on top without copying its margins.
 - `Book.toast(text)` for a brief message. `shared.js` provides `sigmoid`, `makeModelDump`, `makeSingleTrainer`, `makeSeparator`.
 - Fetch datasets from `py/<file>`. Handle the failure case with a visible message.
 - Widget colors: `var(--accent)` blue, `var(--good)`, `var(--bad)`, `var(--warn)`; `var(--part)` is the current part's color.

@@ -1,0 +1,43 @@
+<div class="cert-app" id="cert-app">
+  <p class="lede" id="cert-lede">Finish every chapter and this page turns into a certificate with your name on it.</p>
+  <noscript><p>This page needs JavaScript to read your progress, which is saved only in this browser.</p></noscript>
+
+  <section class="cert-overview" id="cert-overview" hidden>
+    <div class="cert-ring" id="cert-ring"><div class="cert-ring-text"><span id="cert-count"></span><small>chapters done</small></div></div>
+    <div>
+      <h2 id="cert-headline"></h2>
+      <p id="cert-summary"></p>
+    </div>
+  </section>
+
+  <section id="cert-make" hidden>
+    <form class="cert-form" id="cert-form">
+      <label for="cert-name">Name to print on the certificate
+        <input id="cert-name" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Your name" required>
+      </label>
+      <div class="cert-actions">
+        <button type="submit" id="cert-submit">Make my certificate</button>
+      </div>
+    </form>
+    <p class="cert-note">Your name stays in this browser. It is never sent anywhere.</p>
+  </section>
+
+  <figure class="cert-sheet" id="cert-sheet" hidden>
+    <img id="cert-image" alt="" width="2000" height="1414">
+    <figcaption id="cert-caption"></figcaption>
+  </figure>
+  <div class="cert-actions" id="cert-save" hidden>
+    <button type="button" id="cert-download">Save as image</button>
+    <button type="button" class="secondary" id="cert-print">Print</button>
+  </div>
+
+  <section id="cert-progress" hidden>
+    <h3 id="cert-progress-title">Chapter by chapter</h3>
+    <ul class="cert-legend">
+      <li><i></i>not finished yet</li>
+      <li><i class="done"></i>finished</li>
+      <li><i class="star"></i>every quiz question right</li>
+    </ul>
+    <ol class="cert-parts" id="cert-parts"></ol>
+  </section>
+</div>

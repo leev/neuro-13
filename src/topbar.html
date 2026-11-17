@@ -1,8 +1,10 @@
+<a class="skip-link" href="#main">Skip to the page</a>
 <header class="topbar">
-  <button type="button" class="icon-btn menu-btn" data-menu aria-label="Open contents" aria-controls="sidenav" aria-expanded="false">☰</button>
-  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">%%book_title%%</span></a>
+  <button type="button" class="icon-btn menu-btn" data-menu aria-label="Open contents" aria-controls="sidenav" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 25V7l18 18V7" fill="none" stroke="#1d2238" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="25" r="4.3" fill="#2563eb" style="fill:var(--p1)"/><circle cx="7" cy="7" r="4.3" fill="#0d9488" style="fill:var(--p2)"/><circle cx="16" cy="16" r="3.6" fill="#7c3aed" style="fill:var(--p3)"/><circle cx="25" cy="25" r="4.3" fill="#ea580c" style="fill:var(--p4)"/><circle cx="25" cy="7" r="4.3" fill="#db2777" style="fill:var(--p5)"/></svg><span class="brand-name">%%book_title%%</span></a>
   <div class="topbar-space"></div>
-  <a class="progress-pill" href="index.html#contents" title="Your progress"><span data-progress-count>0</span> / %%total%%</a>
-  <button type="button" class="icon-btn" data-search aria-label="Search the book">Search</button>
-  <button type="button" class="icon-btn" data-share aria-label="Share this page">Share</button>
+  <a class="progress-pill" href="index.html#contents" title="Chapters you have finished"><span class="progress-ring" aria-hidden="true"></span><span><span data-progress-count>0</span> / %%total%%<span class="sr-only"> chapters finished</span></span></a>
+  <button type="button" class="icon-btn" data-search aria-label="Search the book" aria-keyshortcuts="/"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></svg><span class="btn-label">Search</span><kbd class="btn-kbd" aria-hidden="true">/</kbd></button>
+  <button type="button" class="icon-btn" data-share aria-label="Share this page"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 7.5L12 3.5l4 4M5 12v7h14v-7"/></svg><span class="btn-label">Share</span></button>
+  <div class="read-progress" aria-hidden="true"><span></span></div>
 </header>

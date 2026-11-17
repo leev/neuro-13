@@ -7,15 +7,14 @@
 %%topbar%%
 <div class="layout home-layout">
 %%sidenav%%
-<main>
+<main id="main">
   <section class="hero">
     <div class="hero-text">
-      <p class="hero-kicker">A hands-on book for curious 13-year-olds</p>
-      <h1>How a neural network <em>actually</em> works</h1>
-      <p class="hero-sub">Start with one tiny neuron. Finish having trained networks that read handwriting, invent names, sort the news and turn noise into pictures. Everything runs right here in your browser: nothing to install.</p>
+      <h1>%%title%%</h1>
+      <p class="hero-sub">A hands-on book for curious <span class="nowrap">13-year-olds</span>. Start with one tiny neuron. Finish having trained networks that read handwriting, invent names, sort the news and turn noise into pictures. Everything runs right here in your browser, with nothing to install.</p>
       <div class="hero-actions">
-        <a class="cta" href="%%first%%.html" data-continue>Start reading</a>
-        <a class="cta ghost" href="#contents">See what's inside</a>
+        <a class="cta" href="%%first%%.html" data-continue data-start-href="%%first%%.html" data-start-label="Start reading">Start reading</a>
+        <a class="cta ghost" href="#contents">See all %%total%% chapters</a>
       </div>
       <ul class="hero-stats">
         <li><strong>%%total%%</strong> chapters</li>
@@ -23,12 +22,162 @@
         <li><strong>%%scripts_count%%</strong> real Python programs</li>
       </ul>
     </div>
-    <div class="hero-art" id="hero-art"></div>
+    <figure class="hero-figure">
+      <div class="hero-art" id="hero-art"></div>
+      <figcaption class="hero-panel" id="hero-panel">
+        <noscript><p class="hero-caption">A small neural network trains here when JavaScript is turned on.</p></noscript>
+      </figcaption>
+    </figure>
   </section>
-  <section id="highlights" class="highlights"></section>
-  <section id="contents" class="parts">
+
+  <section id="highlights" class="highlights" aria-labelledby="highlights-title">
+    <div class="section-head">
+      <h2 id="highlights-title">What you'll build</h2>
+      <p>Every one of these is a real model that learns in front of you, from random numbers, on your own device.</p>
+    </div>
+    <ul class="hl-grid">
+      <li><a class="hl-card" href="training.html" data-slug="training" style="--part:var(--p1);--part-tint:var(--t1)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <path class="i" d="M40 38l50 20" style="stroke-width:6"/>
+          <path class="i" d="M40 82l50-20" style="stroke-width:2"/>
+          <path class="i" d="M112 60h20m-7-7l7 7-7 7"/>
+          <circle class="wi" cx="32" cy="36" r="11"/>
+          <circle class="wi" cx="32" cy="84" r="11"/>
+          <circle class="f" cx="96" cy="60" r="18"/>
+          <rect class="wi" x="138" y="46" width="34" height="28" rx="14"/>
+          <text class="k" x="155" y="65" text-anchor="middle" font-size="13">yes</text>
+        </svg></span>
+        <span class="hl-text"><strong>Teach a neuron a rule</strong><span>Show it examples, watch it nudge its own weights until it gets every one right.</span></span>
+        <span class="hl-where" data-chapter-label="training"></span>
+      </a></li>
+      <li><a class="hl-card" href="hidden.html" data-slug="hidden" style="--part:var(--p1);--part-tint:var(--t1)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <path class="f" d="M40 1l132 97-32 21L8 22z" opacity="0.18"/>
+          <path class="s" d="M40 1l132 97M8 22l132 97" stroke-dasharray="7 7"/>
+          <circle class="f" cx="60" cy="38" r="12"/>
+          <circle class="f" cx="120" cy="82" r="12"/>
+          <circle class="wi" cx="120" cy="38" r="11"/>
+          <circle class="wi" cx="60" cy="82" r="11"/>
+        </svg></span>
+        <span class="hl-text"><strong>Crack the XOR puzzle</strong><span>One neuron can't solve it. Add a hidden layer and the impossible becomes easy.</span></span>
+        <span class="hl-where" data-chapter-label="hidden"></span>
+      </a></li>
+      <li><a class="hl-card" href="backprop.html" data-slug="backprop" style="--part:var(--p2);--part-tint:var(--t2)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <path class="i" d="M34 40h56M34 80h56M34 40l56 40M34 80l56-40M90 40l58 20M90 80l58-20" style="stroke-width:1.5;opacity:0.45"/>
+          <path class="s" d="M138 48L106 37m9-4l-9 4 4 9M76 34H48m8-7l-8 7 8 7" style="stroke-width:3.5"/>
+          <circle class="wi" cx="32" cy="40" r="10"/>
+          <circle class="wi" cx="32" cy="80" r="10"/>
+          <circle class="wi" cx="90" cy="40" r="10"/>
+          <circle class="wi" cx="90" cy="80" r="10"/>
+          <circle class="f" cx="150" cy="60" r="13"/>
+        </svg></span>
+        <span class="hl-text"><strong>Step through backpropagation</strong><span>Follow the blame backwards through a network, one real number at a time.</span></span>
+        <span class="hl-where" data-chapter-label="backprop"></span>
+      </a></li>
+      <li><a class="hl-card" href="names.html" data-slug="names" style="--part:var(--p3);--part-tint:var(--t3)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <rect class="wi" x="14" y="42" width="28" height="36" rx="7"/>
+          <rect class="wi" x="46" y="42" width="28" height="36" rx="7"/>
+          <rect class="wi" x="78" y="42" width="28" height="36" rx="7"/>
+          <rect class="wi" x="110" y="42" width="28" height="36" rx="7"/>
+          <rect class="f" x="142" y="42" width="28" height="36" rx="7"/>
+          <text class="k" x="28" y="67" text-anchor="middle" font-size="20">m</text>
+          <text class="k" x="60" y="67" text-anchor="middle" font-size="20">i</text>
+          <text class="k" x="92" y="67" text-anchor="middle" font-size="20">r</text>
+          <text class="k" x="124" y="67" text-anchor="middle" font-size="20">a</text>
+          <text class="w" x="156" y="67" text-anchor="middle" font-size="20">?</text>
+        </svg></span>
+        <span class="hl-text"><strong>Invent brand-new names</strong><span>Train a language model that makes up names, one letter at a time.</span></span>
+        <span class="hl-where" data-chapter-label="names"></span>
+      </a></li>
+      <li><a class="hl-card" href="decide.html" data-slug="decide" style="--part:var(--p3);--part-tint:var(--t3)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <g class="k" opacity="0.4"><rect x="16" y="25" width="30" height="8" rx="4"/><rect x="16" y="47" width="22" height="8" rx="4"/><rect x="16" y="69" width="30" height="8" rx="4"/><rect x="16" y="91" width="18" height="8" rx="4"/></g>
+          <g class="w"><rect x="56" y="22" width="108" height="14" rx="7"/><rect x="56" y="44" width="108" height="14" rx="7"/><rect x="56" y="66" width="108" height="14" rx="7"/><rect x="56" y="88" width="108" height="14" rx="7"/></g>
+          <g class="f"><rect x="56" y="22" width="16" height="14" rx="7"/><rect x="56" y="44" width="94" height="14" rx="7"/><rect x="56" y="66" width="24" height="14" rx="7"/><rect x="56" y="88" width="14" height="14" rx="7"/></g>
+        </svg></span>
+        <span class="hl-text"><strong>Sort 10,000 headlines</strong><span>Build a model that reads real news and decides what each story is about.</span></span>
+        <span class="hl-where" data-chapter-label="decide"></span>
+      </a></li>
+      <li><a class="hl-card" href="digits.html" data-slug="digits" style="--part:var(--p4);--part-tint:var(--t4)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <rect class="k" x="20" y="22" width="76" height="76" rx="12"/>
+          <path d="M40 44h36L58 82" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="i" d="M104 60h18m-7-7l7 7-7 7"/>
+          <circle class="ws" cx="148" cy="60" r="19"/>
+          <text class="f" x="148" y="69" text-anchor="middle" font-size="25">7</text>
+        </svg></span>
+        <span class="hl-text"><strong>Read your handwriting</strong><span>Train a digit reader on thousands of real scribbles, then draw for it.</span></span>
+        <span class="hl-where" data-chapter-label="digits"></span>
+      </a></li>
+      <li><a class="hl-card" href="diffusion.html" data-slug="diffusion" style="--part:var(--p4);--part-tint:var(--t4)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <rect class="w" x="10" y="36" width="48" height="48" rx="10"/>
+          <rect class="w" x="66" y="36" width="48" height="48" rx="10"/>
+          <rect class="w" x="122" y="36" width="48" height="48" rx="10"/>
+          <g class="k"><circle cx="19" cy="46" r="2.5"/><circle cx="33" cy="42" r="2.5"/><circle cx="48" cy="49" r="2.5"/><circle cx="26" cy="58" r="2.5"/><circle cx="41" cy="61" r="2.5"/><circle cx="17" cy="71" r="2.5"/><circle cx="31" cy="76" r="2.5"/><circle cx="50" cy="73" r="2.5"/><circle cx="38" cy="50" r="2.5"/><circle cx="23" cy="65" r="2.5"/></g>
+          <g class="f"><circle cx="90" cy="45" r="3"/><circle cx="101" cy="50" r="3"/><circle cx="105" cy="61" r="3"/><circle cx="100" cy="72" r="3"/><circle cx="89" cy="76" r="3"/><circle cx="78" cy="71" r="3"/><circle cx="74" cy="59" r="3"/><circle cx="80" cy="49" r="3"/><circle cx="92" cy="62" r="2"/><circle cx="84" cy="57" r="2"/></g>
+          <circle class="f" cx="146" cy="60" r="17"/>
+          <circle class="w" cx="140" cy="55" r="2.8"/>
+          <circle class="w" cx="152" cy="55" r="2.8"/>
+          <path d="M138 64c4 6 12 6 16 0" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+        </svg></span>
+        <span class="hl-text"><strong>Make pictures from noise</strong><span>The trick behind AI image generators, small enough to watch working.</span></span>
+        <span class="hl-where" data-chapter-label="diffusion"></span>
+      </a></li>
+      <li><a class="hl-card" href="rl.html" data-slug="rl" style="--part:var(--p4);--part-tint:var(--t4)">
+        <span class="hl-art"><svg viewBox="0 0 180 120" aria-hidden="true">
+          <rect class="wi" x="30" y="18" width="120" height="84" rx="10"/>
+          <path class="i" d="M60 18v28M90 46v56M90 46h30M120 74h30M60 74v28"/>
+          <path class="s" d="M45 88V60h30V32h60v28h-30v28h30" stroke-dasharray="1 9" style="stroke-width:5"/>
+          <circle class="f" cx="45" cy="88" r="9"/>
+          <circle class="w" cx="42" cy="86" r="1.8"/>
+          <circle class="w" cx="48" cy="86" r="1.8"/>
+          <path d="M135 78l3 6.5 7 .8-5.2 4.8 1.4 7-6.2-3.5-6.2 3.5 1.4-7-5.2-4.8 7-.8z" fill="#f5b83d" stroke="#1d2238" stroke-width="2" stroke-linejoin="round"/>
+        </svg></span>
+        <span class="hl-text"><strong>Learn a maze by trial and error</strong><span>No right answers given, only rewards. Watch a creature work out the way.</span></span>
+        <span class="hl-where" data-chapter-label="rl"></span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section id="contents" class="parts" aria-labelledby="contents-title">
+    <div class="section-head">
+      <h2 id="contents-title">The whole book</h2>
+      <p>%%total%% chapters in five parts. Go in order: each one builds on the one before.</p>
+    </div>
 %%parts%%
   </section>
+
+  <footer class="site-foot">
+    <div>
+      <h2>Who it's for</h2>
+      <p>Curious <span class="nowrap">13-year-olds</span> reading on their own, and anyone older who never got a straight answer about how this works. The first chapter covers the handful of math symbols you need.</p>
+    </div>
+    <div>
+      <h2>Private by design</h2>
+      <p>Every network in this book trains inside your browser. Nothing you type, draw or train is sent anywhere, and your progress is saved only on this device.</p>
+      <p>Chapters with Python fetch a code editor and the Python engine from public code libraries. Your code still runs on your own device.</p>
+    </div>
+    <div>
+      <h2>More</h2>
+      <ul>
+        <li><a href="grown-ups.html">For parents and teachers</a></li>
+        <li><a href="glossary.html">Glossary</a></li>
+        <li><a href="certificate.html">Your certificate</a></li>
+        <li><a href="neuro13-code.zip" download>Download every Python program</a></li>
+      </ul>
+      <div class="reset-row" data-reset-row hidden>
+        <button type="button" class="text-btn" data-reset-ask>Reset my progress</button>
+        <span class="reset-confirm" data-reset-confirm hidden>
+          <span>Clear every finished chapter and quiz score?</span>
+          <button type="button" class="text-btn danger" data-reset-progress>Yes, clear it</button>
+          <button type="button" class="text-btn" data-reset-cancel>Keep it</button>
+        </span>
+      </div>
+    </div>
+  </footer>
 </main>
 </div>
 %%scripts%%

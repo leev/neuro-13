@@ -7,18 +7,18 @@
 %%topbar%%
 <div class="layout">
 %%sidenav%%
-<main>
+<main id="main">
   <article>
     <header class="chapter-head">
-      <div class="chapter-kicker"><a href="index.html#part-%%part_id%%">Part %%part_number%% · %%part_title%%</a><span class="chapter-meta">%%minutes%% min read</span></div>
-      <div class="chapter-title-row"><span class="chapter-num" aria-hidden="true">%%number%%</span><h1>%%title%%</h1></div>
+      <div class="chapter-kicker"><a href="index.html#part-%%part_id%%"><span class="kicker-part">Part %%part_number%%</span><span class="kicker-title">%%part_title%%</span></a><span class="chapter-meta">%%minutes%% min read</span></div>
+      <div class="chapter-title-row"><span class="chapter-num" aria-hidden="true">%%number%%</span><h1><span class="sr-only">Chapter %%number%%: </span>%%title%%</h1></div>
       <p class="chapter-hook">%%hook%%</p>
     </header>
     <div class="chapter-body">
 %%body%%
     </div>
     <footer class="chapter-end">
-      <p class="chapter-done" hidden>✓ Chapter %%number%% complete</p>
+      <p class="chapter-done" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>Chapter %%number%% complete</p>
       <div class="pagers">%%prev%%%%next%%</div>
     </footer>
   </article>
