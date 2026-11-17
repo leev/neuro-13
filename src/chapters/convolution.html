@@ -1,0 +1,447 @@
+<p>At the end of {{ch:digits}} you found your digit reader's blind spot. Slide a digit three pixels sideways and it could no longer read most of them. You can see at a glance that nothing important changed. Why can't the network?</p>
+<p>This chapter builds the network that chapter asked for: one that knows pixels have neighbors, and that can learn what the end of a stroke looks like once and then spot it anywhere. It is one of the most successful ideas in all of machine learning, and it is how computers learned to see. The trick is to stop treating a picture as a long list of unrelated numbers and to look at it the way you do: one small patch at a time, hunting for the same shapes wherever they turn up.</p>
+
+<h3>Why a bag of pixels fails</h3>
+<p>A quick reminder of what went wrong. The fully connected network from {{ch:digits}} flattens the 28 × 28 picture into one long row of 784 numbers, and every hidden neuron has its own separate weight for each of them. Nothing tells the network that two pixels sat side by side. The pixels might as well have been poured out of a bag, which is why it read scrambled pictures just as well as normal ones.</p>
+<p>That explains the sliding digit too. When a 7 moves three pixels to the right, its ink lands on different pixels, and those pixels have different weights. Whatever the network learned about a stroke at pixel 300 is no help with the same stroke at pixel 303. It would have to learn every digit again at every position, and nobody showed it digits at every position.</p>
+<p>A picture is not a bag. Which pixels are neighbors is the whole point: a line is a run of inky neighbors, and a corner is two lines meeting. We want a network with that fact built in.</p>
+
+<h3>A filter is a tiny pattern detector</h3>
+<p>Forget the 784 weights per neuron. Take a tiny grid of weights instead: 3 × 3, just nine numbers. That little grid is called a <strong>filter</strong>. (You will also see it called a <strong>kernel</strong>, which means the same thing.)</p>
+<p>Lay the filter on the top-left corner of the picture so that it covers nine pixels. Multiply each pixel by the weight sitting on top of it, and add up the nine products. That is a weighted sum, the same move the neuron made in {{ch:neuron}}, only with nine inputs. Write the answer down.</p>
+<p>Now slide the filter one pixel to the right and do it again. And again. At the end of the row, drop down one pixel and start the next row. Keep going until the filter has visited every spot it can. The answers, laid out in the same arrangement as the spots they came from, make a new grid of numbers called a <strong>feature map</strong>. The whole slide-multiply-add routine is called a <strong>convolution</strong>.</p>
+<p>What do the answers mean? Here is a filter with −1s down its left side, 0s in the middle and +1s down the right, sitting on two different patches of a picture. As in {{ch:digits}}, each pixel says how much ink is there, already divided by 255: 0 is blank paper and 1 is solid ink.</p>
+
+<svg viewBox="0 0 600 304" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same filter laid on two patches. On a patch that is blank paper on the left and ink on the right, the nine products add up to 3. On a patch that is all ink they add up to 0.">
+  <text x="24" y="22" font-size="13" fill="#374151">a patch that goes from paper to ink</text>
+  <rect x="24" y="30" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="58" y="30" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="92" y="30" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="24" y="64" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="58" y="64" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="92" y="64" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="24" y="98" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="58" y="98" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#9ca3af">0</text>
+  <rect x="92" y="98" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <text x="149" y="88" text-anchor="middle" font-size="22" fill="#6b7280">×</text>
+  <rect x="172" y="30" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="30" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="30" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="52.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <rect x="172" y="64" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="64" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="64" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="86.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <rect x="172" y="98" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="98" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="98" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="120.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <text x="300" y="88" text-anchor="middle" font-size="22" fill="#6b7280">→</text>
+  <rect x="326" y="52" width="64" height="58" rx="10" fill="#2563eb" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="358" y="91" text-anchor="middle" font-size="26" font-weight="700" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">3</text>
+  <text x="404" y="76" font-size="13" fill="#374151">three inky pixels × +1</text>
+  <text x="404" y="96" font-size="13" fill="#6b7280">the blank ones add nothing</text>
+  <text x="24" y="168" font-size="13" fill="#374151">a patch that is all ink</text>
+  <rect x="24" y="176" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="58" y="176" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="92" y="176" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="24" y="210" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="58" y="210" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="92" y="210" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="24" y="244" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="41.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="58" y="244" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="75.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <rect x="92" y="244" width="34" height="34" fill="#1b1f27" stroke="#9ca3af" stroke-width="1"/>
+  <text x="109.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#ffffff">1</text>
+  <text x="149" y="234" text-anchor="middle" font-size="22" fill="#6b7280">×</text>
+  <rect x="172" y="176" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="176" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="176" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="198.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <rect x="172" y="210" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="210" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="210" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="232.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <rect x="172" y="244" width="34" height="34" fill="#fecaca" stroke="#9ca3af" stroke-width="1"/>
+  <text x="189.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#991b1b">−1</text>
+  <rect x="206" y="244" width="34" height="34" fill="#ffffff" stroke="#9ca3af" stroke-width="1"/>
+  <text x="223.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#6b7280">0</text>
+  <rect x="240" y="244" width="34" height="34" fill="#bfdbfe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="257.0" y="266.0" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, monospace" fill="#1e3a8a">+1</text>
+  <text x="300" y="234" text-anchor="middle" font-size="22" fill="#6b7280">→</text>
+  <rect x="326" y="198" width="64" height="58" rx="10" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.5"/>
+  <text x="358" y="237" text-anchor="middle" font-size="26" font-weight="700" font-family="ui-monospace, Menlo, monospace" fill="#374151">0</text>
+  <text x="404" y="222" font-size="13" fill="#374151">the −1s cancel the +1s</text>
+  <text x="404" y="242" font-size="13" fill="#6b7280">no edge here</text>
+  <text x="75" y="294" text-anchor="middle" font-size="11.5" fill="#6b7280">9 pixels</text>
+  <text x="223" y="294" text-anchor="middle" font-size="11.5" fill="#6b7280">the filter</text>
+  <text x="358" y="294" text-anchor="middle" font-size="11.5" fill="#6b7280">the sum</text>
+</svg>
+
+<p>On the first patch the inky pixels line up under the +1s, the blank pixels under the −1s add nothing, and the sum is big. On the second patch every pixel is inky, so the −1s exactly cancel the +1s. This filter does not care how much ink there is. It responds to one thing only: <em>paper on the left, ink on the right</em>. It is a detector for one kind of edge.</p>
+<p>That is the whole trick. A filter gives a big number wherever the patch underneath looks like the filter's own pattern, and a small or negative one where it doesn't. Slide it across a picture and the feature map lights up exactly where that pattern is.</p>
+
+<div class="predict" data-answer="b">
+  <p>The widget below has a picture called "block": a solid square of ink on blank paper. You slide that same paper-to-ink filter over it. Where will the output map be anything other than zero?</p>
+  <button data-opt="a">Everywhere inside the inky square</button>
+  <button data-opt="b">Only along the square's left and right sides</button>
+  <button data-opt="c">Along all four sides</button>
+  <p class="why">Only the left and right sides. Inside the square everything is equally inky, so the filter cancels to 0. Along the top and bottom the ink changes as you go <em>down</em>, not across, and this filter only compares left with right. Pick "block" and "vertical edges" below and check. Then switch to "horizontal edges" and watch the other two sides appear.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Slide the filter</h3>
+  <p>On the left is a picture: 28 × 28 numbers, from 0 (blank paper) to 1 (solid ink). The nine boxes in the middle are the filter. The map on the right is what comes out. Point at any cell of the output map: the orange frame shows the nine pixels that made it, and the panel underneath shows the arithmetic. Press <strong>slide the filter</strong> to watch it travel. Then try the other pictures and filters, or type your own numbers into the nine boxes.</p>
+  <div class="cv-label">picture</div>
+  <div class="toggle-row cv-chips" id="sf-pictures">
+    <div class="toggle on" data-pic="4">a 4</div>
+    <div class="toggle" data-pic="7">a 7</div>
+    <div class="toggle" data-pic="3">a 3</div>
+    <div class="toggle" data-pic="block">block</div>
+    <div class="toggle" data-pic="ring">ring</div>
+    <div class="toggle" data-pic="slash">slash</div>
+    <div class="toggle" data-pic="draw">✏ draw your own</div>
+  </div>
+  <div class="cv-label">filter</div>
+  <div class="toggle-row cv-chips" id="sf-presets">
+    <div class="toggle on" data-preset="vertical">vertical edges</div>
+    <div class="toggle" data-preset="horizontal">horizontal edges</div>
+    <div class="toggle" data-preset="blur">blur</div>
+    <div class="toggle" data-preset="sharpen">sharpen</div>
+    <div class="toggle" data-preset="outline">outline</div>
+    <div class="toggle" data-preset="nothing">do nothing</div>
+  </div>
+  <div class="cv-stage">
+    <figure><canvas id="sf-in" width="280" height="280" aria-label="the picture, 28 by 28 pixels"></canvas><figcaption>picture · 28 × 28</figcaption></figure>
+    <figure><div class="cv-kernel" id="sf-kernel"></div><figcaption>filter · 3 × 3</figcaption></figure>
+    <figure><canvas id="sf-out" width="280" height="280" aria-label="the output map, 26 by 26 numbers"></canvas><figcaption>output map · 26 × 26</figcaption></figure>
+  </div>
+  <p class="cv-legend"><span id="sf-hint"></span> Output colors: <span class="cv-swatch" style="background:#2563eb"></span>positive <span class="cv-swatch" style="background:#fff"></span>zero <span class="cv-swatch" style="background:#dc2626"></span>negative, stretched so the biggest number in the map gets the strongest color.</p>
+  <div><button id="sf-play">▶ slide the filter</button></div>
+  <div class="math-panel">
+    <h4>The framed output number (<span id="sf-where"></span>): pixel × weight, nine times</h4>
+    <div class="cv-terms" id="sf-terms"></div>
+    <div class="cv-sum" id="sf-sum"></div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<ul>
+  <li><strong>Vertical edges.</strong> On the 4, the map is blue wherever paper turns to ink as you go right (the left side of each stroke) and red where ink turns back to paper (the right side). Same edge, opposite direction, opposite sign. Everything flat, blank or inky, comes out as exactly 0.</li>
+  <li><strong>Horizontal edges.</strong> The same filter turned on its side. Now the tops and bottoms of strokes light up and the upright strokes nearly vanish.</li>
+  <li><strong>Blur.</strong> All nine weights are one ninth (the boxes show 0.11), so every output is the average of nine neighbors.</li>
+  <li><strong>Sharpen and outline.</strong> A big positive weight in the middle with negative weights around it compares each pixel with its neighbors. In "outline" the nine weights add up to 0, so anything flat gives 0 and only the places where something changes survive.</li>
+  <li><strong>Do nothing.</strong> A single 1 in the middle copies the picture. A filter is only arithmetic. The interesting part is which nine numbers you put in it.</li>
+</ul>
+<p>Filters like these are older than neural networks. The blur and sharpen buttons in a photo editor do exactly this arithmetic, with numbers a person chose.</p>
+<p>Did you notice the output map is 26 × 26 and not 28 × 28? The 3 × 3 filter is not allowed to hang off the edge of the picture, so it only fits in 26 places across and 26 down: 676 stops in all. Many networks first add a border of zeros around the picture, called <strong>padding</strong>, so that the map comes out the same size as the picture. The network later in this chapter does that.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: a mathematician would call what we just did <em>cross-correlation</em>. A true convolution flips the filter upside down and back to front before sliding it. In a network the filter's numbers are learned, so flipped or not makes no difference, and everyone in machine learning says "convolution" anyway.</p>
+
+<h3>The same weights, everywhere</h3>
+<p>Here is something you did <em>not</em> do in that widget: set different weights for different parts of the picture. The same nine numbers were used at all 676 stops. That is called <strong>weight sharing</strong>, and it does two things at once.</p>
+<p><strong>Position stops mattering.</strong> An edge detector that works in the top-left corner works in the bottom-right corner too, because it is literally the same detector. If the digit slides sideways, the lit-up spots in the feature map slide along with it. Nothing has to be learned twice.</p>
+<p><strong>The number of weights collapses.</strong> A filter has the same number of weights however big the picture is. A plain layer does not:</p>
+<table class="cv-table">
+  <tr><th></th><th>a plain layer of 64 neurons</th><th>one 5 × 5 filter</th></tr>
+  <tr><td>a 28 × 28 gray digit</td><td>50,176 weights</td><td>25 weights</td></tr>
+  <tr><td>a 12-megapixel color photo</td><td>2,304,000,000 weights</td><td>75 weights</td></tr>
+</table>
+<p>The big number is not a typo. A 12-megapixel phone photo is 4,000 × 3,000 pixels, and each pixel has a red, a green and a blue number: 36,000,000 inputs. Give each of just 64 plain neurons a weight for every one of them and you need 2,304,000,000 weights in a single layer. A 5 × 5 filter on the same photo needs 75: 25 for each of the three colors. (Each neuron and each filter also has one bias, which we left out of the table.)</p>
+<p>Sharing weights is a bet, though. It bets that neighboring pixels belong together, and that a pattern means the same thing wherever it shows up.</p>
+
+<div class="predict" data-answer="c">
+  <p>Remember the scramble experiment from {{ch:digits}}? Shuffle the pixels of every picture the same way and the plain network reads them as well as ever. We ran it again with a network built from filters, the one you are about to meet. On normal digits it beats the plain network. What happens when it trains on scrambled ones?</p>
+  <button data-opt="a">Nothing. Scrambling made no difference before, so it makes none now.</button>
+  <button data-opt="b">It gets better. The filters find hidden patterns in the static.</button>
+  <button data-opt="c">It gets worse, and ends up behind the plain network.</button>
+  <p class="why">It gets worse. On normal test digits it scored 98.5%. Trained and tested on scrambled ones, 93.6%. The plain network, trained the same way on the same digits, scored 97.5% and 97.4%: it did not notice. Shuffle a picture and neighbors are not neighbors any more, so there is nothing left for a small filter to find. The bet only pays when neighbors matter. In real pictures they do.</p>
+</div>
+
+<h3>From one filter to a layer</h3>
+<p>One filter finds one pattern. A <strong>convolutional layer</strong> uses several filters at once, and each one produces its own feature map. A layer with 8 filters turns one picture into a stack of 8 maps: one showing where the upright edges are, one for some other pattern, and so on.</p>
+<p>Two small extras, both old friends. Each filter has a bias that is added to every sum. And every number then goes through ReLU from {{ch:activations}}, which turns negatives into 0. So in a feature map, 0 means "my pattern is not here" and a big number means "it is right here".</p>
+
+<h3>Pooling: shrink the map, keep the news</h3>
+<p>A feature map records where a pattern was found, exact to the pixel. That is more detail than is good for us: a 7 is still a 7 if its corner sits one pixel higher. <strong>Pooling</strong> throws some of the "where" away on purpose. Cut the map into 2 × 2 blocks and keep only the biggest number in each block. This kind is called <strong>max pooling</strong>.</p>
+
+<svg viewBox="0 0 440 215" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Max pooling: a 4 by 4 grid of numbers is cut into four 2 by 2 blocks, and the biggest number of each block is kept, giving a 2 by 2 grid: 5, 2, 7, 4.">
+  <rect x="30" y="30" width="40" height="40" fill="#ffedd5" stroke="#9ca3af" stroke-width="1"/>
+  <text x="50.0" y="55.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">1</text>
+  <rect x="70" y="30" width="40" height="40" fill="#ffedd5" stroke="#9ca3af" stroke-width="1"/>
+  <text x="90.0" y="55.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="110" y="30" width="40" height="40" fill="#dbeafe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="130.0" y="55.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">2</text>
+  <rect x="150" y="30" width="40" height="40" fill="#dbeafe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="170.0" y="55.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="30" y="70" width="40" height="40" fill="#ffedd5" stroke="#9ca3af" stroke-width="1"/>
+  <text x="50.0" y="95.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="70" y="70" width="40" height="40" fill="#ffedd5" stroke="#9ca3af" stroke-width="1"/>
+  <text x="90.0" y="95.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">5</text>
+  <rect x="110" y="70" width="40" height="40" fill="#dbeafe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="130.0" y="95.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">1</text>
+  <rect x="150" y="70" width="40" height="40" fill="#dbeafe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="170.0" y="95.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">3</text>
+  <rect x="30" y="110" width="40" height="40" fill="#dcfce7" stroke="#9ca3af" stroke-width="1"/>
+  <text x="50.0" y="135.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="70" y="110" width="40" height="40" fill="#dcfce7" stroke="#9ca3af" stroke-width="1"/>
+  <text x="90.0" y="135.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="110" y="110" width="40" height="40" fill="#fce7f3" stroke="#9ca3af" stroke-width="1"/>
+  <text x="130.0" y="135.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="150" y="110" width="40" height="40" fill="#fce7f3" stroke="#9ca3af" stroke-width="1"/>
+  <text x="170.0" y="135.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">1</text>
+  <rect x="30" y="150" width="40" height="40" fill="#dcfce7" stroke="#9ca3af" stroke-width="1"/>
+  <text x="50.0" y="175.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">7</text>
+  <rect x="70" y="150" width="40" height="40" fill="#dcfce7" stroke="#9ca3af" stroke-width="1"/>
+  <text x="90.0" y="175.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">2</text>
+  <rect x="110" y="150" width="40" height="40" fill="#fce7f3" stroke="#9ca3af" stroke-width="1"/>
+  <text x="130.0" y="175.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="400" fill="#9ca3af">0</text>
+  <rect x="150" y="150" width="40" height="40" fill="#fce7f3" stroke="#9ca3af" stroke-width="1"/>
+  <text x="170.0" y="175.5" text-anchor="middle" font-size="15" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">4</text>
+  <rect x="300" y="58" width="52" height="52" fill="#ffedd5" stroke="#9ca3af" stroke-width="1"/>
+  <text x="326" y="90.5" text-anchor="middle" font-size="18" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">5</text>
+  <rect x="352" y="58" width="52" height="52" fill="#dbeafe" stroke="#9ca3af" stroke-width="1"/>
+  <text x="378" y="90.5" text-anchor="middle" font-size="18" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">3</text>
+  <rect x="300" y="110" width="52" height="52" fill="#dcfce7" stroke="#9ca3af" stroke-width="1"/>
+  <text x="326" y="142.5" text-anchor="middle" font-size="18" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">7</text>
+  <rect x="352" y="110" width="52" height="52" fill="#fce7f3" stroke="#9ca3af" stroke-width="1"/>
+  <text x="378" y="142.5" text-anchor="middle" font-size="18" font-family="ui-monospace, Menlo, monospace" font-weight="700" fill="#111827">4</text>
+  <line x1="204" y1="110" x2="282" y2="110" stroke="#9ca3af" stroke-width="2" marker-end="url(#cv-arrow)"/>
+  <text x="243" y="96" text-anchor="middle" font-size="12" fill="#6b7280">keep the biggest</text>
+  <text x="243" y="132" text-anchor="middle" font-size="12" fill="#6b7280">in each block</text>
+  <text x="110" y="210" text-anchor="middle" font-size="12" fill="#6b7280">feature map, 4 × 4</text>
+  <text x="352" y="210" text-anchor="middle" font-size="12" fill="#6b7280">pooled map, 2 × 2</text>
+  <defs><marker id="cv-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#9ca3af"/></marker></defs>
+</svg>
+
+<p>Two things come of it. The map shrinks to half the width and half the height, so the next layer has a quarter as many numbers to deal with, and each of its filters reaches across twice as much of the original picture. And the map becomes a little <em>tolerant</em>: if a pattern moves by one pixel, the biggest number in its block is often still the same number, so the pooled map often does not change at all.</p>
+<p>Pooling has no weights. There is nothing in it to learn. It is a fixed rule.</p>
+
+<h3>Stack them up</h3>
+<p>Now do it all again. A second convolutional layer slides its filters over the <em>pooled maps</em> instead of over the picture. If the first layer made 8 maps, each second-layer filter is 5 × 5 and 8 deep: it reads the same patch of all eight maps at once, so it can respond to combinations, like "an upright edge here, with a flat top just above it".</p>
+<p>It also sees more. In the network below, a first-layer filter looks at a 5 × 5 patch of the picture. Because of the pooling in between, a second-layer filter is fed by a patch 14 pixels wide: half the width of the whole picture.</p>
+<p>A network built this way, from layers of filters with pooling in between, is called a <strong>convolutional network</strong>. The standard story of what its layers do goes like this. Early layers find edges. The next find corners and curves made of edges. Later ones find parts made of those, like an eye or a wheel, and the last ones find whole things. Small and simple at the bottom, big and abstract at the top.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: that tidy ladder is a cartoon. The edge detectors in the first layer are real, and they turn up in almost every network trained on pictures. Higher up it gets messier. People who look inside big image networks find units that respond to textures such as fur or brick more than to shapes, units that respond to several unrelated things, and plenty that nobody can put a name to. The direction of the story is right. The neatness is not.</p>
+
+<h3>Nobody designs the filters</h3>
+<p>Here is the part that matters most. In the first widget <em>you</em> picked the nine numbers, or used a preset that a person worked out long ago. In a convolutional network nobody picks. Every filter starts out as random numbers. Training nudges them with backpropagation from {{ch:backprop}}, exactly like any other weight. (The one twist: a filter is used at every position, so its nudge is the sum of the nudges from all of them.) The network has to <em>discover</em> which patterns are worth detecting, with nothing to go on but "get more digits right".</p>
+<p>The network in the next widget is built like this:</p>
+<table class="cv-table cv-steps">
+  <tr><th>step</th><th>what comes out</th><th>weights</th></tr>
+  <tr><td>8 filters, each 5 × 5, then ReLU</td><td>8 feature maps, 28 × 28</td><td>208</td></tr>
+  <tr><td>max pooling, 2 × 2</td><td>8 maps, 14 × 14</td><td>0</td></tr>
+  <tr><td>32 filters, each 5 × 5 and 8 deep, then ReLU</td><td>32 feature maps, 14 × 14</td><td>6,432</td></tr>
+  <tr><td>keep the strongest number in each map</td><td>32 numbers</td><td>0</td></tr>
+  <tr><td>one plain layer, then softmax</td><td>10 probabilities, one per digit</td><td>330</td></tr>
+  <tr><td><strong>total</strong></td><td></td><td><strong>6,970</strong></td></tr>
+</table>
+<p>The fourth step is pooling taken to the limit: instead of the biggest number in each 2 × 2 block, keep the single biggest number in each whole map. It turns every map into one answer: "how strongly did my pattern show up, anywhere at all?" The plain network of {{ch:digits}}, 784 → 64 → 10, has 50,890 weights. This one has about a seventh as many.</p>
+
+<div class="predict" data-answer="c">
+  <p>The 8 first-layer filters began as random numbers and were trained only to get digits right. Nobody mentioned edges. What do you expect them to look like now?</p>
+  <button data-opt="a">Still random speckle. 25 numbers can't hold a pattern.</button>
+  <button data-opt="b">Tiny pictures of digits</button>
+  <button data-opt="c">Stroke and edge detectors, a bit like the presets you tried</button>
+  <p class="why">Look at the top row of the widget below. Most of the filters are blue on one side and red on the other: edge detectors, tilted at different angles, like rougher versions of the presets you tried. A couple are mostly blue and simply fire on ink. Nobody put those patterns there. Spotting edges turned out to be useful for telling digits apart, so training found them. Train again from different random numbers and you get a different set, in a different order.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Filters nobody designed</h3>
+  <p>Draw a digit in the box with your mouse or finger, or load a test digit the network has never trained on. Your drawing gets the same tidy-up as in {{ch:digits}}: the line is redrawn at the thickness of the pens in MNIST, the box around the ink is shrunk to fit 20 × 20, and the digit is slid until its center of mass sits in the middle of a 28 × 28 picture. Then watch each stage of the network respond. Read down a column: a filter, the map it makes from your digit, and the pooled map.</p>
+  <div class="run-note"><strong>Trained ahead of time.</strong> This network was trained once, on 55,000 handwritten digits, by the Python script at the end of this chapter. Your browser downloaded its 6,970 finished weights and is only <em>running</em> it. Nothing on this page is learning.</div>
+  <p class="cv-status" id="fl-status">loading the trained network…</p>
+  <div class="cv-draw">
+    <canvas class="cv-pad" id="fl-pad" width="240" height="240" aria-label="drawing pad"></canvas>
+    <figure>
+      <canvas class="cv-seen" id="fl-seen" width="112" height="112" aria-label="the tidied 28 by 28 picture"></canvas>
+      <figcaption class="cv-caption">tidied to 28 × 28:<br>what the network gets</figcaption>
+    </figure>
+    <div class="cv-readout">
+      <div class="cv-label">the network's answer</div>
+      <div class="cv-answer" id="fl-answer"><span class="cv-digit">?</span><span class="cv-sure"></span></div>
+      <div class="cv-bars" id="fl-bars"></div>
+    </div>
+  </div>
+  <div class="cv-samples" id="fl-samples"></div>
+  <div class="math-panel cv-rows">
+    <div class="cv-label">the 8 filters it learned · 5 × 5 weights each</div>
+    <canvas id="fl-filters" width="640" height="73" aria-label="the eight learned filters"></canvas>
+    <p class="cv-note"><span class="cv-swatch" style="background:#2563eb; margin-left:0"></span>positive weight <span class="cv-swatch" style="background:#fff"></span>zero <span class="cv-swatch" style="background:#dc2626"></span>negative weight. These never change, whatever you draw.</p>
+    <div class="cv-label">8 feature maps · where each filter fires on your digit</div>
+    <canvas id="fl-maps" width="640" height="73" aria-label="eight feature maps"></canvas>
+    <div class="cv-label">after 2 × 2 max pooling · the same maps at 14 × 14</div>
+    <canvas id="fl-pooled" width="640" height="73" aria-label="eight pooled maps"></canvas>
+    <div class="cv-label">second layer · 32 new maps, each made from all 8 pooled maps</div>
+    <canvas id="fl-maps2" width="640" height="76" aria-label="thirty-two second-layer maps"></canvas>
+    <p class="cv-note">The small orange frame marks the strongest number in each map. Those 32 numbers, and nothing else, go on to the last layer, which turns them into the ten bars above.</p>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<ul>
+  <li><strong>The filters</strong> are the learned part. They stay the same whatever you draw, because nothing on this page is training.</li>
+  <li><strong>The feature maps</strong> are your digit seen through each filter. A filter that is blue on top and red underneath lights up along the bottom edges of your strokes, and a tilted one lights up on slanted strokes. Draw a 1 and then a 0 and watch which maps care. A few maps are faintly blue all over: those filters have a positive bias, so they are slightly "on" even over blank paper.</li>
+  <li><strong>The pooled maps</strong> are the same pictures at half the width and half the height. Chunkier, and still easy to recognize: not much was lost.</li>
+  <li><strong>The second layer</strong> looks different. Most of its 32 maps are nearly blank with a few lit-up spots, and which maps light up changes from digit to digit. Each second-layer filter is waiting for one particular combination of first-layer patterns, and most combinations are not in your drawing.</li>
+</ul>
+<p>One thing you can't do here is fool it by drawing in a corner, because the tidying step moves your digit back to the middle before the network sees it. To test what started this chapter, the digit has to be moved <em>after</em> tidying.</p>
+
+<h3>Back to the blind spot</h3>
+<p>Time to settle what started this chapter. Here are two networks side by side. One is plain: the same shape as the one you trained in {{ch:digits}}, 784 → 64 → 10, but taught with 55,000 digits instead of 8,000, which is why it starts from a higher score than yours did. The other is the convolutional network you just looked inside. Both learned from the same 55,000 centered digits, with the same recipe. <strong>Neither was ever shown a digit that had been pushed off-center.</strong></p>
+
+<div class="predict" data-answer="c">
+  <p>We push every one of the 10,000 test digits 4 pixels to the right and ask both networks to read them. The plain network drops from 97.5% right to 33.2%. What do you expect from the convolutional network, which scores 98.5% on centered digits?</p>
+  <button data-opt="a">It collapses too. It never saw a shifted digit either.</button>
+  <button data-opt="b">It holds up better, but still loses a lot: maybe 70%.</button>
+  <button data-opt="c">It barely changes.</button>
+  <p class="why">It scores 98.4%. Its filters find the same strokes wherever they are, and its last pooling step only asks how strongly each pattern showed up, not where. Try it yourself below.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>The shift test</h3>
+  <p>Draw a digit or load a test digit, and check that both networks read it. Then drag the slider to push the tidied digit across the picture, one pixel at a time. Whatever slides off the edge is gone. Watch the two answers.</p>
+  <p class="cv-status" id="sh-status">loading the trained networks…</p>
+  <div class="cv-draw">
+    <canvas class="cv-pad" id="sh-pad" width="240" height="240" aria-label="drawing pad"></canvas>
+    <div class="cv-readout">
+      <figure>
+        <canvas class="cv-seen" id="sh-seen" width="168" height="168" aria-label="the shifted 28 by 28 picture both networks receive"></canvas>
+        <figcaption class="cv-caption" style="text-align:left">what both networks get</figcaption>
+      </figure>
+      <div class="slider-row"><label for="sh-shift" style="width:auto">push it by</label><input type="range" id="sh-shift" min="0" max="6" step="1" value="0"><span class="value" id="sh-shift-v">0 px</span></div>
+      <div class="toggle-row cv-chips cv-dirs" id="sh-dir">
+        <div class="toggle on" data-dir="right">→ right</div>
+        <div class="toggle" data-dir="left">← left</div>
+        <div class="toggle" data-dir="down">↓ down</div>
+        <div class="toggle" data-dir="up">↑ up</div>
+      </div>
+    </div>
+  </div>
+  <div class="cv-samples" id="sh-samples"></div>
+  <div class="cv-versus">
+    <div class="cv-card">
+      <h4>Plain network</h4>
+      <p class="cv-kind">784 → 64 → 10 · 50,890 weights · a separate weight for every pixel</p>
+      <div class="cv-answer" id="sh-plain-answer"><span class="cv-digit">?</span><span class="cv-sure"></span></div>
+      <div class="cv-bars" id="sh-plain-bars"></div>
+      <p class="cv-measured" id="sh-plain-measured"></p>
+    </div>
+    <div class="cv-card">
+      <h4>Convolutional network</h4>
+      <p class="cv-kind">filters → pooling → filters → strongest → 10 · 6,970 weights · shared</p>
+      <div class="cv-answer" id="sh-conv-answer"><span class="cv-digit">?</span><span class="cv-sure"></span></div>
+      <div class="cv-bars" id="sh-conv-bars"></div>
+      <p class="cv-measured" id="sh-conv-measured"></p>
+    </div>
+  </div>
+  <p class="cv-note">Both networks were trained ahead of time by the script below. The line under each card is not about your drawing: it is that network's score on all 10,000 test digits pushed the same way.</p>
+</div>
+
+<h3>The measured truth</h3>
+<p>One drawing proves little, so here is the whole test set: all 10,000 test digits, pushed to the right, read by both networks.</p>
+<table class="cv-table">
+  <tr><th>digits pushed right by</th><th>plain network</th><th>convolutional network</th></tr>
+  <tr><td>0 pixels</td><td>97.5%</td><td class="cv-win">98.5%</td></tr>
+  <tr><td>2 pixels</td><td>78.0%</td><td class="cv-win">98.5%</td></tr>
+  <tr><td>4 pixels</td><td>33.2%</td><td class="cv-win">98.4%</td></tr>
+  <tr><td>6 pixels</td><td>13.6%</td><td class="cv-win">97.5%</td></tr>
+</table>
+<p>Same digits to learn from, same training recipe, a seventh of the weights, and a completely different result. At 6 pixels the plain network is close to guessing (one digit in ten would be 10%). The difference is not what the networks were shown. It is how they are wired.</p>
+<p>Follow a shifted digit through the convolutional network and you can see why. The filters find the same strokes in their new places, because the same weights run everywhere. The feature maps slide over by the same amount. And the last pooling step keeps only the strongest number in each map, wherever it happens to be. So the 32 numbers that reach the final layer hardly move, and neither does the answer.</p>
+
+<h3>The fine print</h3>
+<p>This result is easy to oversell, so here are three things it does not mean.</p>
+<p><strong>Up and down are harder.</strong> Switch the direction in the widget. Handwritten digits are taller than they are wide, so they have less empty margin above and below than at the sides. Pushed 4 pixels down, the convolutional network reads 91.9% of the test digits, and at 6 pixels 80.7%. (The plain network: 15.4% and 4.3%.) Two things go wrong when a digit is pressed against the frame. Past a certain point its ink slides off the picture, and no wiring can read ink that is not there. And even before that, the edge of the frame gets in the way: filters can only be placed inside it, so the detectors that would sit just beyond the end of a stroke, looking back at it, have nowhere to stand.</p>
+<p><strong>Sharing weights is not the whole trick.</strong> We trained a third network with the same two layers of filters but a different ending. Instead of keeping only the strongest number in each map, its last layer has a separate weight for every position in every map, which is how LeNet-5 and many other classic convolutional networks finish. On centered digits it beat ours: 99.2%. Pushed 4 pixels right it scored 81.5%, and at 6 pixels 37.3%. That is better than the plain network and far worse than ours. Shared filters make the feature maps slide along with the digit. Whether the network then stops caring <em>where</em> things are is decided by its last steps. Networks that end the classic way are usually also shown shifted, stretched and turned copies of their training pictures, a trick called <strong>data augmentation</strong>.</p>
+<p><strong>Sliding is the only thing it gets for free.</strong> Turn a digit on its side, or make it twice as big, and the same filters no longer match. Tolerance to turning and resizing is not built into the wiring. It has to be learned from examples.</p>
+
+<h3>Where this came from</h3>
+<p>The idea of stacking shared detectors with pooling in between goes back to 1980, when Kunihiko Fukushima in Japan built a network he called the <em>neocognitron</em>. He was inspired by what biologists had found in the seeing part of a cat's brain: cells that respond to an edge at one particular angle in one small patch of what the eye sees. What his network lacked was a good way to learn its filters.</p>
+<p>In 1989 Yann LeCun and his colleagues at Bell Labs supplied it. They trained a convolutional network with backpropagation to read handwritten ZIP codes from real United States mail. By 1998 the design had grown into <strong>LeNet-5</strong>, with about 60,000 weights, and a system built around a network of that kind was reading several million bank checks a day. The MNIST digits you have been using were put together by the same group to test networks like these.</p>
+<p>Then, for more than a decade, most people working on computer vision preferred other methods. Convolutional networks could read small gray digits, but real photos seemed out of reach. What changed was the amount of data and computing power. In 2012 a network called <strong>AlexNet</strong>, built by Alex Krizhevsky, Ilya Sutskever and Geoffrey Hinton, entered ImageNet, a yearly contest to sort photos into 1,000 categories, with 1.2 million photos to learn from. AlexNet had about 60 million weights and trained for five to six days on two graphics cards made for video games. A guess counted as right if the true label was among a network's top five. The best of the other entries got 26.2% of the test photos wrong. AlexNet got 15.3% wrong. Within a couple of years nearly every entry was a convolutional network, and many people date the current boom in AI to that result.</p>
+
+<h3>Where convolutional networks are used</h3>
+<p>Anywhere a computer has to make sense of something laid out on a grid, where neighbors matter:</p>
+<ul>
+  <li>a phone camera finding faces to focus on, and a photo app that lets you search your pictures for "dog";</li>
+  <li>reading: addresses on envelopes, license plates, the text in a photo of a sign;</li>
+  <li>medicine: flagging possible signs of disease in X-rays, scans and photos of skin or eyes, for a doctor to check;</li>
+  <li>the cameras in cars that pick out lanes, other cars and people;</li>
+  <li>sound: turn a recording into a picture of pitch against time, then slide filters over that;</li>
+  <li>board games: AlphaGo, the program that beat a world champion at Go in 2016, read the board with convolutional layers.</li>
+</ul>
+<p>They are no longer the only way to see. Many of today's image models instead cut the picture into small square patches, treat each patch like a token, and run them through a transformer using the attention from {{ch:attention}}. Convolutional networks are still everywhere, especially where a model has to be small and fast.</p>
+
+<div class="bigidea"><p>A filter is a tiny pattern detector with a handful of weights, and the same filter is reused at every position of the picture. Stack layers of filters with pooling in between and a network can find small patterns, then patterns made of patterns, wherever they are. Nobody designs the filters: training finds them.</p></div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run locally</div>
+  <h3>The script that trained both networks</h3>
+  <p>This is <code>convnet.py</code>, the script that produced the weights your browser has been running, and every measurement in this chapter. It uses PyTorch (you will meet it properly in {{ch:pytorch}}), which is too big to load inside this page, so read it here and run it on your own computer. Things to look for: the two <code>class</code> blocks that describe the networks, the <code>shifted</code> function, and the fact that <code>train</code> never calls it.</p>
+  <div class="run-note"><code>pip install torch numpy</code><br><code>python3 convnet.py</code></div>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">convnet.py</span>
+      <span class="code-status ready" id="py-status-convnet">local Python script</span>
+    </div>
+    <textarea class="code-editor" id="py-code-convnet" spellcheck="false" rows="30" data-src="convnet.py" readonly></textarea>
+  </div>
+  <div class="terminal" id="py-out-convnet"><span class="dim">Run locally with: python3 convnet.py   (the first run downloads the MNIST digits, 11 MB)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Two to try. <strong>With the first widget:</strong> invent a filter for slanted lines. It should light up strongly along the "slash" picture and give 0 along the straight sides of the "block" (its corners will still show). Hint: make the three weights in every row add up to 0, and the three in every column too. Why does that silence straight edges? <strong>With Python:</strong> teach the plain network about shifting the brute-force way. In <code>convnet.py</code>, add <code>import random</code> at the top, and inside <code>train</code> replace <code>net(x[batch])</code> with <code>net(shifted(x[batch], random.randint(-4, 4), random.randint(-4, 4)))</code>. That is data augmentation. Run it and read the plain column of the shift test: what did it gain, what did it give up on centered digits, and what happens at 6 pixels, further than anything it was shown?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A filter produces a big positive number at one spot in a picture. What does that tell you?</p>
+    <button data-opt="a">There is a lot of ink at that spot.</button>
+    <button data-opt="b">The patch at that spot looks like the filter's own pattern.</button>
+    <button data-opt="c">The network is confident about its final answer.</button>
+    <p class="why">A filter measures how well a patch matches its pattern. Ink alone does not do it: the edge filter gave exactly 0 on a patch that was solid ink.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>One 5 × 5 filter is used on a 28 × 28 gray picture, and then on a gray picture 1,000 pixels wide and 1,000 tall. How many weights does it need?</p>
+    <button data-opt="a">25 both times</button>
+    <button data-opt="b">25 for the small picture, and a million for the big one: one per pixel</button>
+    <button data-opt="c">25 for the small picture, and more for the big one, because it has to make more stops</button>
+    <p class="why">The filter makes far more stops on the big picture, but it uses the same 25 weights at every stop. That is weight sharing, and it is why these networks can handle large pictures at all.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Our convolutional network still read digits pushed 4 pixels sideways, though it never trained on a shifted digit. Why?</p>
+    <button data-opt="a">During training it memorized what every digit looks like at every position.</button>
+    <button data-opt="b">The same filters run at every position, and its last pooling step asks only how strongly each pattern showed up, not where.</button>
+    <button data-opt="c">2 × 2 pooling shrinks the picture, so a 4-pixel shift disappears.</button>
+    <p class="why">Shared filters make the feature maps slide along with the digit, and keeping only the strongest number in each map throws the position away. The 2 × 2 pooling helps a little, but on its own it only forgives a shift of about a pixel.</p>
+  </div>
+</div>

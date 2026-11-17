@@ -1,0 +1,13 @@
+{
+  "filter": "In a network that looks at pictures: a small grid of weights that is slid across the picture to detect one pattern, such as an edge. Also called a kernel.",
+  "kernel": "Another name for a filter: the small grid of weights a convolutional layer slides across a picture.",
+  "convolution": "Sliding a small filter across a picture and, at every stop, multiplying the pixels under it by the filter’s weights and adding them up.",
+  "feature map": "The grid of numbers a filter produces: big where its pattern was found in the picture, near zero where it was not.",
+  "weight sharing": "Using the same weights at every position of a picture, so a pattern learned in one place is recognized everywhere.",
+  "convolutional layer": "A layer made of several filters. Each one slides over the same input and produces its own feature map.",
+  "convolutional network": "A network built from layers of filters that slide across a picture, usually with pooling in between. Often shortened to CNN.",
+  "pooling": "Shrinking a feature map by replacing each small block of numbers with a single number.",
+  "max pooling": "Pooling that keeps only the biggest number in each block.",
+  "padding": "In a convolutional network: a border of zeros added around a picture so the feature map comes out the same size as the picture.",
+  "data augmentation": "Training on deliberately altered copies of the examples, such as shifted or rotated pictures, so the network learns to ignore those changes."
+}
