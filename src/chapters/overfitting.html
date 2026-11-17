@@ -1,0 +1,209 @@
+<p>There are two ways to get ready for a math test. The slow way: work through the practice sheet until you understand <em>why</em> each answer is what it is. The fast way, popular at 11 p.m. the night before: memorize the answer key. Question 1 is 42, question 2 is 7, question 3 is 19. Either way you score 100% on the practice sheet. The difference only shows when the real test asks different questions.</p>
+<p>A neural network faces the same choice, and nothing in training pushes it toward the slow way. Training asks for one thing only: get the training examples right. Understand the rule or memorize the answers, the loss goes down either way. {{Ch:real-data}} gave the memorizing version a name, <strong>overfitting</strong>, and a way to catch it: hold back a test set that the network never trains on. In this chapter you'll watch overfitting happen, learn to spot it on a chart, and try three cures.</p>
+
+<h3>A secret rule and a sloppy answer key</h3>
+<p>Here's the experiment. Take a square of graph paper and draw a gently wavy line across the middle. That line is the secret rule: a dot above it is <strong style="color: #ea580c;">orange</strong>, a dot below it is <strong style="color: #2563eb;">blue</strong>. Scatter some dots on the paper, color each one by the rule, and hand them to a network as its training examples. A dot's position (two numbers, x and y) is the input, and its color is the right answer. This is the dots-on-graph-paper picture from {{ch:tables-dots}}, except the boundary is now a curve, so the network gets hidden layers to bend with.</p>
+<p>Now the twist that makes it realistic: <strong>15 out of every 100 training dots have the wrong color.</strong> Real data is like this. Someone tired clicks the wrong button. A sensor glitches. A photo of a muffin gets filed under "chihuahua". Wrong answers hiding in the training data are called <strong>label noise</strong>, and nobody tells the network which labels are the wrong ones. To the network, a mislabeled dot looks exactly as trustworthy as any other. It's a practice sheet whose answer key has typos in it.</p>
+<p>That gives us a number worth remembering: <strong>85%</strong>. A network that learned the wavy line <em>perfectly</em> would disagree with every mislabeled dot, so it would score 85% on its training dots, not 100%. The only way to score much higher is to learn the typos too.</p>
+<p>For the test we use 300 fresh dots that the network never trains on, colored by the true rule with no mistakes. So the test score answers one question: how well does this network know the real rule? A network that does well on examples it has never seen is said to <strong>generalize</strong>, and that is the whole point of training one.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: in a real project the test set comes out of the same messy pile as the training set, so it has wrong labels too, and you can't clean them out because you don't know which ones they are. We gave ours a clean test so that its score means exactly "how much of the true rule does the network know". The shape of the chart you're about to see is the same either way.</p>
+
+<div class="predict" data-answer="c">
+  <p>The big network below trains for 1,000 epochs, long after it has found the rough shape of the rule. What will its score on the <em>test</em> dots do over that time?</p>
+  <button data-opt="a">Keep climbing: more practice always helps</button>
+  <button data-opt="b">Climb, then level off and stay there</button>
+  <button data-opt="c">Climb, then start falling</button>
+  <p class="why">Press train and watch the teal line. It peaks early. After that, more training makes the network <em>worse</em> at the real rule, even while its score on the training dots keeps going up.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Ace the homework, fail the test</h3>
+  <p>Press <strong>train</strong>. The map shows the training dots, with the network's current opinion painted behind them: orange where it would answer orange, blue where it would answer blue, stronger color where it is more sure. The chart shows its two scores as training goes on. Watch what grows around the ringed dots, and what the test line does while that is happening.</p>
+  <div class="slider-row"><label for="of-n">training dots</label><input type="range" id="of-n" min="20" max="400" step="20" value="80"><span class="value of-count" id="of-n-v">80 dots, 12 mislabeled</span></div>
+  <div class="toggle-row of-sizes" id="of-size">
+    <div class="toggle" data-size="small">small network<small>1 hidden layer × 4</small></div>
+    <div class="toggle" data-size="medium">medium network<small>2 hidden layers × 8</small></div>
+    <div class="toggle on" data-size="big">big network<small>2 hidden layers × 32</small></div>
+  </div>
+  <div class="of-stage">
+    <figure>
+      <canvas id="of-field" width="320" height="320" role="img" aria-label="The training dots on graph paper, with the network's opinion about every point painted behind them"></canvas>
+      <figcaption>
+        <span class="of-key orange"></span><span class="of-key blue"></span> training dots
+        · <span class="of-key ring"></span><b>dark ring</b> = wrong label
+        · <span class="of-key dash"></span> the true rule<br>
+        The network is never shown the rings or the dashed line.
+      </figcaption>
+    </figure>
+    <figure>
+      <canvas id="of-chart" width="330" height="320" role="img" aria-label="Line chart of accuracy on the training dots and on the test dots as training goes on"></canvas>
+      <figcaption>
+        <span class="of-key line train"></span> score on the <b>training dots</b> (the homework)<br>
+        <span class="of-key line test"></span> score on the 300 unseen <b>test dots</b> (the exam)
+      </figcaption>
+    </figure>
+  </div>
+  <p class="of-note" id="of-note" aria-live="polite"></p>
+  <div>
+    <button id="of-train">train</button>
+    <button class="secondary" id="of-rewind" disabled>◂◂ rewind to the best moment</button>
+    <button class="secondary" id="of-reset">reset</button>
+    <button class="secondary" id="of-new">new dots</button>
+  </div>
+  <div class="toggle-row of-view">
+    <div class="toggle" id="of-show-test">show the 300 test dots</div>
+  </div>
+  <p style="font-size: 12.5px; color: var(--muted); margin: 6px 0 0;">Test dots are drawn as diamonds <span class="of-key diamond"></span>. A big diamond with a black outline <span class="of-key diamond missed"></span> is one the network currently gets wrong.</p>
+  <div class="stat-row">
+    <span>epoch: <strong id="of-epoch">0</strong> / 1,000</span>
+    <span>training accuracy: <strong id="of-train-acc">?</strong></span>
+    <span>test accuracy: <strong id="of-test-acc">?</strong></span>
+    <span>best test: <strong id="of-best">?</strong></span>
+    <span>stored numbers: <strong id="of-params">?</strong></span>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>For the first few hundred epochs the network does exactly what you'd hope. It paints orange on top and blue underneath, with a boundary that settles close to the dashed line. At epoch 305 its test score peaks at <strong>96%</strong>. Its score on the training dots at that moment is 83%, just under the 85% that a perfect learner would get. It is "wrong" about the ringed dots, and it is right to be.</p>
+<p>But training doesn't know that. All the loss can see is 12 dots the network keeps getting wrong, and gradient descent keeps pushing to fix them. The big network has 1,185 stored numbers and only 80 dots to satisfy, so it has plenty of room to spare. It uses that room. It bends the boundary out of shape, pushing long fingers of orange deep into the blue region to reach the ringed dots down there, and blowing a bubble of blue around a ringed dot stranded up in the orange. Each one it captures pushes the training score up a notch. By epoch 900 it scores a perfect <strong>100%</strong> on its training dots.</p>
+<p>And the test? Down to <strong>80%</strong>. At its best moment the network got 11 of the 300 test dots wrong. By the end it gets 59 wrong.</p>
+<p>Those fingers and islands are what memorizing looks like. An island of blue in the middle of the orange isn't a rule. It's a sticky note that says "the answer near <em>this exact spot</em> is blue", written because of a single dot, and that dot was a typo. Switch on <strong>show the 300 test dots</strong> and look at the black-outlined diamonds: they sit inside the fingers and islands. Each one is an innocent dot that happened to land next to a typo.</p>
+<p>This is the 11 p.m. student. A big memory, a short practice sheet and plenty of time: memorizing every answer, typos included, is the easiest road to a perfect homework score. A big network with only a few examples is in exactly that position.</p>
+<p style="font-size: 14px; color: var(--muted);">Is this a fluke of one lucky set of dots? Press <strong>new dots</strong> and train again. We ran this setting on 30 different sets of dots. The big network's test score fell from its peak every single time: by 14 points on average, never by fewer than 8. It finished with between 93% and 100% on its training dots and between 74% and 87% on the test.</p>
+
+<h3>How to read the two lines</h3>
+<p>The widget's chart, with one line for the training score and one for the test score, is one of the most useful pictures in all of machine learning. Here is the run you just watched, with the two stages marked.</p>
+
+<svg viewBox="0 0 640 286" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The default run from the widget: both lines climb together until epoch 305, then the training line rises to 100% while the test line falls to 80%">
+  <rect x="52" y="34" width="165.9" height="202" fill="#ccfbf1" opacity="0.7"/>
+  <rect x="217.9" y="34" width="378.1" height="202" fill="#ffedd5" opacity="0.7"/>
+  <line x1="52" y1="236.0" x2="596" y2="236.0" stroke="#fff" stroke-width="1"/>
+  <text x="44" y="240.0" text-anchor="end" font-size="11" fill="#6b7280">60%</text>
+  <line x1="52" y1="185.5" x2="596" y2="185.5" stroke="#fff" stroke-width="1"/>
+  <text x="44" y="189.5" text-anchor="end" font-size="11" fill="#6b7280">70%</text>
+  <line x1="52" y1="135.0" x2="596" y2="135.0" stroke="#fff" stroke-width="1"/>
+  <text x="44" y="139.0" text-anchor="end" font-size="11" fill="#6b7280">80%</text>
+  <line x1="52" y1="84.5" x2="596" y2="84.5" stroke="#fff" stroke-width="1"/>
+  <text x="44" y="88.5" text-anchor="end" font-size="11" fill="#6b7280">90%</text>
+  <line x1="52" y1="34.0" x2="596" y2="34.0" stroke="#fff" stroke-width="1"/>
+  <text x="44" y="38.0" text-anchor="end" font-size="11" fill="#6b7280">100%</text>
+  <text x="135.0" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#0f766e">learning</text>
+  <text x="135.0" y="29" text-anchor="middle" font-size="11" fill="#0f766e">both lines climb</text>
+  <text x="407.0" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#c2410c">memorizing</text>
+  <text x="407.0" y="29" text-anchor="middle" font-size="11" fill="#c2410c">training line up, test line down</text>
+  <line x1="217.9" y1="34" x2="217.9" y2="236" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <polyline fill="none" stroke="#475569" stroke-width="2.5" stroke-linejoin="round" points="54.7,147.6 57.4,160.3 60.2,147.6 62.9,147.6 65.6,141.3 68.3,135.0 71.0,147.6 73.8,147.6 76.5,141.3 79.2,141.3 81.9,135.0 84.6,141.3 87.4,141.3 90.1,141.3 92.8,135.0 95.5,135.0 98.2,122.4 101.0,122.4 103.7,128.7 106.4,128.7 109.1,128.7 111.8,128.7 114.6,128.7 117.3,128.7 120.0,128.7 122.7,128.7 125.4,128.7 128.2,128.7 130.9,128.7 133.6,128.7 136.3,128.7 139.0,128.7 141.8,128.7 144.5,128.7 147.2,128.7 149.9,128.7 152.6,128.7 155.4,128.7 158.1,128.7 160.8,128.7 163.5,128.7 166.2,128.7 169.0,109.8 171.7,109.8 174.4,109.8 177.1,109.8 179.8,109.8 182.6,116.1 185.3,116.1 188.0,116.1 190.7,116.1 193.4,116.1 196.2,116.1 198.9,116.1 201.6,116.1 204.3,116.1 207.0,116.1 209.8,122.4 212.5,122.4 215.2,122.4 217.9,122.4 220.6,116.1 223.4,116.1 226.1,116.1 228.8,116.1 231.5,116.1 234.2,109.8 237.0,109.8 239.7,109.8 242.4,109.8 245.1,109.8 247.8,109.8 250.6,109.8 253.3,109.8 256.0,109.8 258.7,109.8 261.4,109.8 264.2,109.8 266.9,109.8 269.6,109.8 272.3,109.8 275.0,109.8 277.8,109.8 280.5,109.8 283.2,109.8 285.9,109.8 288.6,109.8 291.4,109.8 294.1,109.8 296.8,109.8 299.5,109.8 302.2,109.8 305.0,109.8 307.7,109.8 310.4,109.8 313.1,109.8 315.8,109.8 318.6,109.8 321.3,109.8 324.0,109.8 326.7,109.8 329.4,109.8 332.2,109.8 334.9,103.4 337.6,103.4 340.3,97.1 343.0,97.1 345.8,97.1 348.5,97.1 351.2,90.8 353.9,90.8 356.6,90.8 359.4,90.8 362.1,90.8 364.8,90.8 367.5,84.5 370.2,84.5 373.0,84.5 375.7,78.2 378.4,78.2 381.1,78.2 383.8,78.2 386.6,65.6 389.3,65.6 392.0,65.6 394.7,59.3 397.4,59.3 400.2,59.3 402.9,59.3 405.6,59.3 408.3,59.3 411.0,59.3 413.8,59.3 416.5,59.3 419.2,59.3 421.9,59.3 424.6,59.3 427.4,59.3 430.1,59.3 432.8,59.3 435.5,52.9 438.2,52.9 441.0,52.9 443.7,52.9 446.4,52.9 449.1,52.9 451.8,52.9 454.6,52.9 457.3,52.9 460.0,52.9 462.7,52.9 465.4,52.9 468.2,52.9 470.9,52.9 473.6,46.6 476.3,46.6 479.0,46.6 481.8,46.6 484.5,46.6 487.2,40.3 489.9,40.3 492.6,40.3 495.4,40.3 498.1,40.3 500.8,40.3 503.5,40.3 506.2,40.3 509.0,40.3 511.7,40.3 514.4,40.3 517.1,40.3 519.8,40.3 522.6,40.3 525.3,40.3 528.0,40.3 530.7,40.3 533.4,40.3 536.2,40.3 538.9,40.3 541.6,34.0 544.3,34.0 547.0,34.0 549.8,34.0 552.5,34.0 555.2,34.0 557.9,34.0 560.6,34.0 563.4,34.0 566.1,34.0 568.8,34.0 571.5,34.0 574.2,34.0 577.0,34.0 579.7,34.0 582.4,34.0 585.1,34.0 587.8,34.0 590.6,34.0 593.3,34.0 596.0,34.0"/>
+  <polyline fill="none" stroke="#0d9488" stroke-width="2.5" stroke-linejoin="round" points="54.7,135.0 57.4,126.6 60.2,116.5 62.9,106.4 65.6,123.2 68.3,121.5 71.0,114.8 73.8,94.6 76.5,99.6 79.2,103.0 81.9,101.3 84.6,91.2 87.4,87.9 90.1,84.5 92.8,82.8 95.5,79.4 98.2,77.8 101.0,77.8 103.7,77.8 106.4,76.1 109.1,76.1 111.8,76.1 114.6,76.1 117.3,76.1 120.0,76.1 122.7,76.1 125.4,74.4 128.2,74.4 130.9,74.4 133.6,69.3 136.3,67.7 139.0,67.7 141.8,67.7 144.5,66.0 147.2,66.0 149.9,66.0 152.6,64.3 155.4,64.3 158.1,64.3 160.8,64.3 163.5,62.6 166.2,60.9 169.0,60.9 171.7,55.9 174.4,55.9 177.1,55.9 179.8,55.9 182.6,55.9 185.3,57.6 188.0,57.6 190.7,57.6 193.4,57.6 196.2,57.6 198.9,57.6 201.6,57.6 204.3,62.6 207.0,59.3 209.8,57.6 212.5,59.3 215.2,54.2 217.9,52.5 220.6,57.6 223.4,59.3 226.1,60.9 228.8,60.9 231.5,62.6 234.2,66.0 237.0,69.3 239.7,71.0 242.4,72.7 245.1,72.7 247.8,79.4 250.6,81.1 253.3,81.1 256.0,81.1 258.7,81.1 261.4,81.1 264.2,81.1 266.9,84.5 269.6,86.2 272.3,86.2 275.0,86.2 277.8,86.2 280.5,86.2 283.2,86.2 285.9,86.2 288.6,86.2 291.4,86.2 294.1,86.2 296.8,84.5 299.5,84.5 302.2,84.5 305.0,84.5 307.7,84.5 310.4,84.5 313.1,84.5 315.8,84.5 318.6,84.5 321.3,86.2 324.0,86.2 326.7,86.2 329.4,87.9 332.2,91.2 334.9,91.2 337.6,91.2 340.3,89.5 343.0,92.9 345.8,91.2 348.5,91.2 351.2,91.2 353.9,94.6 356.6,96.3 359.4,98.0 362.1,98.0 364.8,99.6 367.5,99.6 370.2,101.3 373.0,99.6 375.7,101.3 378.4,101.3 381.1,101.3 383.8,103.0 386.6,101.3 389.3,103.0 392.0,103.0 394.7,103.0 397.4,101.3 400.2,101.3 402.9,103.0 405.6,103.0 408.3,103.0 411.0,103.0 413.8,103.0 416.5,104.7 419.2,104.7 421.9,104.7 424.6,104.7 427.4,104.7 430.1,104.7 432.8,108.1 435.5,108.1 438.2,106.4 441.0,108.1 443.7,108.1 446.4,108.1 449.1,106.4 451.8,108.1 454.6,108.1 457.3,108.1 460.0,109.8 462.7,108.1 465.4,106.4 468.2,106.4 470.9,106.4 473.6,108.1 476.3,108.1 479.0,109.8 481.8,109.8 484.5,109.8 487.2,109.8 489.9,113.1 492.6,113.1 495.4,114.8 498.1,114.8 500.8,114.8 503.5,118.2 506.2,118.2 509.0,121.5 511.7,121.5 514.4,121.5 517.1,123.2 519.8,124.9 522.6,128.3 525.3,128.3 528.0,129.9 530.7,129.9 533.4,131.6 536.2,131.6 538.9,131.6 541.6,131.6 544.3,131.6 547.0,131.6 549.8,131.6 552.5,131.6 555.2,133.3 557.9,133.3 560.6,135.0 563.4,133.3 566.1,133.3 568.8,133.3 571.5,133.3 574.2,131.6 577.0,131.6 579.7,131.6 582.4,131.6 585.1,131.6 587.8,131.6 590.6,131.6 593.3,133.3 596.0,133.3"/>
+  <circle cx="217.9" cy="52.5" r="5" fill="#fff" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="226.9" y="206" font-size="12" font-weight="700" fill="#0f766e">the best moment</text>
+  <text x="226.9" y="221" font-size="11" fill="#0f766e">epoch 305: test 96%</text>
+  <text x="602" y="38.0" font-size="11" font-weight="700" fill="#475569">100%</text>
+  <text x="602" y="137.3" font-size="11" font-weight="700" fill="#0d9488">80%</text>
+  <text x="334.9" y="120.4" text-anchor="middle" font-size="11.5" font-weight="600" fill="#475569">training dots</text>
+  <text x="563.4" y="151.3" text-anchor="middle" font-size="11.5" font-weight="600" fill="#0f766e">test dots</text>
+  <line x1="52" y1="109.8" x2="596" y2="109.8" stroke="#6b7280" stroke-width="1" stroke-dasharray="2 4"/>
+  <text x="44" y="113.8" text-anchor="end" font-size="11" font-weight="700" fill="#374151">85%</text>
+  <text x="52" y="254" font-size="11" fill="#6b7280">epoch 0</text>
+  <text x="596" y="254" text-anchor="end" font-size="11" fill="#6b7280">epoch 1,000</text>
+  <text x="324.0" y="272" text-anchor="middle" font-size="12" fill="#6b7280">epochs of training</text>
+</svg>
+
+<ul>
+  <li><strong>Both lines climbing together: learning.</strong> Whatever the network is picking up also works on dots it has never seen, so it must be something about the rule.</li>
+  <li><strong>Training line climbing, test line falling: memorizing.</strong> The network is getting better at its homework in ways that don't carry over to anything else.</li>
+  <li><strong>The peak of the test line: the best moment.</strong> That's the best network this run ever produced. Everything after it made things worse.</li>
+</ul>
+<p>The space between the two lines at the end, 100% against 80%, is the bill for memorizing. People call it the <em>generalization gap</em>.</p>
+<p>One odd thing about our chart: early on, the test line sits <em>above</em> the training line. That's the label noise. On this homework 85% (the dotted line) is the best an honest learner can do, while the clean test goes all the way up to 100%. On real data the test has mistakes in it too, so the training line is normally on top the whole way, and what tells you memorizing has begun is the gap getting wider. You'll see exactly that in {{ch:decide}}, where you train a model on 10,000 real news headlines.</p>
+
+<h3>Three cures</h3>
+<p>Go back to the widget and try each of these. Changing a setting gives you a fresh, untrained network.</p>
+<p><strong>Cure 1: more data.</strong> Slide <em>training dots</em> up to 400 and train the same big network. Now there are 60 mislabeled dots, but they are scattered among 340 correct ones. The dots are packed closer together now, so an island around a typo would swallow its correctly colored neighbors too, and they outvote it. The training score stops at 85%, right where an honest learner should be, and the test score finishes at 96%. Try the stops in between and you can watch the gap close: with 20 dots the big network finishes at 67% on the test, with 80 dots at 80%, with 200 dots at 86%, with 400 dots at 96%. More data is the most reliable cure there is, which is one reason AI companies go to so much trouble to collect it.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: more data makes memorizing much harder, not impossible. Look closely at the 400-dot map and you can find a faint dent or two where the network has started to try. When we let that same run carry on to 1,500 epochs, it had crept up to 86% on the training dots and slipped to 94% on the test.</p>
+<p><strong>Cure 2: a simpler model.</strong> Back to 80 dots, and pick the small network: 17 stored numbers instead of 1,185. That is enough to draw a smooth, gently bending boundary, and not enough to chase a dozen separate typos. It finishes with 83% on the training dots and 95% on the test. It never came close to acing the homework, and it beat the big network on the exam by about 15 points.</p>
+<p><strong>Cure 3: stop early.</strong> Big network, 80 dots, train to the end, then press <strong>rewind to the best moment</strong>. The fingers and islands vanish. The good network was there all along, at epoch 305, and all you had to do was stop. This is called <strong>early stopping</strong>, and it is exactly as simple as it sounds: keep a copy of the network from the moment the score on unseen data was at its best.</p>
+<table class="of-table">
+  <tr><th>What we trained</th><th>Training dots</th><th>Test dots</th></tr>
+  <tr><td>Big network, 80 dots, all 1,000 epochs</td><td>100%</td><td>80%</td></tr>
+  <tr><td>Cure 1: big network, 400 dots</td><td>85%</td><td>96%</td></tr>
+  <tr><td>Cure 2: small network, 80 dots</td><td>83%</td><td>95%</td></tr>
+  <tr><td>Cure 3: big network, 80 dots, stopped at epoch 305</td><td>83%</td><td>96%</td></tr>
+</table>
+<p>Read that table twice. The row with the best homework score has the worst exam score. A high training score was never the goal.</p>
+<p style="font-size: 14px; color: var(--muted);">How dependable are the cures? Across the same 30 sets of dots, 400 dots beat 80 dots on the test all 30 times (96% on average against 81%). The small network beat the big one 28 times out of 30, but it is the shakier cure: its test score ranged from 74% to 96%, because a network that small sometimes can't quite follow the wave either. A model can be too simple as well as too big.</p>
+
+<h3>The golden rule: never peek at the test</h3>
+<p>There's a catch hiding in cure 3. How did the rewind button know that epoch 305 was the best moment? It looked at the test scores.</p>
+<p>That sounds harmless. We never <em>trained</em> on the test dots. But think about what happened: we checked the network at 200 different moments during training and kept the version that did best on those particular 300 dots. Some of that was skill and some was luck, a version that just happened to suit those dots. So the 96% we reported is a little too rosy. Give that network 300 brand-new dots and it would probably score slightly lower.</p>
+<p>Now imagine doing a lot of choosing that way. Try five network sizes and keep the one with the best test score. Try ten learning rates. Try different stopping points. Each choice bends the model a little more toward one particular set of test dots. No weights ever touched them, but <em>you</em> did. The memorizing just moved from the network into the person training it.</p>
+<p>So the golden rule of machine learning is: <strong>the test set stays unseen until the very end.</strong> If the score is supposed to tell you how the model will do on data nobody has seen, then nobody can have used that data for anything. Not the network, and not you.</p>
+<p>Which leaves a puzzle. You still need <em>some</em> unseen data to decide when to stop and which size to use. The answer is a third pile:</p>
+<table>
+  <tr><th>Pile</th><th>What it's for</th><th>At school</th></tr>
+  <tr><td><strong>Training set</strong></td><td>The network learns from it</td><td>The homework</td></tr>
+  <tr><td><strong>Validation set</strong></td><td>You make choices with it: when to stop, how big a network, which learning rate</td><td>The practice exam</td></tr>
+  <tr><td><strong>Test set</strong></td><td>Used once, after every choice is made, to get an honest score</td><td>The real exam, in a sealed envelope</td></tr>
+</table>
+<p>A <strong>validation set</strong> is a slice of your data held back from training, just like the test set, but one you're allowed to look at as often as you like. A common split is 80% training, 10% validation, 10% test. In real work the rewind button would watch the validation score, and the test set would stay in its envelope until the last day.</p>
+
+<h3>Other ways to discourage memorizing</h3>
+<p>Two more tools, named here so you recognize them later. <strong>Weight decay</strong> shrinks every weight a tiny bit on every step, so the network can only keep the large weights that sharp little islands need if they really earn their keep. <strong>Dropout</strong> switches off a random handful of neurons on each training step, so the network can't count on any single neuron to remember a single example. We won't build either one in this book, but you'll find them in the training recipe of a great many real models.</p>
+
+<h3>So why do giant networks work at all?</h3>
+<p>If 1,185 stored numbers are enough to memorize 80 dots, a chatbot with hundreds of billions of weights ought to be the worst crammer in history. Why isn't it?</p>
+<p>Mostly because of cure 1. Those models are trained on enormous amounts of data: hundreds of billions of words and more. It is the 400-dot end of the slider, pushed about as far as anyone can afford to push it. With that much to get right, learning the patterns is a cheaper way to lower the loss than memorizing each sentence.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: that isn't the whole story. Big models do memorize some of what they read, and a chatbot can sometimes recite a famous passage word for word. And researchers have found that very large networks overfit <em>less</em> than the simple picture in this chapter predicts, even when they have room to memorize everything. Why that happens is an open research question. What nobody disputes is the golden rule: you only find out what a model has learned by testing it on data it has never seen.</p>
+
+<div class="bigidea">
+  <p>A network's score on its training data tells you how well it <em>remembers</em>. Only its score on data it has never seen tells you what it <em>learned</em>. When the first keeps climbing while the second falls, it has stopped learning and started memorizing.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>The same experiment in numpy</h3>
+  <p>This is <code>overfit.py</code>. It makes its own dots (not the same ones as the widget, so the numbers differ a little) and trains three networks: big with 80 dots, big with 400 dots, small with 80 dots. Read the three tables as they scroll past, then compare the summary at the bottom with the table above.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">overfit.py</span>
+      <span class="code-status" id="py-status-overfit">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-overfit" spellcheck="false" rows="30" data-src="overfit.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="overfit">▶ run</button>
+    <button class="secondary" data-py-reset="overfit">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-overfit"><span class="dim">(click "run" to execute)</span></div>
+</div>
+<p>When we ran it, the big network with 80 dots finished at 100% on its training dots and 79% on the test, after peaking at 95% back at epoch 110. With 400 dots it finished at 85% and 97%. The small network finished at 85% and 94%.</p>
+<p style="font-size: 14px; color: var(--muted);">Two things under the hood, for the curious. The hidden neurons in this chapter squish with <strong>tanh</strong>, a cousin of sigmoid that outputs −1 to +1 instead of 0 to 1. And the gradient descent uses <strong>momentum</strong>: each step keeps 90% of the step before it, like a ball that keeps rolling, which gets through the slow stretches of training faster. Momentum is one of the "smarter step" rules that {{ch:descent}} mentioned. It is not what causes the memorizing. We switched it off and ran the widget's default setting again: the same network on the same dots still peaked and then memorized, only far more slowly. Its training score passed 97% at epoch 11,735 instead of epoch 775.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Find the breaking point. With the big network, slide the dots up 20 at a time. How many does it take before the network can no longer reach 100% on its training dots in 1,000 epochs? Then try the reverse: give the <em>small</em> network only 20 dots. Can it memorize now? What does that tell you about what "big" and "small" really mean?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Two networks are trained on the same data. <strong>Network A:</strong> its training accuracy climbs to 91% and its test accuracy climbs to 89%, and then both level off. <strong>Network B:</strong> its training accuracy climbs to 99.8%, while its test accuracy reaches 88% early on and then slides down to 74%. Which one is overfitting?</p>
+    <button data-opt="a">Network A, because its training score is lower</button>
+    <button data-opt="b">Network B, because its training line keeps rising while its test line falls</button>
+    <button data-opt="c">Both, because each has a gap between the two scores</button>
+    <p class="why">B is getting better at its homework and worse at the exam at the same time, which is the signature of memorizing. A's two lines move together and stay close. A small steady gap like that is normal.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>You know that about 1 in 10 labels in your training data is wrong. Your network scores 100% on that training data. What does that tell you?</p>
+    <button data-opt="a">It learned the rule perfectly</button>
+    <button data-opt="b">Training repaired the wrong labels</button>
+    <button data-opt="c">It must have memorized the wrong labels too</button>
+    <p class="why">The real rule disagrees with every wrong label, so a network that learned only the rule would top out around 90%. Scoring 100% means it reproduces the mistakes as well, and the only way to do that is to memorize them.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>You train 20 networks of different sizes, pick the one with the highest test score, and report that score as "how good my model is". What went wrong?</p>
+    <button data-opt="a">Nothing. None of the networks was trained on the test set</button>
+    <button data-opt="b">The test set was used to make a choice, so the score is probably too rosy</button>
+    <button data-opt="c">Twenty networks is too few to pick from</button>
+    <p class="why">Picking the winner by test score is peeking. Part of why that network won is luck with those particular test examples. The choice should have been made on a validation set, with the test set saved for one final, honest measurement.</p>
+  </div>
+</div>

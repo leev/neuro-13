@@ -14,7 +14,7 @@
         {"slug": "training", "title": "Training the neuron", "hook": "Show it examples, nudge the weights, repeat."},
         {"slug": "what-changes", "title": "What training actually changes", "hook": "A trained model is its numbers and nothing else."},
         {"slug": "tables-dots", "title": "Tables, dots, and lines", "hook": "Why a neuron's decision is always a straight line."},
-        {"slug": "xor-fail", "title": "When one neuron isn't enough", "hook": "The puzzle that stalled AI research for years."},
+        {"slug": "xor-fail", "title": "When one neuron isn't enough", "hook": "Four dots that no single neuron can separate, and the research slump they came to stand for."},
         {"slug": "hidden", "title": "Hidden neurons fix it", "hook": "Add a middle layer and the impossible becomes easy."},
         {"slug": "recap-neuron", "title": "Checkpoint: one neuron", "hook": "What to remember, a mixed quiz, and your first build-it project."}
       ]

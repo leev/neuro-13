@@ -1,0 +1,61 @@
+.of-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 14px 0 8px;
+}
+.of-stage figure { margin: 0; flex: 1 1 290px; min-width: 0; }
+.of-stage canvas {
+  display: block;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.of-stage figcaption {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.of-stage figcaption b { color: #374151; font-weight: 600; }
+
+.of-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 3px 0 2px;
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+.of-key.orange { background: #ea580c; }
+.of-key.blue { background: #2563eb; }
+.of-key.ring { background: #9ca3af; box-shadow: 0 0 0 1.5px #fff, 0 0 0 3.2px #111827; margin: 0 6px 0 5px; }
+.of-key.diamond { background: #9ca3af; border-radius: 0; transform: rotate(45deg) scale(0.85); }
+.of-key.missed { box-shadow: 0 0 0 2px #111827; margin: 0 6px 0 5px; }
+.of-key.dash { width: 20px; height: 0; border-radius: 0; border-top: 2px dashed #4b5563; vertical-align: 3px; }
+.of-key.line { width: 16px; height: 3px; border-radius: 2px; vertical-align: 3px; }
+.of-key.train { background: #475569; }
+.of-key.test { background: #0d9488; }
+
+.interactive p.of-note {
+  box-sizing: border-box;
+  min-height: 64px;
+  margin: 10px 0 8px;
+  padding: 10px 14px;
+  border-left: 4px solid var(--part);
+  border-radius: 6px;
+  background: var(--part-tint);
+  color: #134e4a;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.slider-row .value.of-count { width: 190px; white-space: nowrap; }
+.interactive .toggle-row.of-sizes { gap: 8px; margin: 10px 0 4px; }
+.of-sizes .toggle { display: flex; flex-direction: column; align-items: flex-start; padding: 8px 16px; border-radius: 14px; }
+.of-sizes .toggle small { font-size: 12px; font-weight: 400; color: inherit; opacity: 0.75; }
+.interactive .toggle-row.of-view { margin: 4px 0 0; }
+.of-view .toggle { padding: 7px 14px; font-size: 13px; }
+
+.of-table td:not(:first-child), .of-table th:not(:first-child) { text-align: right; white-space: nowrap; }

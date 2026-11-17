@@ -48,7 +48,7 @@
     for (; el && el.nodeType === 1; el = el.parentElement) {
       if (SKIP.has(el.tagName.toUpperCase())) return true;
       if (el.hasAttribute('data-no-gloss')) return true;
-      if (el.classList.contains('gloss') || el.classList.contains('terminal') || el.classList.contains('CodeMirror')) return true;
+      if (['gloss', 'terminal', 'CodeMirror', 'toggle', 'token-pill'].some(c => el.classList.contains(c))) return true;
     }
     return false;
   }

@@ -1,0 +1,10 @@
+{
+  "training set": "The examples a network learns from. Its homework.",
+  "test set": "Examples held back and never trained on, used once at the very end to measure what the network really learned.",
+  "validation set": "A third pile of held-back examples, used for making choices during training (such as when to stop) so that the test set can stay unseen.",
+  "generalize": "To do well on examples that were not in the training data. It is the whole point of learning a rule instead of memorizing answers.",
+  "label noise": "Wrong answers hiding in the training data, like typos in an answer key.",
+  "early stopping": "Ending training at the moment the score on held-back data is at its best, before the network starts memorizing.",
+  "weight decay": "A training trick that shrinks every weight a tiny bit on each step, which discourages the extreme weights that memorizing needs.",
+  "dropout": "A training trick that switches off a random handful of neurons on every step, so the network cannot rely on any single neuron to memorize an example."
+}
