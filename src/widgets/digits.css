@@ -1,0 +1,67 @@
+.dg-row { display: flex; flex-wrap: wrap; gap: 18px 22px; align-items: flex-start; }
+.dg-figure { margin: 0; }
+.dg-frame { display: block; background: #fff; border-radius: 8px; box-shadow: 0 0 0 1px var(--border); }
+.dg-bitmap { display: block; background: #fff; border-radius: 6px; box-shadow: 0 0 0 1px var(--border); image-rendering: pixelated; }
+.dg-caption { margin-top: 6px; font-size: 12px; line-height: 1.35; color: var(--muted); text-align: center; }
+.interactive .dg-small { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+.interactive .dg-error { color: var(--bad); font-weight: 600; }
+.interactive .dg-need { background: #fff7e6; border: 1px dashed #f1c36d; border-radius: 8px; padding: 6px 12px; }
+.dg-need[hidden], .dg-error[hidden] { display: none; }
+.dg-need button { margin: 2px 0 2px 8px; padding: 5px 12px; }
+.dg-note { font-size: 13px; color: var(--muted); grid-column: 1 / -1; }
+
+.dg-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.dg-picks button { width: 36px; margin: 0; padding: 6px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
+.dg-picks button.on { background: var(--accent); color: #fff; }
+#dg-px, #dg-strip { cursor: crosshair; }
+#dg-strip { display: block; }
+
+.dg-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 12px 8px; }
+.dg-tile { margin: 0; font-size: 11.5px; line-height: 1.3; color: var(--muted); text-align: center; }
+.dg-tile canvas { width: 100%; max-width: 56px; margin: 0 auto 4px; }
+.dg-tile figcaption { min-height: 15px; }
+.dg-tile figcaption + canvas { margin-top: 6px; }
+.dg-tile b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--fg); }
+.dg-tile b.dg-ok, .dg-ok { color: var(--good); }
+.dg-tile b.dg-no, .dg-no { color: var(--bad); }
+#dg-gallery { grid-template-columns: repeat(10, 1fr); }
+#dg-wrong { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+.dg-tiles-tight { grid-template-columns: repeat(8, 1fr); gap: 4px; max-width: 360px; margin-bottom: 8px; }
+.dg-tiles-tight .dg-tile canvas { max-width: 40px; margin-bottom: 0; }
+.dg-tiles-tight .dg-tile figcaption { display: none; }
+
+.dg-draw { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; align-items: start; }
+.dg-pad { touch-action: none; cursor: crosshair; border-radius: 10px; box-shadow: 0 0 0 2px var(--fg); }
+.dg-pad-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.dg-pad-tools button { margin: 0; }
+.dg-pad-tools .toggle-row { margin: 0; gap: 6px; }
+.dg-pad-tools .toggle { padding: 7px 10px; font-size: 13px; }
+.dg-seen-row { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
+.dg-guess { text-align: center; min-width: 96px; }
+.dg-guess-digit { font: 800 68px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; color: var(--part); }
+.dg-guess-digit.dg-no { color: var(--bad); }
+.dg-guess-sure { margin-top: 4px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+.dg-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.dg-bar-digit { width: 12px; font-weight: 700; color: #374151; }
+.dg-bar-track { flex: 1; height: 14px; background: var(--code-bg); border-radius: 3px; overflow: hidden; }
+.dg-bar-fill { width: 0; height: 100%; background: #93c5fd; border-radius: 3px; transition: width 0.12s; }
+.dg-bar-pct { width: 40px; text-align: right; color: var(--muted); }
+.dg-bar.top .dg-bar-fill { background: var(--part); }
+.dg-bar.top .dg-bar-digit, .dg-bar.top .dg-bar-pct { color: var(--part); font-weight: 700; }
+
+.dg-sheet { display: block; width: 100%; max-width: 605px; margin: 14px auto 0; background: #dfe3ea; border-radius: 6px; image-rendering: pixelated; cursor: pointer; }
+.dg-neuron { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.dg-neuron-info { flex: 1; min-width: 220px; }
+#dg-votes { display: block; }
+
+.dg-arrows { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.dg-arrows button { width: 42px; margin: 0; padding: 7px 0; font-size: 16px; }
+.dg-nudge-side { flex: 1; min-width: 200px; }
+.dg-nudge-side .dg-guess { text-align: left; margin-bottom: 8px; }
+.interactive .dg-nudge-side .dg-small { min-height: 63px; }
+
+@media (max-width: 640px) {
+  .dg-draw { grid-template-columns: 1fr; }
+  #dg-gallery { grid-template-columns: repeat(5, 1fr); }
+  .dg-seen-row { gap: 14px; }
+}

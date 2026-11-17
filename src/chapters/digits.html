@@ -1,0 +1,355 @@
+<p>Somewhere right now a machine is reading handwriting. One is sorting envelopes by the ZIP code scrawled on the front. Another is reading the amount on a paper check. This was one of the first real jobs neural networks ever held: in the 1990s, networks built by Yann LeCun's team were reading the handwritten numbers on millions of bank checks.</p>
+<p>In this chapter you'll build one. You'll train a network on thousands of real handwritten digits, here in your browser, and then you'll write digits for it yourself and watch it read them. After that you'll go looking for its blind spot. It has a big one.</p>
+
+<h3>A picture is a grid of numbers</h3>
+<p>First problem: a neuron eats numbers, and a picture isn't a number. Or is it?</p>
+<p>Zoom far enough into any picture on a screen and it turns into little squares. Each square is a <strong>pixel</strong>, and to a computer a pixel is just a number saying how bright that square is. (A color picture uses three numbers per pixel: how much red, green and blue.) Our pictures are tiny and have no color: 28 pixels wide and 28 tall, with one number per pixel saying how much ink is there. <code>0</code> means blank paper. <code>255</code> means solid ink. The numbers in between are the gray smudge at the edge of a pen stroke.</p>
+<p style="font-size: 14px; color: var(--muted);">Why stop at 255? Each pixel is stored in one byte of memory, and a byte can hold exactly 256 different values: 0 up to 255.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Look inside a picture</h3>
+  <p>This is a real handwritten digit. Move your mouse over it (or tap it). The magnifier on the right shows the actual numbers stored for the pixels under your pointer. Find the middle of a pen stroke, then its fuzzy edge, then blank paper.</p>
+  <div class="dg-row">
+    <div class="dg-figure">
+      <canvas id="dg-px" class="dg-frame" width="280" height="280" aria-label="a handwritten digit, enlarged so each pixel is a square"></canvas>
+      <div class="dg-caption">the picture: 28 × 28 pixels</div>
+    </div>
+    <div class="dg-figure">
+      <canvas id="dg-mag" class="dg-frame" width="252" height="252" aria-label="the numbers stored for the pixels under the pointer"></canvas>
+      <div class="dg-caption">the numbers under your pointer</div>
+    </div>
+  </div>
+  <div id="dg-picks" class="dg-picks" aria-label="choose a digit"></div>
+  <div class="stat-row">
+    <span>row <strong id="dg-px-row">–</strong>, column <strong id="dg-px-col">–</strong></span>
+    <span>ink: <strong id="dg-px-ink">–</strong> of 255</span>
+    <span>the network is fed: <strong id="dg-px-fed">–</strong></span>
+    <span>input number <strong id="dg-px-n">–</strong> of 784</span>
+  </div>
+  <div class="math-panel">
+    <h4>The same picture, unrolled</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">A network doesn't take a grid. It takes a list. So the 28 rows are laid end to end, top row first: 784 numbers in one long line. The orange mark shows where the pixel under your pointer ends up.</p>
+    <canvas id="dg-strip" width="588" height="62" aria-label="the same picture as one row of 784 numbers"></canvas>
+    <div><button class="secondary" id="dg-unroll">unroll it again, row by row</button></div>
+  </div>
+</div>
+
+<p>That unrolling has a name: we <strong>flatten</strong> the picture, which just means laying a grid out as one long list. The network you're about to train has <strong>784 inputs</strong>, because 28 × 28 = 784: one input for every pixel. Each pixel's number is divided by 255 on the way in, so every input lands between 0 and 1. (That's the feature scaling from {{ch:real-data}}.)</p>
+<p>Notice what flattening throws away. In the grid, a pixel sits right on top of the pixel below it. In the list those two are 28 places apart, and nothing tells the network they were ever neighbors. Hold that thought. It comes back at the end of the chapter.</p>
+
+<h3>10,000 real digits</h3>
+<p>The digits come from <a href="http://yann.lecun.com/exdb/mnist/" target="_blank" rel="noopener"><strong>MNIST</strong></a>, the most famous dataset in machine learning: 70,000 handwritten digits, written by American high-school students and Census Bureau workers, and put together by Yann LeCun, Corinna Cortes and Christopher Burges. For nearly thirty years, new ideas for reading images have been tried out on MNIST first.</p>
+<p>We'll use 10,000 of them, 1,000 of each digit: <strong>8,000 to train on</strong> and <strong>2,000 held back</strong> for the honest test from {{ch:real-data}}.</p>
+<p style="font-size: 14px; color: var(--muted);">MNIST is by Yann LeCun, Corinna Cortes and Christopher J.C. Burges, and is shared under the Creative Commons Attribution-ShareAlike 3.0 license. Our sample is in <code>digits.bin</code>.</p>
+
+<h3>Train it</h3>
+<p>You already know every part of this network:</p>
+<ul>
+  <li><strong>784 inputs</strong>, one per pixel.</li>
+  <li><strong>64 hidden neurons</strong>, each using ReLU from {{ch:activations}}. Every one of them is wired to all 784 inputs.</li>
+  <li><strong>10 output neurons</strong>, one per digit, with the softmax from {{ch:multi}} turning their ten scores into ten probabilities that add up to 1.</li>
+</ul>
+
+<svg viewBox="0 0 600 190" xmlns="http://www.w3.org/2000/svg" aria-label="784 inputs feed 64 hidden neurons, which feed 10 outputs, one per digit">
+  <g stroke="#cbd5e1" stroke-width="1">
+    <line x1="120" y1="30" x2="296" y2="42"/><line x1="120" y1="30" x2="296" y2="95"/><line x1="120" y1="30" x2="296" y2="148"/>
+    <line x1="120" y1="95" x2="296" y2="42"/><line x1="120" y1="95" x2="296" y2="95"/><line x1="120" y1="95" x2="296" y2="148"/>
+    <line x1="120" y1="160" x2="296" y2="42"/><line x1="120" y1="160" x2="296" y2="95"/><line x1="120" y1="160" x2="296" y2="148"/>
+    <line x1="324" y1="42" x2="476" y2="30"/><line x1="324" y1="42" x2="476" y2="95"/><line x1="324" y1="42" x2="476" y2="160"/>
+    <line x1="324" y1="95" x2="476" y2="30"/><line x1="324" y1="95" x2="476" y2="95"/><line x1="324" y1="95" x2="476" y2="160"/>
+    <line x1="324" y1="148" x2="476" y2="30"/><line x1="324" y1="148" x2="476" y2="95"/><line x1="324" y1="148" x2="476" y2="160"/>
+  </g>
+  <rect x="96" y="16" width="24" height="158" rx="4" fill="#fff" stroke="#1b1f27" stroke-width="1.5"/>
+  <g fill="#1b1f27">
+    <rect x="100" y="52" width="16" height="5" opacity="0.25"/><rect x="100" y="58" width="16" height="5" opacity="0.9"/><rect x="100" y="64" width="16" height="5"/>
+    <rect x="100" y="70" width="16" height="5" opacity="0.5"/><rect x="100" y="106" width="16" height="5" opacity="0.7"/><rect x="100" y="112" width="16" height="5"/>
+    <rect x="100" y="118" width="16" height="5" opacity="0.3"/>
+  </g>
+  <text x="108" y="187" text-anchor="middle" font-size="12" fill="#4b5563">784 inputs</text>
+  <text x="84" y="99" text-anchor="end" font-size="12" fill="#4b5563">one per pixel</text>
+  <g fill="#ffedd5" stroke="#ea580c" stroke-width="1.5">
+    <circle cx="310" cy="42" r="13"/><circle cx="310" cy="95" r="13"/><circle cx="310" cy="148" r="13"/>
+  </g>
+  <text x="310" y="72" text-anchor="middle" font-size="14" fill="#9ca3af">⋮</text>
+  <text x="310" y="125" text-anchor="middle" font-size="14" fill="#9ca3af">⋮</text>
+  <text x="310" y="187" text-anchor="middle" font-size="12" fill="#4b5563">64 hidden neurons (ReLU)</text>
+  <g fill="#dbeafe" stroke="#2563eb" stroke-width="1.5">
+    <circle cx="490" cy="30" r="13"/><circle cx="490" cy="95" r="13"/><circle cx="490" cy="160" r="13"/>
+  </g>
+  <g font-size="13" fill="#2563eb" text-anchor="middle" font-weight="700">
+    <text x="490" y="35">0</text><text x="490" y="100">4</text><text x="490" y="165">9</text>
+  </g>
+  <text x="490" y="66" text-anchor="middle" font-size="14" fill="#9ca3af">⋮</text>
+  <text x="490" y="131" text-anchor="middle" font-size="14" fill="#9ca3af">⋮</text>
+  <text x="512" y="99" font-size="12" fill="#4b5563">10 outputs,</text>
+  <text x="512" y="114" font-size="12" fill="#4b5563">one per digit</text>
+</svg>
+
+<p>Count the weights. Each hidden neuron has 784 weights and a bias: 64 × 785 = 50,240. Each output neuron has 64 weights and a bias: 10 × 65 = 650. That's <strong>50,890 numbers</strong> to learn, and they all start out random.</p>
+<p>Training is the loop you've used since {{ch:training}}: show the network a small batch of pictures (32 at a time), use backpropagation from {{ch:backprop}} to find out which way to nudge every weight, nudge, repeat. One trip through all 8,000 training digits is one epoch. We'll do 10.</p>
+
+<div class="predict" data-answer="b">
+  <p>Before any training, the weights are random. Out of 100 test digits, about how many will the untrained network get right?</p>
+  <button data-opt="a">None. Random weights can't get anything right.</button>
+  <button data-opt="b">About 10</button>
+  <button data-opt="c">About 50</button>
+  <p class="why">About 10. There are ten possible answers and the test set has the same number of each digit, so even a network that guesses blindly is right about one time in ten. Remember that number: 10% is the score for knowing nothing at all.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Train a digit reader</h3>
+  <p>Press the button. Your browser downloads the 10,000 digits (about 8 MB) and trains the network right here, starting from random weights. Watch the row of test digits underneath: the network has never trained on those, and its guesses turn from red to green as it learns.</p>
+  <div>
+    <button id="dg-train" data-dg-train>load 10,000 digits &amp; train</button>
+  </div>
+  <p id="dg-error" class="dg-error" hidden></p>
+  <div class="stat-row">
+    <span>epoch: <strong id="dg-epoch">0</strong> / <span id="dg-epochs">10</span></span>
+    <span>train accuracy: <strong id="dg-train-acc">?</strong></span>
+    <span>test accuracy: <strong id="dg-test-acc">?</strong></span>
+    <span>before training: <strong id="dg-before">?</strong></span>
+    <span>weights: <strong id="dg-weights">50,890</strong></span>
+    <span>time: <strong id="dg-time">?</strong></span>
+  </div>
+  <canvas id="dg-curve" width="600" height="200" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); margin-top: 14px;"></canvas>
+  <p style="font-size: 13px; color: var(--muted);"><span style="color: var(--accent); font-weight: 600;">Blue</span> = accuracy on the 8,000 digits it trains on. <span style="color: var(--warn); font-weight: 600;">Orange</span> = accuracy on the 2,000 it has never seen. The chart is zoomed in: its bottom edge is 80%, not zero.</p>
+
+  <div class="math-panel">
+    <h4>Twenty test digits and what the network says they are</h4>
+    <div id="dg-gallery" class="dg-tiles"><span class="dg-note">(press the button above)</span></div>
+  </div>
+
+  <div class="math-panel">
+    <h4>The ones it got wrong</h4>
+    <p id="dg-wrong-note" style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">When training finishes, the test digits it misread show up here, with what it said and how sure it was.</p>
+    <div id="dg-wrong" class="dg-tiles"></div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>Before training, the network scored about 10%: a blind guess, as predicted. One epoch later it was reading nearly 90 out of 100 digits it had never seen. By the end it gets <strong>94 or 95 out of 100</strong>. Nobody told it what a 3 looks like. It worked that out from 8,000 examples, by nudging 50,890 numbers.</p>
+<p>Your exact numbers will differ a little from run to run, because every run starts from different random weights. Press the button again and see.</p>
+<p>Now look at the two lines on the chart. The blue line climbs to about 99%: the network gets nearly every <em>training</em> digit right. The orange line stalls about five points lower. That gap is the overfitting from {{ch:overfitting}}, on real data. Part of what the network learned is "what digits look like", and part is "what these particular 8,000 digits look like". Only the first part helps on the test.</p>
+<p>Then spend a minute with <strong>the ones it got wrong</strong>. Some are fair: a 4 with a closed top really does look like a 9, and you might have to squint yourself. Others are easy for you and the network is still wrong, sometimes while claiming to be very sure: in our runs, between 18 and 39 of the mistakes came with more than 90% confidence. Both kinds matter. A test score of 95% does not mean "nearly perfect". It means that one digit in every twenty is wrong, and the network doesn't always know which one.</p>
+
+<h3>Draw for it</h3>
+<p>Those 2,000 test digits were written decades ago by strangers. The real test of a handwriting reader is <em>your</em> handwriting.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Write a digit</h3>
+  <p>Draw one digit in the box with your mouse or finger. Make it any size, anywhere. The small picture is what the network actually receives, and the bars show how sure it is of each answer. Try all ten digits.</p>
+  <p class="dg-need">This uses the network from the widget above. <button class="secondary" data-dg-train>train it now</button></p>
+  <div class="dg-draw">
+    <div class="dg-figure">
+      <canvas id="dg-pad" class="dg-frame dg-pad" width="280" height="280" aria-label="drawing pad"></canvas>
+      <div class="dg-pad-tools">
+        <button class="secondary" id="dg-clear">clear</button>
+        <div class="toggle-row" id="dg-tidy">
+          <div class="toggle on" data-tidy="on">tidy-up on</div>
+          <div class="toggle" data-tidy="off">tidy-up off</div>
+        </div>
+      </div>
+    </div>
+    <div class="dg-reading">
+      <div class="dg-seen-row">
+        <div class="dg-figure">
+          <canvas id="dg-seen" class="dg-bitmap" width="28" height="28" style="width: 140px;" aria-label="the 28 by 28 picture the network receives"></canvas>
+          <div class="dg-caption">what the network actually sees</div>
+        </div>
+        <div class="dg-guess">
+          <div class="dg-guess-digit" id="dg-guess">?</div>
+          <div class="dg-guess-sure" id="dg-sure">draw a digit</div>
+        </div>
+      </div>
+      <div id="dg-bars" class="dg-bars"></div>
+    </div>
+  </div>
+</div>
+
+<p>With the tidy-up on, it should read most of what you write. Now switch the <strong>tidy-up off</strong> and draw the same digits again: small, or up in a corner. Watch the small picture. The network is suddenly hopeless, and nothing about the network changed.</p>
+<p>So what is the tidy-up? The people who made MNIST didn't just scan handwriting and save it. They put every single digit through the same routine, and with the tidy-up on, your drawing goes through it too:</p>
+<ol>
+  <li><strong>Find the box around the ink.</strong> That's the dashed orange box on your drawing.</li>
+  <li><strong>Resize it to fit a 20 × 20 square</strong>, without stretching it out of shape. A tall thin 1 stays tall and thin. (We also redraw your line at the thickness of the pens in MNIST.)</li>
+  <li><strong>Find the ink's center of mass:</strong> the point where the drawing would balance on a fingertip, marked with the orange cross. Slide the digit so that point sits in the exact middle of the 28 × 28 frame.</li>
+  <li><strong>Average.</strong> Each of the 784 pixels gets the average amount of ink in the patch of drawing it covers. That's where the soft gray edges come from.</li>
+</ol>
+<p>With the tidy-up off, the network gets your drawing shrunk straight down to 28 × 28, wherever and however big you drew it. Every digit it ever trained on filled the middle of the frame. A small 7 in the corner is nothing like any 7 it has seen.</p>
+<p>Getting data into the shape a model expects is called <strong>preprocessing</strong>, and it is a big part of real machine-learning work.</p>
+
+<div class="callout">A model only works on inputs that look like the ones it was trained on. Feed it something else and it doesn't say "I don't know". It still picks a digit, and often sounds sure about it.</div>
+
+<p style="font-size: 14px; color: var(--muted);">Honesty note: even with the tidy-up, this network will misread some of your digits. A mouse is not a pen, and you don't write like an American student in the 1990s. If you put a bar through your 7 or a flag and a foot on your 1, the network has seen very few like yours. That's the same lesson again, and it's why the headline model in {{ch:decide}} had never heard of anything invented after 2004.</p>
+
+<h3>What is each neuron looking for?</h3>
+<p>Each hidden neuron has 784 weights, one for every pixel. That's the same count as the picture, so we can do something sneaky: lay one neuron's weights out as a 28 × 28 picture of their own and <em>look</em> at what the neuron cares about.</p>
+<p>In the tiles below, <span style="color: var(--accent); font-weight: 600;">blue</span> marks a positive weight: ink on that pixel pushes the neuron toward firing. <span style="color: var(--bad); font-weight: 600;">Red</span> marks a negative weight: ink there pushes it toward staying quiet. White means the weight is close to zero, so the neuron ignores that pixel.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>The 64 hidden neurons</h3>
+  <p>One tile per hidden neuron. Press the button to retrain from scratch and watch the tiles form: they begin as random speckle and turn into smudgy shapes in the first second or two. Then click any tile to see which test digits excite that neuron most, and which answers it votes for.</p>
+  <div><button data-dg-train class="secondary">train again and watch them form</button></div>
+  <canvas id="dg-neurons" class="dg-sheet" width="242" height="242" aria-label="the weights of all 64 hidden neurons, drawn as 28 by 28 tiles"></canvas>
+  <div class="math-panel">
+    <h4 id="dg-neuron-title">Pick a neuron</h4>
+    <div class="dg-neuron">
+      <canvas id="dg-neuron-big" class="dg-bitmap" width="28" height="28" style="width: 140px;"></canvas>
+      <div class="dg-neuron-info">
+        <p class="dg-small" id="dg-neuron-fans">Train the network, then click a tile.</p>
+        <div id="dg-neuron-top" class="dg-tiles dg-tiles-tight"></div>
+        <p class="dg-small" id="dg-neuron-says"></p>
+        <canvas id="dg-votes" width="300" height="96" aria-label="this neuron's votes for each digit"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>You might have hoped for 64 neat little pictures of digits. You get swirls and smudges instead. Each neuron is a rough template that says "I like ink <em>here</em> and I don't like ink <em>there</em>". One might like a stroke across the top and hate ink in the middle, which makes it fire for 7s and stay quiet for 4s. No single neuron reads a digit. The ten output neurons listen to all 64 smudge detectors at once and add up their votes.</p>
+<p>Four things worth spotting:</p>
+<ul>
+  <li><strong>The edges stay faintly speckled.</strong> Nobody writes in the corners: 110 of the 784 pixels are blank in every one of the 8,000 training digits. A weight multiplied by 0 changes nothing, so it never gets any blame, so training never moves it. Those weights are still the small random numbers they started as.</li>
+  <li><strong>A few tiles stay faint all over.</strong> In our runs, between 4 and 14 of the 64. Their weights have hardly moved from the random start. Click one: if it fires at all it fires weakly, and its votes are small. Training found the other neurons more useful and spent most of its nudges on them.</li>
+  <li><strong>Now and then a neuron goes silent.</strong> In about half of our runs, one or two neurons ended up firing for no digit at all. ReLU sends out 0, so no blame flows back, so the neuron can't learn its way out. That is called a <strong>dead neuron</strong>. If you click a tile and the panel says it never fires, you've found one.</li>
+  <li><strong>Train again and every tile is different.</strong> Different random start, different 64 detectors, about the same score. There isn't one right set of weights. There are many, and training finds one of them.</li>
+</ul>
+
+<h3>Break it</h3>
+<p>Now for the blind spot. Go back to the tiles for a second: every weight belongs to <em>one exact pixel</em>. A neuron that likes ink at row 9, column 14 has no opinion at all about row 9, column 17, unless it happened to learn that separately.</p>
+
+<div class="predict" data-answer="c">
+  <p>The network reads about 95% of the test digits. Suppose we slide every test digit 3 pixels to the right (about a tenth of the picture's width) and test it again. What happens?</p>
+  <button data-opt="a">Nothing much. It's the same digit.</button>
+  <button data-opt="b">It slips a little, to about 85%.</button>
+  <button data-opt="c">It gets fewer than half of them right.</button>
+  <p class="why">Fewer than half. In our runs the score fell from about 95% to about 46%. (Sliding up or down is even worse: about 36%.) You would hardly notice that a digit had moved three pixels. To this network it has become a different picture.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Nudge a digit</h3>
+  <p>Here is a test digit the network reads correctly. Use the arrows to slide it one pixel at a time. No tidy-up comes to the rescue here: the network gets exactly the picture you see. The map shows every nudge at once: <span style="color: var(--good); font-weight: 600;">green</span> where the network still gets it right, <span style="color: var(--bad); font-weight: 600;">red</span> where it doesn't.</p>
+  <p class="dg-need">This uses the network from the training widget. <button class="secondary" data-dg-train>train it now</button></p>
+  <div class="dg-row">
+    <div class="dg-figure">
+      <canvas id="dg-nudge-view" class="dg-bitmap" width="28" height="28" style="width: 196px;" aria-label="the nudged digit"></canvas>
+      <div class="dg-arrows">
+        <button class="secondary" data-nudge="-1,0" aria-label="left">←</button>
+        <button class="secondary" data-nudge="0,-1" aria-label="up">↑</button>
+        <button class="secondary" data-nudge="0,1" aria-label="down">↓</button>
+        <button class="secondary" data-nudge="1,0" aria-label="right">→</button>
+      </div>
+    </div>
+    <div class="dg-figure">
+      <canvas id="dg-nudge-map" class="dg-frame" width="182" height="182" style="cursor: pointer;" aria-label="map of every nudge up to 6 pixels each way"></canvas>
+      <div class="dg-caption">every nudge up to 6 pixels<br>(click a square to jump there)</div>
+    </div>
+    <div class="dg-nudge-side">
+      <div class="dg-guess">
+        <div class="dg-guess-digit" id="dg-nudge-guess">?</div>
+        <div class="dg-guess-sure" id="dg-nudge-sure"></div>
+      </div>
+      <p class="dg-small" id="dg-nudge-text"></p>
+      <div>
+        <button class="secondary" id="dg-nudge-home">back to the middle</button>
+        <button class="secondary" id="dg-nudge-next">another digit</button>
+        <button class="secondary" id="dg-nudge-mine">use my drawing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p>For most digits the green patch is small. A typical digit keeps about 36 of the 169 squares green: a patch around six pixels across, somewhere near the middle. Step outside it and the network reads the digit as something else, and may tell you it's sure. Averaged over all 2,000 test digits and all four directions, in our runs a nudge of 1 pixel dropped the score from about 95% to about 89%. Two pixels: about 67%. Three: about 41%. Four: about 22%. Five or six pixels and it's back near 10%, the score for knowing nothing.</p>
+<p>This is why MNIST's makers centered every digit so carefully, and why your drawings needed the tidy-up. The network never learned "a 7 is a bar on top with a slanted stroke under it". It learned "a 7 has ink on <em>these particular pixels</em>".</p>
+
+<h3>The scramble experiment</h3>
+<p>Here's a stranger way to see the same thing. Take every picture and shuffle its 784 pixels, like cutting it into 784 tiny squares and dealing them back in a different order. Use the <em>same</em> shuffle for every picture, training and test. A 3 is now a spray of dots. So is a 7. You can't tell them apart.</p>
+
+<div class="predict" data-answer="c">
+  <p>We scramble all 10,000 pictures the same way and train a brand-new network on the scrambled ones. How well will it read scrambled test digits?</p>
+  <button data-opt="a">About 10%. It's just noise now.</button>
+  <button data-opt="b">Somewhere around half. It's much harder.</button>
+  <button data-opt="c">About as well as before.</button>
+  <p class="why">About as well as before. Run it and see.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Scramble every picture</h3>
+  <p>The top row shows six test digits. The bottom row is the same six after the shuffle. Press the button to train a fresh network that only ever sees scrambled pictures, and compare its test accuracy with the network you trained earlier.</p>
+  <p class="dg-need">Train the first network before running this. <button class="secondary" data-dg-train>train it now</button></p>
+  <div id="dg-mix-pairs" class="dg-tiles"></div>
+  <div><button id="dg-mix">scramble all 10,000 &amp; train a new network</button></div>
+  <div class="stat-row">
+    <span>epoch: <strong id="dg-mix-epoch">0</strong> / <span id="dg-mix-epochs">10</span></span>
+    <span>normal pictures, test: <strong id="dg-mix-normal">?</strong></span>
+    <span>scrambled pictures, test: <strong id="dg-mix-acc">?</strong></span>
+  </div>
+  <canvas id="dg-mix-curve" width="600" height="180" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); margin-top: 14px;"></canvas>
+  <p style="font-size: 13px; color: var(--muted);">Both lines are test accuracy. <span style="color: var(--accent); font-weight: 600;">Blue</span> = the network trained on normal pictures. <span style="color: var(--warn); font-weight: 600;">Orange</span> = the new network trained on scrambled ones.</p>
+  <div class="math-panel">
+    <h4>Its neurons, unscrambled</h4>
+    <p class="dg-small" id="dg-mix-note">After training, eight of the new network's neurons appear here twice: first as the network stores them, then with every pixel put back where it came from.</p>
+    <div id="dg-mix-neurons" class="dg-tiles"></div>
+  </div>
+</div>
+
+<p>The two lines land almost on top of each other. We trained the normal network 70 times, and it finished between 93.7% and 95.2% on the test digits. We trained a scrambled one a dozen times, and it finished between 94.0% and 95.0%. Scrambling makes no difference you can measure. The network reads scrambled digits that no human could, and it isn't doing anything clever. It simply never knew the pixels had an order.</p>
+<p>Think about what a layer like this actually is. Every hidden neuron is connected to every input, which is why it's called a <strong>fully connected</strong> layer. Input 301 and input 302 are just two wires. Nothing in the network says they sit side by side in the picture, so shuffling the wires costs it nothing. (The last panel shows it: put the pixels back and the scrambled network's neurons turn out to be the same kind of smudges as before.)</p>
+<p>That is a real weakness, not a party trick. Everything that makes a picture a picture depends on which pixels are next to each other: edges, corners, loops, strokes. A network that ignores neighbors has to learn "a stroke at this spot" and "the same stroke two pixels over" as separate facts, 784 inputs at a time. It works on small, carefully centered digits. On a real photo, where a cat can be anywhere in the frame, it struggles badly.</p>
+
+<div class="bigidea">
+  <p>To a computer, a picture is a grid of numbers. A plain network can learn to read handwriting from those numbers, but it treats them as a bag of 784 unrelated inputs. It has no idea which pixels are neighbors, so it only works when the input looks just like its training data.</p>
+</div>
+
+<p>What we want is a network that knows pixels have neighbors, and that can learn "this is what the end of a stroke looks like" once and then spot it anywhere in the picture. That's {{ch:convolution}}, where the network gets eyes.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the digit reader</h3>
+  <p>This is <code>digits.py</code>: the same network in about 120 lines of numpy. It reads <code>digits.bin</code>, draws one digit using letters so you can see the grid of numbers, trains for 10 epochs printing the accuracy after each one, then slides the test digits sideways to measure the blind spot. In the browser the whole thing takes roughly half a minute the first time, including loading Python.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">digits.py</span>
+      <span class="code-status" id="py-status-digits">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-digits" spellcheck="false" rows="30" data-src="digits.py" data-files="digits.bin"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="digits">▶ run</button>
+    <button class="secondary" data-py-reset="digits">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-digits"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Three things to try. First, in the script, change <code>SCRAMBLE = False</code> to <code>SCRAMBLE = True</code> and run it again: the digit it prints turns into confetti, so does the test accuracy drop? Second, set it back and try <code>HIDDEN = 8</code>. How well can just eight smudge detectors read digits? Third, no code at all: with the tidy-up on, try to draw a digit that any person would read easily but the network gets wrong. When you find one, work out what makes it different from the digits in the "twenty test digits" row.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A 28 × 28 picture goes into this chapter's network as…</p>
+    <button data-opt="a">28 numbers, one for each row</button>
+    <button data-opt="b">784 numbers, one for each pixel, in one long list</button>
+    <button data-opt="c">a single number that stands for the whole shape</button>
+    <p class="why">One number per pixel: how much ink is there. The grid is flattened row by row into a list of 784, and each one goes to its own input.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Your drawings were read far better with the tidy-up on. Why?</p>
+    <button data-opt="a">It makes your handwriting neater</button>
+    <button data-opt="b">It gives the network a hint about the answer</button>
+    <button data-opt="c">It makes your drawing the same size and position as the digits the network trained on</button>
+    <p class="why">The network only ever saw digits that filled the middle of the frame. The tidy-up doesn't improve your handwriting or peek at the answer. It makes your input look like the training data, which is the only kind of input the network can handle.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Scrambling the pixels the same way in every picture didn't hurt the network. What does that tell you?</p>
+    <button data-opt="a">It never used the fact that some pixels are next to each other</button>
+    <button data-opt="b">It is smart enough to unscramble the pictures first</button>
+    <button data-opt="c">Scrambled pictures are easier to read</button>
+    <p class="why">A fully connected layer wires every input to every neuron and treats them all alike. It has no idea which pixels are neighbors, so a new order costs it nothing. That's also why sliding a digit a few pixels breaks it.</p>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+{
+  "pixel": "One tiny square of a picture. To a computer it is just a number saying how bright (or how inky) that square is.",
+  "MNIST": "A famous collection of 70,000 handwritten digits, each 28 × 28 pixels, used to test image-reading networks since the 1990s.",
+  "flatten": "To unroll a grid of numbers into one long list, row after row, so it can be fed to a layer of neurons.",
+  "fully connected": "A layer where every neuron is wired to every input. It treats the inputs as a plain list and has no idea which ones are neighbors.",
+  "preprocessing": "Tidying raw data into the shape a model expects before the model sees it, the same way for training and for real use.",
+  "center of mass": "The balance point of a shape: the spot where it would balance on a fingertip.",
+  "dead neuron": "A ReLU neuron that outputs 0 for every input. No blame flows back through it, so it never learns again."
+}

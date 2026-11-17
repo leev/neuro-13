@@ -11,7 +11,7 @@ sleep 1
 fail=0
 for page in "$DIR"/*.html; do
   name=$(basename "$page")
-  errors=$("$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="${TMPDIR:-/tmp}/neuro13-smoke" \
+  errors=$("$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="${TMPDIR:-/tmp}/neuro13-smoke-$PORT" \
     --enable-logging=stderr --log-level=0 --virtual-time-budget=4000 --dump-dom \
     "http://localhost:$PORT/$name" 2>&1 >/dev/null | grep -E 'CONSOLE.*(Uncaught|Error|Failed to load|404)' | grep -v 'favicon\|og.png')
   if [ -n "$errors" ]; then
