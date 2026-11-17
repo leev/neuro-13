@@ -27,18 +27,18 @@
 .bp-rate::after { content: " →"; color: var(--part); }
 
 .bp-stages { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 8px; }
-.bp-stages .stage-pill { min-height: 32px; padding: 5px 13px; font-size: 13px; }
+.bp-stages .stage-pill { min-height: 40px; padding: 5px 13px; font-size: 13px; }
 .bp-stages .stage-pill.active { background: var(--part); color: #fff; }
 .bp-stages .stage-pill.done { background: var(--part-tint); color: var(--part-ink); }
 .bp-stages .stage-pill[data-stage="blame"].active { background: var(--warn); }
 .bp-stages .gloss { border-bottom: 0; cursor: inherit; }
 
 .bp-compact { gap: 6px; margin: 10px 0; }
-.bp-compact .toggle { min-height: 34px; padding: 5px 12px; font-size: 13.5px; }
+.bp-compact .toggle { min-height: 40px; padding: 5px 12px; font-size: 13.5px; }
 #bp-examples, #wg-examples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 #bp-examples .toggle, #wg-examples .toggle { justify-content: center; text-align: center; padding: 6px 4px; border-radius: 14px; line-height: 1.3; }
 #wg-keys { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
-#wg-keys .toggle { justify-content: center; min-height: 32px; padding: 4px 2px; font-size: 12px; white-space: nowrap; }
+#wg-keys .toggle { justify-content: center; min-height: 40px; padding: 4px 2px; font-size: 12px; white-space: nowrap; }
 .bp-compact .gloss { border-bottom: 0; cursor: inherit; }
 .bp-row-label { font-size: 13.5px; color: var(--muted); align-self: center; margin-right: 2px; }
 

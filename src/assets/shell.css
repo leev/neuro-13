@@ -736,7 +736,7 @@ button[data-opt].wrong::before { content: "✕"; background: var(--bad); color: 
   .slider-row label { width: auto; flex: 1 1 60%; font-size: 13.5px; }
   .slider-row .value { order: 1; width: auto; flex: 0 0 auto; }
   .slider-row input[type="range"] { order: 2; flex: 1 1 100%; }
-  .digit-tool, .guesser-tool { grid-template-columns: 1fr; }
+  .guesser-tool { grid-template-columns: 1fr; }
   .chapter-body table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .glossary-list { grid-template-columns: minmax(0, 1fr); }
   .glossary-list dd { border-top: 0; padding-top: 0; }

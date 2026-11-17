@@ -6,11 +6,12 @@ news headline and returns a typed answer with a probability:
     yes/no : is this about sports?          -> {"sports": 0.97}
 
 Data: headlines.csv, 10,000 real headlines (2,500 per topic) from the
-AG News collection. First 8,000 rows train the model, last 2,000 test it.
+AG News collection. The first four fifths of the rows (8,000) train the
+model and the rest (2,000) test it.
 
 The whole model is two grids of numbers:
-    E : one row of 16 numbers per known word   (the embedding table, chapter 14)
-    W : 16 numbers in -> 4 topic scores out    (the snack picker, chapter 9)
+    E : one row of 16 numbers per known word   (the embedding table, chapter 20)
+    W : 16 numbers in -> 4 topic scores out    (the snack picker, chapter 10)
 
     words -> ids -> rows of E -> average them -> @ W -> softmax -> decision
 
@@ -36,7 +37,7 @@ np.seterr(divide="ignore", over="ignore", invalid="ignore")
 rows = list(csv.DictReader(open("headlines.csv", encoding="utf-8")))
 texts = [r["text"] for r in rows]
 labels = np.array([TOPICS.index(r["topic"]) for r in rows])
-N_TRAIN = 8000
+N_TRAIN = len(rows) * 4 // 5
 print(f"{len(rows)} headlines: {N_TRAIN} to train on, {len(rows) - N_TRAIN} held back for the test")
 
 
@@ -76,7 +77,7 @@ E = rng.normal(0, 0.1, (V, EMBED))
 E[0] = 0
 W = rng.normal(0, 0.1, (EMBED, len(TOPICS)))
 b = np.zeros(len(TOPICS))
-print(f"model: {E.size + W.size + b.size:,} weights ({V} x {EMBED} embedding table + a {EMBED} -> 4 layer)\n")
+print(f"model: {E.size + W.size + b.size:,} weights ({V} x {EMBED} embedding table + a {EMBED} -> {len(TOPICS)} layer)\n")
 
 
 def forward(id_rows, word_counts):
@@ -115,10 +116,11 @@ for epoch in range(1, EPOCHS + 1):
 _, p_test = forward(ids[N_TRAIN:], n_words[N_TRAIN:])
 confidence = p_test.max(axis=1)
 correct = p_test.argmax(axis=1) == labels[N_TRAIN:]
-print("\nhow honest is its confidence? (2,000 test headlines)")
+print(f"\nhow honest is its confidence? ({len(rows) - N_TRAIN:,} test headlines)")
 for lo, hi in [(0.25, 0.5), (0.5, 0.7), (0.7, 0.9), (0.9, 1.01)]:
     mask = (confidence >= lo) & (confidence < hi)
-    print(f"  says {lo:4.0%} to {min(hi, 1):4.0%} sure: {mask.sum():4d} headlines, actually right {correct[mask].mean():.0%}")
+    if mask.any():
+        print(f"  says {lo:4.0%} to {min(hi, 1):4.0%} sure: {mask.sum():4d} headlines, actually right {correct[mask].mean():.0%}")
 
 
 def probabilities(text):
@@ -146,7 +148,7 @@ for text in [
 ]:
     print(f"  {text}")
     print(f"    choice -> {json.dumps(choice(text))}")
-    print(f"    is it sports? -> {json.dumps(yes_no(text, 'sports'))}")
+    print(f"    is it {TOPICS[1]}? -> {json.dumps(yes_no(text, TOPICS[1]))}")
 
 # Nobody told the model which words are related. Words that push toward the
 # same answers end up with similar rows in E.
@@ -154,5 +156,7 @@ id_to_word = {i: w for w, i in vocab.items()}
 unit = E / np.maximum(np.linalg.norm(E, axis=1, keepdims=True), 1e-9)
 print("\nwords the model filed next to each other:")
 for w in ["football", "software", "president", "profit"]:
+    if w not in vocab:
+        continue
     nearest = np.argsort(-(unit @ unit[vocab[w]]))[1:6]
     print(f"  {w:10s} ~ {', '.join(id_to_word[i] for i in nearest)}")

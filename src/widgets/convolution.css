@@ -75,7 +75,7 @@
 .cv-seen { display: block; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--border); image-rendering: pixelated; }
 .cv-samples { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 4px 0 6px; }
 .cv-samples span { font-size: 13px; color: var(--muted); margin: 0 4px; }
-.interactive .cv-samples button { margin: 0; padding: 6px 0; width: 34px; font: 700 13px/1.2 var(--font-mono); }
+.interactive .cv-samples button { margin: 0; padding: 6px 0; width: 40px; font: 700 13px/1.2 var(--font-mono); }
 .interactive .cv-samples button.cv-wide { width: auto; padding: 6px 12px; font-family: var(--font-body); font-weight: 500; }
 .cv-label .gloss, .cv-caption .gloss, .cv-stage figcaption .gloss, .cv-card h4 .gloss, .cv-kind .gloss { border-bottom: 0; cursor: inherit; background: none; }
 

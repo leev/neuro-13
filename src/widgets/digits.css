@@ -11,7 +11,7 @@
 .dg-note { font-size: 13px; color: var(--muted); grid-column: 1 / -1; }
 
 .dg-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.dg-picks button { width: 36px; margin: 0; padding: 6px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
+.dg-picks button { width: 40px; margin: 0; padding: 6px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
 .dg-picks button.on { background: var(--accent); color: #fff; }
 #dg-px, #dg-strip { cursor: crosshair; }
 #dg-strip { display: block; }

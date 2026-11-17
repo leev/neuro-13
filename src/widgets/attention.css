@@ -166,3 +166,6 @@
   .ah-layout { grid-template-columns: minmax(0, 1fr); }
   .lk-locker { flex-basis: 62px; min-width: 62px; }
 }
+@media (pointer: coarse) {
+  .lk-door select { min-height: 40px; }
+}

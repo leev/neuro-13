@@ -257,3 +257,9 @@
   #pg-lab .pg-bar .pg-share { margin-left: 0; }
   .pg-notebook > li { padding: 56px 14px 12px; }
 }
+@media (pointer: coarse) {
+  .pg-seg button, #pg-lab .pg-small { min-height: 40px; }
+  .pg-stepper button, .pg-col button { width: 40px; height: 40px; }
+  .pg-cols, .pg-cols.tight { height: 104px; }
+  .pg-col { flex-direction: column-reverse; gap: 1px; }
+}
