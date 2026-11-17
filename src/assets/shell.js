@@ -262,10 +262,28 @@ window.Book = (function () {
     }
   });
 
+  function makeTogglesReachable(root) {
+    root.querySelectorAll('.toggle:not([tabindex])').forEach(el => {
+      if (el.matches('button, a, input, label')) return;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+    });
+  }
+  makeTogglesReachable(document);
+  if ('MutationObserver' in window) {
+    new MutationObserver(() => makeTogglesReachable(document)).observe(document.body, { childList: true, subtree: true });
+  }
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.toggle[role="button"]')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') setMenu(false);
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (e.target.closest('input, textarea, select, button, [contenteditable], .CodeMirror, canvas')) return;
+    if (e.target.closest('input, textarea, select, button, [contenteditable], [role="button"], [role="dialog"], .CodeMirror, canvas, svg')) return;
     const rel = e.key === 'ArrowRight' ? 'next' : e.key === 'ArrowLeft' ? 'prev' : null;
     const link = rel && document.querySelector(`.pagers a[rel="${rel}"]`);
     if (link) location.href = link.href;
