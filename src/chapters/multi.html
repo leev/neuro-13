@@ -1,4 +1,4 @@
-<p>So far the neuron has just answered yes or no. What if the question is "<strong>which snack should I grab?</strong>" with several options?</p>
+<p>So far every neuron has answered yes or no. But plenty of questions have more than two answers. Take "<strong>which snack should I grab?</strong>" Here is the house rule, as a table:</p>
 
 <table>
   <tr><th>hungry?</th><th>after school?</th><th>weekend?</th><th>snack</th></tr>
@@ -12,24 +12,89 @@
   <tr><td>1</td><td>1</td><td>1</td><td>cookie</td></tr>
 </table>
 
-<p>Three options now: <strong>fruit</strong>, <strong>chips</strong>, <strong>cookie</strong>. The fix is small: have <strong>one output neuron per option</strong>. Each outputs a score for its option. A function called <strong>softmax</strong> turns the scores into probabilities that always add up to 1.</p>
+<div class="predict" data-answer="a">
+  <p>Study the table for a moment. One of the three inputs makes no difference at all to the snack. Which one?</p>
+  <button data-opt="a">hungry</button>
+  <button data-opt="b">after school</button>
+  <button data-opt="c">weekend</button>
+  <p class="why">Hungry. Compare the rows in pairs: every time only "hungry" changes, the snack stays the same. Nobody will tell the network this. It has to work out for itself that one of its inputs is a decoy.</p>
+</div>
 
-<p>The math is small enough you could do it on paper. For three scores <code>z₁, z₂, z₃</code>, softmax is:</p>
+<h3>One output neuron per answer</h3>
+<p>Three possible answers means three output neurons: one for fruit, one for chips, one for cookie. Each possible answer is called a <strong>class</strong>, and each output neuron produces a <strong>score</strong> for its class. A higher score means "I think it's this one."</p>
+<p>Scores can be any numbers, positive or negative, which makes them awkward to read. So the last step is a function called <strong>softmax</strong>, which turns a list of scores into probabilities that always add up to 1:</p>
 
 <pre>softmax_i = e^(z_i) / (e^(z_1) + e^(z_2) + e^(z_3))</pre>
 
-<p>(Haven't met <code>e</code> yet? It's just a famous fixed number, about <strong>2.718</strong> — math's favorite constant after π. And <code>e^z</code> means "e raised to the power z": <code>e^2 = e × e ≈ 7.4</code>, <code>e^0 = 1</code>, and e to a negative power is a small positive fraction. Only two things matter here: <code>e^z</code> is <em>always positive</em>, and it <em>grows fast</em> as z grows.)</p>
-<p>The <code>e^</code> part makes everything positive and exaggerates the differences (a bigger score becomes <em>way</em> more likely than a slightly smaller one). The dividing makes them add up to 1, so they're proper probabilities. Quick example:</p>
+<p>Here <code>z₁, z₂, z₃</code> are the three scores, and <code>e</code> is a famous fixed number, about <strong>2.718</strong>. <code>e^z</code> means "e raised to the power z": <code>e^0 = 1</code>, <code>e^2 ≈ 7.4</code>, and e to a negative power is a small positive fraction. Two things matter here: <code>e^z</code> is <em>always positive</em>, and it <em>grows fast</em> as z grows.</p>
+<p>So the top of the fraction makes every score positive and stretches the gaps between them. The bottom divides by the total, which is what makes the answers add up to 1.</p>
 
 <pre>softmax([2.0, 1.0, 0.1])  →  [0.66, 0.24, 0.10]</pre>
 
-<p>The model might output <code>[0.10, 0.85, 0.05]</code> meaning "10% chance fruit, 85% chance chips, 5% chance cookie". You pick the highest one (chips).</p>
-<p>The labels we feed in for training look like <code>[1,0,0]</code> for fruit, <code>[0,1,0]</code> for chips, <code>[0,0,1]</code> for cookie. Exactly one slot is 1 (the right answer) and the rest are 0. That's called <strong>one-hot encoding</strong> — we'll meet it again in {{ch:meals}}'s meal guesser and use the name more often.</p>
+<p>Read that as "66% fruit, 24% chips, 10% cookie." The network's pick is whichever is highest.</p>
+
+<h3>Keeping score: how surprised was the model?</h3>
+<p>To train this network we need a single number that says how wrong it was, so training has something to shrink. That number is called the <strong>loss</strong>. The single neuron in {{ch:training}} used the simplest one, <strong>squared error</strong>: take <code>truth − prediction</code>, square it, and average over the examples.</p>
+<p>A list of probabilities gets a better score. First write the right answer as a list too: <code>[1,0,0]</code> for fruit, <code>[0,1,0]</code> for chips, <code>[0,0,1]</code> for cookie. Exactly one slot is 1 and the rest are 0. That is called <strong>one-hot encoding</strong>.</p>
+<p>Now look at just one number: the probability the model gave to the <em>right</em> answer. If it said 90% for the snack that turned out to be correct, it is barely surprised. If it said 10%, it is shocked. The <strong>cross-entropy loss</strong> turns that surprise into a number:</p>
+
+<pre>loss = −log(probability the model gave to the right answer)</pre>
+
+<p>(<code>log</code> here is the natural logarithm, the <code>ln</code> button on a calculator. It is the undo button for <code>e^</code>.) You never need to work it out by hand. What matters is its shape:</p>
+
+<table>
+  <tr><th>probability given to the right answer</th><th>loss</th><th>in words</th></tr>
+  <tr><td>0.90</td><td>0.11</td><td>barely surprised</td></tr>
+  <tr><td>0.50</td><td>0.69</td><td>coin-flip surprised</td></tr>
+  <tr><td>0.10</td><td>2.30</td><td>shocked</td></tr>
+</table>
+
+<p>A probability of exactly 1 costs 0. As the probability heads toward 0 the loss climbs without limit: 0.01 costs 4.61. So being <em>confidently wrong</em> is punished much harder than being unsure. The network's loss is the average over all its training examples.</p>
+
+<div class="predict" data-answer="c">
+  <p>The scores are <code>[2.0, 1.0, 0.1]</code>. You add 1 to every score, making them <code>[3.0, 2.0, 1.1]</code>. What happens to the probabilities?</p>
+  <button data-opt="a">They all go up</button>
+  <button data-opt="b">The biggest one takes an even bigger share</button>
+  <button data-opt="c">Nothing changes</button>
+  <p class="why">Nothing changes. Adding 1 to a score multiplies its <code>e^z</code> by e, and when every term on the top and bottom of the fraction is multiplied by the same number, it cancels. Softmax only cares about the <em>gaps</em> between scores. Check it with the sliders below.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Softmax by hand</h3>
+  <p>Drag the three scores and watch softmax turn them into probabilities. Then pick which snack was actually right, and read off how surprised the model is.</p>
+  <div class="slider-row"><label>fruit score</label><input type="range" id="sm-z0" min="-5" max="5" step="0.1" value="2"><span class="value" id="sm-z0-v">2.0</span></div>
+  <div class="slider-row"><label>chips score</label><input type="range" id="sm-z1" min="-5" max="5" step="0.1" value="1"><span class="value" id="sm-z1-v">1.0</span></div>
+  <div class="slider-row"><label>cookie score</label><input type="range" id="sm-z2" min="-5" max="5" step="0.1" value="0.1"><span class="value" id="sm-z2-v">0.1</span></div>
+  <div class="bar-container"><span class="label">🍎 fruit</span><div class="bar-track"><div class="bar" id="sm-p0-bar" style="background:#22c55e;"></div></div><span class="pct" id="sm-p0">0.66</span></div>
+  <div class="bar-container"><span class="label">🥔 chips</span><div class="bar-track"><div class="bar" id="sm-p1-bar" style="background:#eab308;"></div></div><span class="pct" id="sm-p1">0.24</span></div>
+  <div class="bar-container"><span class="label">🍪 cookie</span><div class="bar-track"><div class="bar" id="sm-p2-bar" style="background:#ec4899;"></div></div><span class="pct" id="sm-p2">0.10</span></div>
+  <div class="math-panel">
+    <h4>Keeping score</h4>
+    <p style="font-size: 13px; color: var(--muted); margin: 0;">Suppose the right answer was:</p>
+    <div class="toggle-row" id="sm-truth" style="margin: 8px 0 10px;">
+      <div class="toggle on" data-k="0">fruit</div>
+      <div class="toggle" data-k="1">chips</div>
+      <div class="toggle" data-k="2">cookie</div>
+    </div>
+    <div class="prediction-line" id="sm-loss"></div>
+  </div>
+</div>
+
+<p>Three things worth trying:</p>
+<ul>
+  <li><strong>Make all three scores equal.</strong> You get 0.33 each, whether the scores are all −5 or all +5. Equal scores mean "no idea."</li>
+  <li><strong>Slide every score up by the same amount.</strong> The bars do not move, just as the prediction box said.</li>
+  <li><strong>Drag the right answer's score down to −5 and the others up to +5.</strong> The loss shoots past 10. Now drag the right answer's score up instead: the loss sinks toward 0 but can never go below it.</li>
+</ul>
+
+<h3>A trained snack picker</h3>
+<p>Training this network is the same loop as before: run the examples through, measure the loss, nudge every weight in the direction that lowers it, repeat.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>The trained snack picker</h3>
-  <p>This network was actually trained for you when this page loaded. Toggle the inputs and watch the probabilities update.</p>
+  <p>This network (3 inputs, 6 hidden neurons, 3 outputs) was trained in your browser when the page loaded, starting from random weights. Toggle the inputs and watch the scores and probabilities change. Then toggle <em>hungry</em> on its own and see how little happens.</p>
   <div class="toggle-row">
     <div class="toggle" id="s-hungry">hungry</div>
     <div class="toggle" id="s-school">after school</div>
@@ -39,16 +104,23 @@
   <div class="bar-container"><span class="label">🥔 chips</span><div class="bar-track"><div class="bar" id="s-chips-bar" style="background:#eab308; width:15%"></div></div><span class="pct" id="s-chips-pct">0.15</span></div>
   <div class="bar-container"><span class="label">🍪 cookie</span><div class="bar-track"><div class="bar" id="s-cookie-bar" style="background:#ec4899; width:5%"></div></div><span class="pct" id="s-cookie-pct">0.05</span></div>
   <div class="stat-row">
+    <span>scores before softmax: <strong id="s-scores">?</strong></span>
     <span>recommended: <strong id="s-pick">fruit</strong></span>
+  </div>
+  <div class="stat-row">
+    <span>average loss over all 8 rows: <strong id="s-loss">?</strong></span>
   </div>
 </div>
 
-<p>This same pattern — output one neuron per class, softmax to get probabilities — is how a network can recognize handwritten digits (10 classes: 0 through 9), pick a song to recommend, or pick the next word in a sentence (about <strong>100,000</strong> possible classes — one per possible word/word-piece). Same idea, just more output neurons. If you want the deeper "why" of softmax (where it comes from in statistics), Wikipedia's <a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener">softmax function</a> page is a solid first stop.</p>
+<h3>What just happened</h3>
+<p>After 5,000 rounds of training the right snack gets a probability above 0.99 on every row, so the bars look almost like a plain yes or no. The scores underneath tell the fuller story: the winning score sits several points above the others, and softmax stretches that gap into near-certainty. The exact scores change each time you reload the page, because training starts from different random weights, but the picks do not.</p>
+<p>And the decoy? Toggling "hungry" barely moves anything. The network was never told that input was useless. All eight rows demand the same snack whether hungry is on or off, so training pushed the network until that input stopped changing its answer.</p>
+<p>This pattern (one output neuron per class, then softmax, trained with cross-entropy) is how a network reads handwritten digits (10 classes; you will train one in {{ch:digits}}) and how a chatbot picks its next word-piece (tens of thousands of classes or more; see {{ch:chatbots}}). Same idea, more output neurons.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ run real python</div>
   <h3>Run the real multi-class snack picker</h3>
-  <p>This is <code>neuro4.py</code>. 3 inputs, 6 hidden neurons, 3 output classes with softmax. Trains in a couple of seconds and prints a table with the right snack for each combination.</p>
+  <p>This is <code>neuro4.py</code>: the same network as the widget, in numpy. Watch the loss it prints. It starts near 1.0 (a model that knew nothing and said one-third for each snack would score <code>−log(1/3) ≈ 1.10</code>) and falls to about 0.0002. Then it prints the probabilities for all eight rows.</p>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro4.py</span>
@@ -62,7 +134,34 @@
   </div>
   <div class="terminal" id="py-out-4"><span class="dim">(click "run" to execute)</span></div>
 </div>
+
+<div class="bigidea"><p>To choose between several answers, give each one its own output neuron, let softmax turn the scores into probabilities, and train by punishing the model for how surprised it was by the right answer.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Add a fourth snack class in your notebook: smoothie. What new output neuron and labels would the network need?</p>
+  <p>Add a fourth snack, smoothie, on paper. How many output neurons does the network need now, and what does the one-hot label for smoothie look like? Then find the line in <code>neuro4.py</code> that computes the loss and match each piece of it to the formula above.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A network's three output scores are all exactly the same. What does softmax give?</p>
+    <button data-opt="a">1, 0, 0: it picks the first one</button>
+    <button data-opt="b">One-third each</button>
+    <button data-opt="c">It depends on how big the scores are</button>
+    <p class="why">Softmax only looks at the gaps between scores. No gaps means no preference, so the probability is shared equally, whatever the scores are.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>On one example the model gave the right answer a probability of 0.9. On another it gave the right answer 0.1. How do the two losses compare?</p>
+    <button data-opt="a">They are the same, because both are just one example</button>
+    <button data-opt="b">The second is a little bigger</button>
+    <button data-opt="c">The second is much bigger</button>
+    <p class="why">0.11 against 2.30, about twenty times bigger. Cross-entropy punishes confident mistakes far more than it rewards confident hits, which pushes the model hardest exactly where it is most wrong.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>The classes are [fruit, chips, cookie]. What is the one-hot label for chips?</p>
+    <button data-opt="a">[0, 1, 0]</button>
+    <button data-opt="b">[1, 1, 0]</button>
+    <button data-opt="c">2, because chips is the second class</button>
+    <p class="why">One slot per class, with a single 1 in the right class's slot. A plain "2" would wrongly suggest chips is somehow "twice" fruit.</p>
+  </div>
 </div>

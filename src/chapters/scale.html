@@ -1,34 +1,78 @@
-<p>Everything so far has been with maybe a few dozen neurons total. Real networks are <strong>gigantic</strong>:</p>
+<p>The networks you have trained so far hold somewhere between 3 and a few hundred numbers. The ones in the news hold billions. Weights and biases together are called a model's <strong>parameters</strong>, and the parameter count is the usual way to say how big a model is:</p>
 <table>
-  <tr><th>Network</th><th>Year</th><th>Roughly how many weights</th></tr>
-  <tr><td>The tiny examples above</td><td>—</td><td>~50</td></tr>
-  <tr><td>Meal guesser (this book, ch 11)</td><td>—</td><td>~200</td></tr>
-  <tr><td>MNIST classifier (this book, the MNIST script)</td><td>—</td><td>~110,000</td></tr>
-  <tr><td><a href="http://yann.lecun.com/exdb/lenet/" target="_blank" rel="noopener">LeNet-5</a> (digit recognizer)</td><td>1998</td><td>~60,000</td></tr>
-  <tr><td><a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">ResNet-50</a> (image classifier)</td><td>2015</td><td>~25 million</td></tr>
-  <tr><td><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">GPT-3</a> (the base model under early ChatGPT)</td><td>2020</td><td>175 billion</td></tr>
-  <tr><td>Frontier LLMs today (Claude, GPT-4, Gemini, Llama-405B)</td><td>2023–2026</td><td>Hundreds of billions to trillions (exact numbers usually not public)</td></tr>
+  <tr><th>Network</th><th>Year</th><th>Parameters</th></tr>
+  <tr><td>Screen-time neuron ({{ch:training}})</td><td></td><td>3</td></tr>
+  <tr><td>XOR network ({{ch:hidden}})</td><td></td><td>17</td></tr>
+  <tr><td>Meal guesser ({{ch:meals}})</td><td></td><td>192</td></tr>
+  <tr><td>Digit reader ({{ch:digits}})</td><td></td><td>about 51,000</td></tr>
+  <tr><td><a href="http://yann.lecun.com/exdb/lenet/" target="_blank" rel="noopener">LeNet-5</a>, an early digit reader used on bank checks</td><td>1998</td><td>about 60,000</td></tr>
+  <tr><td><a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">ResNet-50</a>, an image classifier</td><td>2015</td><td>about 25.6 million</td></tr>
+  <tr><td><a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">GPT-3</a>, the language model that led to ChatGPT</td><td>2020</td><td>175 billion</td></tr>
+  <tr><td><a href="https://arxiv.org/abs/2407.21783" target="_blank" rel="noopener">Llama 3.1 405B</a>, a language model anyone can download</td><td>2024</td><td>405 billion</td></tr>
+  <tr><td>The newest chatbots</td><td>now</td><td>usually not published</td></tr>
 </table>
 
-<h3>What stays the same when you scale up</h3>
-<p>The math. Genuinely. The forward pass of a 175-billion-parameter model is still: multiply inputs by weights, add bias, apply a non-linearity, repeat. Backprop still computes gradients the same way. SGD still steps against the gradient. If you understand <code>neuro4.py</code>, you understand the inner loop of GPT.</p>
-<p>You'll see this for yourself in <code>neuro9.py</code> a few chapters from here — the MNIST classifier is the same shape as the iris classifier in <code>neuro8.py</code>, just with 784 inputs instead of 4 and two hidden layers instead of one.</p>
+<div class="predict" data-answer="c">
+  <p>From the meal guesser's 192 parameters to GPT-3's 175 billion is a jump of nearly a billion times. What do you think had to change inside to make that work?</p>
+  <button data-opt="a">The math inside each neuron: big models use a smarter kind of neuron</button>
+  <button data-opt="b">The training rule: gradient descent stops working at that size</button>
+  <button data-opt="c">Neither. It is the same math, and vastly more of it</button>
+  <p class="why">The same math. That is the most surprising fact in this chapter, so the first section is about it.</p>
+</div>
 
-<h3>What changes when you scale up</h3>
-<p><strong>More layers.</strong> Toy nets have 2 layers (input → hidden → output). Image models like ResNet-50 have 50. Modern LLMs have <strong>dozens</strong> of layers stacked on top of each other — GPT-2 has between 12 and 48 depending on size, GPT-3 has 96, Llama-2-70B has 80, Llama-3-405B has 126. (GPT-4 and Claude depths aren't public.) Why does depth help? Each layer can build a more sophisticated representation on top of the last. Early layers might learn edges or syllables; middle layers learn shapes or words; late layers learn objects or whole concepts. This is called <strong>compositionality</strong> and it's the whole reason "deep" learning is called "deep." (The "why depth" chapter near the end of this book lets you watch it happen, on a puzzle that defeats any one-hidden-layer network of similar size.)</p>
-<p><strong>More parameters.</strong> Going from 60,000 weights to 175 billion is a factor of 3 million. That's not a tweak. Each weight is a number stored in memory; each is updated every training step.</p>
-<p><strong>More data.</strong> Iris has 150 rows. MNIST has 60,000 images. ImageNet has 1.2 million images. GPT-3 was trained on roughly <a href="https://arxiv.org/abs/2005.14165" target="_blank" rel="noopener">300 billion tokens</a> — about 500 million pages of text. Modern frontier models train on trillions of tokens. The rough empirical rule is: bigger models need proportionally more data to learn well. The <a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener">2020 Kaplan paper</a> and the 2022 <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">"Chinchilla" paper</a> worked out what those proportions are; people call those rules <strong>scaling laws</strong>.</p>
-<p><strong>More compute.</strong> Training GPT-3 took thousands of GPUs running for months and reportedly cost millions of dollars. A GPU (Graphics Processing Unit) is a chip originally built for video games, but it's <em>spectacularly</em> good at doing thousands of multiply-and-add operations in parallel — which is exactly what neural network forward and backward passes are. Specialized AI chips like Google's TPUs and NVIDIA's H100 / B200 take that idea further. The math is unchanged; the hardware that does the math billions of times per second is what changed.</p>
+<h3>What stays the same</h3>
+<p>The math. The forward pass of a 175-billion-parameter model is still: multiply inputs by weights, add a bias, bend with an activation, pass it on. The loss is still cross-entropy. Backpropagation still finds the gradient, and gradient descent still steps against it. The loop inside <code>neuro4.py</code> is, in outline, the loop that trains a chatbot.</p>
+<p><strong>Honesty note.</strong> The <em>wiring</em> of a large language model is more elaborate than layers stacked in a row. The most important addition is called attention, and it gets its own chapter ({{ch:attention}}). But it is built from the same parts and trained in exactly the same way.</p>
 
-<h3>What gets harder when you scale up</h3>
-<p><strong>Vanishing/exploding gradients.</strong> Remember the 10⁻⁴⁹ from the activations chapter? Stacking 100 layers of anything will misbehave unless you're careful. Modern networks use ReLU-family activations, careful weight initialization, and a trick called <strong>residual connections</strong> (shortcuts that let signal skip past layers) to keep gradients alive.</p>
-<p><strong>Overfitting.</strong> With 175 billion parameters, your network has plenty of capacity to memorize its training data instead of learning rules. People fight this with bigger datasets, dropout, weight decay, and early stopping.</p>
-<p><strong>Engineering.</strong> Training a model that doesn't fit on one GPU means splitting it across thousands. Failure becomes a daily fact of life. Saving checkpoints, restarting, monitoring loss curves, debugging numerical issues — most of a frontier ML team's work is engineering, not algorithm design.</p>
+<h3>What changes</h3>
+<p><strong>More layers.</strong> Your networks have one or two hidden layers. ResNet-50 has 50 layers, GPT-3 has 96, and Llama 3.1 405B has 126. You saw why depth helps in {{ch:depth}}: each layer builds on the one before. In an image model the early layers respond to edges, the middle ones to textures and parts, and the late ones to whole objects. That stacking of simple pieces into complicated ones is the "deep" in deep learning.</p>
+<p><strong>More data.</strong> Iris has 150 rows. MNIST has 60,000 training images. <a href="https://www.image-net.org/" target="_blank" rel="noopener">ImageNet</a>, the dataset ResNet-50 was trained on, has about 1.28 million labelled training images. GPT-3 read 300 billion tokens during training (a token is a word or a piece of one), which is very roughly a couple of million books' worth. Llama 3.1 was trained on more than 15 trillion. Bigger models need more data to be worth their size, and researchers have measured how the two should grow together. Those measurements are called <strong>scaling laws</strong> (<a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener">Kaplan and others, 2020</a>; <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">Hoffmann and others, 2022</a>).</p>
+<p><strong>More computing.</strong> Every one of those parameters gets used on every token and updated at every training step. That takes special hardware.</p>
+
+<h3>Why graphics chips?</h3>
+<p>Think about what one layer has to do. Every neuron multiplies each of its inputs by a weight and adds the results up. A layer with 1,000 neurons and 1,000 inputs is a million multiplications. The weights of a layer form a grid of numbers called a <strong>matrix</strong>, and running the layer is one giant matrix multiplication.</p>
+<p>Here is the useful part: none of those sums depends on any of the others. Neuron 1's total can be worked out without waiting for neuron 2's. The job splits into thousands of small, separate sums that could all be done at the same moment, if only you had thousands of little calculators.</p>
+<p>That is exactly what a <strong>GPU</strong> (graphics processing unit) is. It was designed for video games, where the color of every pixel on the screen has to be worked out many times a second, and each pixel is a small sum that does not depend on its neighbors. A normal processor has a handful of powerful cores that work through tasks one after another. A GPU has thousands of simple ones working side by side. In 2012 a network called AlexNet, trained on two gaming graphics cards, won the main ImageNet competition by a wide margin, and the field has run on GPUs ever since.</p>
+<p>What does this cost? Most companies keep it private, but Meta published figures for Llama 3.1 405B. It was trained on up to 16,000 of Nvidia's H100 chips, each drawing about 700 watts, roughly a microwave oven running flat out. The total came to 30.84 million GPU-hours. A single chip would have needed about 3,500 years. Going by those figures, the chips alone used about 21.6 million kilowatt-hours of electricity, which is what 2,000 average American homes use in a year. That is one training run of one model, and the chips cost far more than the electricity: each is reported to sell for tens of thousands of dollars.</p>
+
+<h3>What gets harder</h3>
+<p><strong>Keeping the gradient alive.</strong> Remember the signal that shrank to a trillionth in {{ch:activations}}? A hundred layers of anything will misbehave unless you are careful. Modern networks use ReLU-family activations, carefully chosen starting weights, and a trick called <strong>residual connections</strong>: shortcuts that let the signal skip past a layer, so it always has a clear path backward.</p>
+<p><strong>Overfitting.</strong> A model with billions of parameters has plenty of room to memorize. The cures are the ones from {{ch:overfitting}}, applied on a giant scale, starting with the simplest: much more data.</p>
+<p><strong>Engineering.</strong> A model that does not fit on one chip has to be split across thousands, and with that many machines something breaks every day. Saving progress, restarting, and watching loss curves for trouble is a large part of the real work.</p>
 
 <h3>Why bigger keeps working</h3>
-<p>Here's the unreasonably-effective fact at the heart of modern AI: when you make a model bigger and train it on more data, it just keeps getting better. Smoothly. Predictably. People expected diminishing returns around 1 billion parameters, then 10 billion, then 100 billion. Each time, scale kept paying off. Rich Sutton's <a href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html" target="_blank" rel="noopener">"The Bitter Lesson"</a> is the most-cited essay on why: clever human-engineered tricks tend to get beaten by simple, general algorithms that just consume more compute. It's bitter because researchers like cleverness. It's a lesson because it keeps happening.</p>
+<p>Here is the fact at the center of modern AI: so far, when people have made these models bigger and trained them on more data, they have kept getting better, and fairly predictably. Many researchers expected clever hand-built designs to win instead. Rich Sutton's short essay <a href="http://www.incompleteideas.net/IncIdeas/BitterLesson.html" target="_blank" rel="noopener">"The Bitter Lesson"</a> is about why they keep losing to simple methods given more computing power. Nobody knows how long the trend will last. It has not stopped yet.</p>
+
+<h3>Next: feeding a network words</h3>
+<p>Everything in this part of the book has fed networks tidy numbers: yes/no switches, measurements in centimeters. The giant models in the table above were trained on text. But a network can only multiply and add, and you cannot multiply a weight by a word. Turning text into numbers is where the next part begins, in {{ch:tokens}}, right after a checkpoint to make sure this part has stuck.</p>
+
+<div class="bigidea"><p>A giant model is not a different kind of machine. It is the same multiply, add, bend and nudge, with more layers, billions of parameters, oceans of data, and thousands of chips doing the sums side by side.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Estimate the weights in a tiny network with 3 inputs, 5 hidden neurons, and 2 outputs. Count weights first, then remember each neuron also has a bias. Then look up how many seconds you'd need to type out all 175 billion of GPT-3's weights if you typed one per second. (Hint: that's about 5,500 years.)</p>
+  <p>Count the parameters in a tiny network with 3 inputs, 5 hidden neurons, and 2 outputs. Count the weights first, then remember that every hidden and output neuron also has a bias. Then work out how long it would take to type out all 175 billion of GPT-3's parameters at one per second, without sleeping. (You should get 32, and about 5,500 years.)</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>What is different about the basic math inside a model with billions of parameters, compared with the meal guesser?</p>
+    <button data-opt="a">It uses a more advanced kind of neuron that the small models do not have</button>
+    <button data-opt="b">Nothing basic: it is still multiply, add, bend, and nudge the weights downhill</button>
+    <button data-opt="c">It does not need training, because it is big enough to work things out</button>
+    <p class="why">The parts and the training rule are the same. What changes is how many there are, how they are wired, and how much data and computing they need.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Why are graphics chips so good at running neural networks?</p>
+    <button data-opt="a">The work is a huge number of small sums that do not depend on each other, and a GPU does thousands at once</button>
+    <button data-opt="b">Neural networks mostly work on pictures</button>
+    <button data-opt="c">Each GPU core is far more powerful than a normal processor's core</button>
+    <p class="why">A GPU's cores are individually simple. Its strength is having thousands of them, which suits a job made of thousands of separate multiply-and-add sums. That is true whether the network handles pictures, text, or sound.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A team makes its model ten times bigger but keeps training it on the same small dataset. Which problem are they most likely to run into?</p>
+    <button data-opt="a">The model will be too small to learn the data</button>
+    <button data-opt="b">Gradient descent will stop working</button>
+    <button data-opt="c">The model will memorize the training data instead of learning from it</button>
+    <p class="why">More parameters means more room to memorize. That is why bigger models are trained on more data: the two have to grow together.</p>
+  </div>
 </div>

@@ -1,12 +1,13 @@
-<p>The snack picker had three choices. Real classifiers often have more classes and messier inputs. So here is the snack picker's big sibling: a tiny network that guesses <em>what meal you're describing</em> from menu-style clues.</p>
+<p>The snack picker had three classes and three tidy yes/no inputs. Real classifiers usually have more classes and messier inputs. So here is the snack picker's big sibling: a small network that guesses <em>which meal you are describing</em> from menu-style clues.</p>
 
-<p>You met <strong>one-hot encoding</strong> back in {{ch:multi}} (the snack labels). This time we'll do it on the <em>inputs</em> too. A neural network wants numbers, not words. So a word choice like <code>course = dessert</code> becomes a few yes/no inputs:</p>
+<h3>Turning words into inputs</h3>
+<p>A neural network wants numbers, not words. In {{ch:multi}} you used <strong>one-hot encoding</strong> for the labels. This time it goes on the <em>inputs</em> too. A word choice like <code>course = dessert</code> becomes three yes/no inputs:</p>
 
 <pre>course_main = 0
 course_snack = 0
 course_dessert = 1</pre>
 
-<p>Same for temperature, taste, diet, and base. The network does not receive the word "pastry"; it receives <code>base_pastry = 1</code> and the other base inputs set to <code>0</code>. None of these clues is enough by itself; the network has to combine them.</p>
+<p>Same for temperature, taste, diet, and base. The network never receives the word "pastry." It receives <code>base_pastry = 1</code> with the other four base inputs set to <code>0</code>. Five word choices become 14 inputs in all.</p>
 
 <table>
   <tr><th>meal</th><th>course</th><th>temperature</th><th>taste</th><th>diet</th><th>base</th></tr>
@@ -20,13 +21,21 @@ course_dessert = 1</pre>
   <tr><td>fruit salad</td><td>dessert</td><td>cold</td><td>sweet</td><td>vegetarian</td><td>fruit</td></tr>
 </table>
 
-<p>Look closely at the table before training: it's full of <strong>near-misses</strong>. Cottage pie and baked potato match on everything except diet. Spaghetti and mac &amp; cheese — same thing (the spaghetti is bolognese, that's where the meat is). Ice cream and fruit salad differ only on base. And apple pie and sausage roll share a pastry crust while disagreeing about everything else. No single clue gives the answer away; the network <em>must</em> combine them.</p>
+<p>Look closely at the table: it is full of <strong>near-misses</strong>. Cottage pie and baked potato match on everything except diet. So do spaghetti and mac &amp; cheese (the spaghetti is bolognese; that is where the meat is). Ice cream and fruit salad differ only on base. And apple pie and sausage roll share a pastry crust while disagreeing about almost everything else. No single clue gives the answer away. The network <em>must</em> combine them.</p>
+
+<div class="predict" data-answer="b">
+  <p>Once the network is trained, you will describe a meal as <em>main, hot, savory, pasta</em> and leave the diet unknown. What will it say?</p>
+  <button data-opt="a">Nothing: it cannot answer without all five clues</button>
+  <button data-opt="b">Spaghetti and mac &amp; cheese will share most of the vote</button>
+  <button data-opt="c">All eight meals will get about the same probability</button>
+  <p class="why">The two pasta dishes share it. Softmax always gives an answer, and the clues you did give fit both pasta dishes and rule out the rest. Try it below.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Train a meal guesser</h3>
-  <p>Click train, then change the traits. The network will show probability bars for each meal. Try normal combinations, then weird ones like a cold sweet pastry that contains meat.</p>
-  <p style="font-size: 13px; color: var(--muted);">Best trick: set course = main, temperature = hot, taste = savory, base = pasta — and leave diet unknown. Watch spaghetti and mac &amp; cheese split the vote almost 50/50. Then pick a diet and watch the tie break instantly. That's a network weighing evidence.</p>
+  <p>Press "train 1,000" and check that train accuracy reaches 1.000 (if it stalls lower, press it again or reset: every run starts from different random weights). Then set the traits and watch the probability bars.</p>
+  <p style="font-size: 13px; color: var(--muted);">The experiment from the prediction box: set course = main, temperature = hot, taste = savory, base = pasta, and leave diet unknown. Then pick a diet and watch one meal take over.</p>
 
   <div class="guesser-tool">
     <div class="guesser-controls">
@@ -59,8 +68,8 @@ course_dessert = 1</pre>
         <div id="a-features"></div>
       </div>
       <div class="math-panel">
-        <h4>What training saved — the model itself, live</h4>
-        <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px;">The trained model is just learned numbers — and this is <em>all</em> of them: <strong><span id="a-param-count">200</span> numbers</strong> for the current network shape. Press the train buttons and watch them get rewritten; freshly changed numbers light up. The grey <code>// notes</code> aren't part of the model — they're labels so you can find your way around the grid.</p>
+        <h4>What training saved: the model itself, live</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px;">This is <em>all</em> of the trained model: <strong><span id="a-param-count">192</span> numbers</strong> for the current network shape. Press the train buttons and watch them get rewritten; freshly changed numbers light up. The grey <code>// notes</code> are not part of the model. They are labels so you can find your way around the grid.</p>
         <button class="secondary" id="a-dump-toggle">show learned numbers</button>
         <pre class="weight-dump model-dump" id="a-weight-dump" hidden></pre>
       </div>
@@ -68,18 +77,19 @@ course_dessert = 1</pre>
   </div>
 </div>
 
-<p><strong>Why this is useful:</strong> the network can learn clue-combinations. One hidden neuron might become useful for <em>cold + sweet</em>, another for <em>pastry</em>, another for <em>main + pasta</em>. We did not name those hidden neurons ourselves. Training nudged the weights until useful patterns appeared. (When researchers try to read what hidden neurons learned in <em>real</em> models, the field they're working in is called <a href="https://www.anthropic.com/research#interpretability" target="_blank" rel="noopener">interpretability</a>. It's hard, and it's some of the most interesting research in AI right now.)</p>
+<h3>What just happened</h3>
+<p>With the diet missing, most of the vote goes to the two pasta dishes. <em>How</em> they split it changes from run to run: sometimes close to even, sometimes more like 30/70, and now and then a third meal sneaks in a share. That is worth noticing. The network was only ever trained on complete meals, so nothing in training pinned down what it should say about half a meal. It was left to improvise. Fill in the diet and you are back on ground it was trained on, and one bar takes over.</p>
+<p>Inside, the hidden neurons have become detectors for <em>combinations</em> of clues. One might respond to <em>cold + sweet</em>, another to <em>pastry</em>, another to <em>main + pasta</em>. Nobody assigned those jobs. Training nudged the weights until useful patterns appeared, and a different run will hand the jobs out differently. Working out what the hidden neurons in real models have learned is a research field of its own, called <a href="https://www.anthropic.com/research#interpretability" target="_blank" rel="noopener">interpretability</a>.</p>
+<p>Press "show learned numbers" in the widget if you have not yet. This is the grown-up sibling of the dark "model" panels you have been watching since {{ch:training}}. When someone says "I downloaded the weights," a much longer list like this one is what they got.</p>
 
 <div class="callout">
-  <strong>How many hidden neurons?</strong> That number is a choice the builder makes before training. Training changes the weights, biases, and probabilities, but it does not grow new neurons in this tiny model. Try 2, 4, 8, and 12 hidden neurons: too few can run out of pattern space, while more gives the model more room to <em>memorize</em> the 8 training meals exactly instead of learning the rule. That's called <strong>overfitting</strong>, and it's a problem real machine learning has to fight constantly. We'll come back to it when we move to real datasets.
+  <strong>How many hidden neurons?</strong> That number is chosen by the builder before training starts. Training changes the weights and biases; it never adds neurons. A setting like this, picked by a person rather than learned, is called a <strong>hyperparameter</strong>. Try 2: the network usually gets stuck below 1.000, because two hidden neurons are too few to tell eight meals apart. Then try 8 or 12, which almost always get there. Bigger is not automatically better, though. A network with lots of spare room can simply memorize its training examples instead of finding the pattern behind them. That is called <strong>overfitting</strong>, and {{ch:overfitting}} lets you watch it happen.
 </div>
-
-<p>One more thing while you're here: hit the <strong>"show learned numbers"</strong> button further down. The trained model is just a bag of numbers — that button literally prints them out, the grown-up sibling of the dark "model" panels you've been watching since {{ch:training}}. This is what's saved when someone says "the model weighs 10 GB" or "I downloaded the weights." A model is its weights and nothing else.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ run real python</div>
   <h3>Run the meal guesser</h3>
-  <p>This is <code>neuro6.py</code>. It trains the same idea in numpy and prints predictions for the training meals plus one mixed-up custom meal.</p>
+  <p>This is <code>neuro6.py</code>: the same network in numpy, with 10 hidden neurons. It prints its loss and accuracy as it trains, then its guess for each of the eight meals, then its guess for one mixed-up meal that is not in the table: a cold, sweet, meaty pastry snack. It leans toward sausage roll, at about 80%. There is no right answer for that one. The model is showing you which training meal the nonsense meal resembles most.</p>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro6.py</span>
@@ -94,7 +104,33 @@ course_dessert = 1</pre>
   <div class="terminal" id="py-out-6"><span class="dim">(click "run" to execute)</span></div>
 </div>
 
+<div class="bigidea"><p>Words go into a network as one-hot inputs, and no single input has to carry the answer. The hidden layer learns which <em>combinations</em> of clues matter, and the output probabilities show how sure the network is.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Add lasagna in your notebook. Write out its traits — they come out <em>identical</em> to spaghetti's row. What happens to a network when two different answers have the exact same clues? What new trait group would fix it?</p>
+  <p>Add lasagna on paper. Write out its five traits: they come out <em>identical</em> to spaghetti's row. What can a network do when two different answers have exactly the same clues? What new trait would you add to the table to fix it?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="c">
+    <p>Why does "base" get five separate yes/no inputs instead of one input numbered 1 to 5?</p>
+    <button data-opt="a">Networks cannot handle numbers bigger than 1</button>
+    <button data-opt="b">Five inputs make the network train faster</button>
+    <button data-opt="c">Numbering them would invent an order and a size that are not real</button>
+    <p class="why">If pastry were 1 and fruit were 5, the network would be told that fruit is "five times pastry" and that potato sits between pastry and pasta. One-hot inputs say only "it is this one, and not the others."</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>You describe a hot, savory pasta main and leave the diet blank. The network splits its vote between spaghetti and mac &amp; cheese. What does that tell you?</p>
+    <button data-opt="a">The clues fit two meals, and the probabilities are reporting that doubt</button>
+    <button data-opt="b">The network is broken</button>
+    <button data-opt="c">It needs more training until it picks one with certainty</button>
+    <p class="why">A split vote is the honest answer when the evidence fits more than one meal. A model that was 100% sure here would be worse, not better.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Who decides how many hidden neurons the meal guesser has?</p>
+    <button data-opt="a">Training adds them one by one as they are needed</button>
+    <button data-opt="b">The person building it, before training starts</button>
+    <button data-opt="c">It always equals the number of inputs</button>
+    <p class="why">The number of hidden neurons is a hyperparameter: a choice made by the builder. Training only adjusts the weights and biases inside the shape it was given.</p>
+  </div>
 </div>

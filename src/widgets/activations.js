@@ -1,9 +1,9 @@
-// ===== Interactive: activation function plot =====
-(function() {
+(function activationWidget() {
   const svg = document.getElementById('act-plot');
   if (!svg) return;
   const W = 600, H = 320, pad = 40;
-  const xMin = -6, xMax = 6, yMin = -0.4, yMax = 1.4;
+  const xMin = -6, xMax = 6;
+  let yMin = -0.4, yMax = 1.4;
   function xToPx(x) { return pad + ((x - xMin) / (xMax - xMin)) * (W - 2*pad); }
   function yToPx(y) { return H - pad - ((y - yMin) / (yMax - yMin)) * (H - 2*pad); }
 
@@ -59,11 +59,12 @@
     // dot
     html += `<circle cx="${dotX}" cy="${dotY}" r="8" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/>`;
     // legend
-    html += `<g><rect x="${W-pad-160}" y="${pad}" width="160" height="40" fill="white" opacity="0.9" rx="4"/>`;
-    html += `<line x1="${W-pad-150}" y1="${pad+12}" x2="${W-pad-130}" y2="${pad+12}" stroke="#2563eb" stroke-width="3"/>`;
-    html += `<text x="${W-pad-124}" y="${pad+16}" font-size="12" fill="#1f2937">${activation}</text>`;
-    html += `<line x1="${W-pad-150}" y1="${pad+30}" x2="${W-pad-130}" y2="${pad+30}" stroke="#f97316" stroke-width="3"/>`;
-    html += `<text x="${W-pad-124}" y="${pad+34}" font-size="12" fill="#1f2937">slope (derivative)</text></g>`;
+    const lx = pad + 8;
+    html += `<g><rect x="${lx}" y="${pad}" width="160" height="40" fill="white" opacity="0.9" rx="4"/>`;
+    html += `<line x1="${lx+10}" y1="${pad+12}" x2="${lx+30}" y2="${pad+12}" stroke="#2563eb" stroke-width="3"/>`;
+    html += `<text x="${lx+36}" y="${pad+16}" font-size="12" fill="#1f2937">${activation === 'relu' ? 'ReLU' : 'sigmoid'}</text>`;
+    html += `<line x1="${lx+10}" y1="${pad+30}" x2="${lx+30}" y2="${pad+30}" stroke="#f97316" stroke-width="3"/>`;
+    html += `<text x="${lx+36}" y="${pad+34}" font-size="12" fill="#1f2937">slope (derivative)</text></g>`;
 
     svg.innerHTML = html;
     document.getElementById('act-x-v').textContent = x.toFixed(2);
@@ -77,6 +78,7 @@
       document.querySelectorAll('[data-act]').forEach(x => x.classList.remove('on'));
       t.classList.add('on');
       activation = t.getAttribute('data-act');
+      [yMin, yMax] = activation === 'relu' ? [-1, 6.5] : [-0.4, 1.4];
       render();
     });
   });

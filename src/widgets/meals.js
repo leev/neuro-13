@@ -1,5 +1,4 @@
-// ===== Interactive 6: meal guesser =====
-(function() {
+(function mealWidget() {
   const svg = document.getElementById('meal-net-svg');
   if (!svg) return;
 

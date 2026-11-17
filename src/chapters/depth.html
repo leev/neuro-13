@@ -1,30 +1,41 @@
-<p>Every network in this book so far has had exactly one hidden layer: input → hidden → output. Real networks stack more: <strong>input → hidden → hidden → output</strong>, and the big ones go dozens of layers deep. The wiring rule doesn't change at all — the outputs of hidden layer 1 simply become the <em>inputs</em> of hidden layer 2. Every neuron in layer 2 does the same multiply-add-squish from {{ch:neuron}}; it just chews on layer 1's answers instead of on the raw input.</p>
-<p>Why does that help? {{Ch:hidden}}'s network built its shape out of <em>straight lines</em>, because every hidden neuron looks at the raw inputs, and a single neuron's question is always a line. A second hidden layer builds shapes out of <em>those shapes</em>: layer 1 makes lines, layer 2 bends and combines them into curves and pockets. That's the "edges → shapes → objects" idea from {{ch:scale}}, shrunk down small enough to watch.</p>
-<p>Here's a puzzle that makes depth visible: <strong>two spirals</strong>, tangled around each other. Every dot is a training example — its position on the graph paper is the input (just two numbers, x and y), and its color is the right answer. This is {{ch:tables-dots}}'s dots-on-graph-paper all grown up. XOR needed one hidden layer; the spiral is XOR's final boss.</p>
+<p>Every network you have trained so far has had exactly one hidden layer: input → hidden → output. Real networks stack more: <strong>input → hidden → hidden → output</strong>, and the big ones go dozens of layers deep. The number of layers is called the network's <strong>depth</strong>. The wiring rule does not change at all. The outputs of hidden layer 1 simply become the <em>inputs</em> of hidden layer 2. Every neuron in layer 2 does the same multiply-add-squish from {{ch:neuron}}; it just works on layer 1's answers instead of on the raw input.</p>
+<p>Why would that help? The network in {{ch:hidden}} built its answer out of <em>straight lines</em>, because each hidden neuron looks at the raw inputs, and one neuron's question is always a line. A second hidden layer builds shapes out of <em>those shapes</em>: layer 1 draws lines, and layer 2 bends and combines them into curves and pockets.</p>
+<p>Here is a puzzle that makes depth visible: <strong>two spirals</strong>, tangled around each other. Every dot is a training example. Its position on the graph paper is the input (two numbers, x and y), and its color is the right answer. This is the dots-on-graph-paper picture from {{ch:tables-dots}}, all grown up. If XOR was the puzzle one neuron could not solve, the spiral is XOR's final boss.</p>
+
+<div class="predict" data-answer="b">
+  <p>You have 8 hidden neurons to spend on the spiral. You can put all 8 in one layer, or split them into two layers of 4. Which arrangement gets further?</p>
+  <button data-opt="a">One layer of 8: it can draw eight lines at once</button>
+  <button data-opt="b">Two layers of 4: the second layer can bend what the first one draws</button>
+  <button data-opt="c">No difference: it is the same eight neurons</button>
+  <p class="why">Two layers of 4, at least from the starting weights this page uses. Eight straight lines added together are not enough to follow the curl. Four lines fed into four more neurons are. Train both below and compare.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
-  <h3>One hidden layer vs two — fight</h3>
-  <p>Pick a brain, then train it. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. The shallow brains get as many (or more) neurons as the deep one — watch who actually learns the spiral.</p>
+  <h3>Same neurons, one layer or two</h3>
+  <p>Pick a network and press "train 2,000" twice. The background shows the network's current opinion about every point on the map; the dots are the training examples it has to match. Watch the boundary bend as training runs, and write down the accuracy after 2,000 and 4,000 epochs. Then try the next network.</p>
   <div class="toggle-row" id="dp-arch" style="font-size: 13px;">
-    <div class="toggle" data-arch="8">1 hidden layer × 8</div>
-    <div class="toggle" data-arch="16">1 hidden layer × 16</div>
-    <div class="toggle on" data-arch="8,8">2 hidden layers × 8 + 8</div>
+    <div class="toggle on" data-arch="8"><span>1 layer × 8</span></div>
+    <div class="toggle" data-arch="4,4"><span>2 layers × 4 + 4</span></div>
+    <div class="toggle" data-arch="16"><span>1 layer × 16</span></div>
+    <div class="toggle" data-arch="8,8"><span>2 layers × 8 + 8</span></div>
   </div>
   <canvas id="dp-canvas" width="280" height="280" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); max-width: 100%;"></canvas>
   <div style="margin-top: 10px;">
-    <button id="dp-train1">train 500</button>
-    <button id="dp-train2">train 5,000</button>
+    <button id="dp-train1">train 250</button>
+    <button id="dp-train2">train 2,000</button>
     <button class="secondary" id="dp-reset">reset</button>
+    <button class="secondary" id="dp-reseed">new random start</button>
   </div>
   <div class="stat-row">
     <span>epochs: <strong id="dp-epoch">0</strong></span>
     <span>accuracy: <strong id="dp-acc">?</strong></span>
     <span>stored numbers: <strong id="dp-params">?</strong></span>
+    <span>starting weights: <strong id="dp-start">the book's</strong></span>
   </div>
   <div class="math-panel">
     <h4>What each hidden neuron is looking for</h4>
-    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each little map shows where on the graph paper one hidden neuron gets excited (<span style="color: var(--accent); font-weight: 600;">blue</span>) or pushes back (<span style="color: var(--bad); font-weight: 600;">red</span>). After training, layer 1's maps are mostly stripes — straight-line questions. Layer 2's maps are bent: shapes built out of layer 1's stripes.</p>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Each little map shows where on the graph paper one hidden neuron gets excited (<span style="color: var(--accent); font-weight: 600;">blue</span>) or pushes back (<span style="color: var(--bad); font-weight: 600;">red</span>). Layer 1's maps are always stripes: straight-line questions. Layer 2's maps are bent: shapes built out of layer 1's stripes.</p>
     <div id="dp-thumbs"></div>
   </div>
   <div class="math-panel">
@@ -34,11 +45,58 @@
   </div>
 </div>
 
-<p>Train each brain for 5,000 epochs and compare. The shallow brains get stuck near coin-flip accuracy — more neurons in the same single layer barely helps, because one layer of lines, squished once, can't follow a curve that keeps curling. The two-layer brain finds the spiral. Then check the neuron maps: layer 1's stay stripey, while layer 2's are bent — each layer-2 neuron is a combination of layer-1 stripes, and bent stripes are exactly what a spiral is made of.</p>
-<p>One honesty note: in theory a single hidden layer can fit almost any shape <em>if you make it absurdly wide</em> — a famous result called the universal approximation theorem. But "possible in theory" and "actually findable by training" are very different things. Depth makes good solutions reachable with fewer neurons and less training, and that gap grows as problems get harder. That's the practical reason every serious network is deep.</p>
-<p style="font-size: 14px; color: var(--muted);">Two footnotes for the curious. First, the hidden squisher here is <strong>tanh</strong> — sigmoid's cousin that outputs −1 to +1 instead of 0 to 1. It trains more smoothly on this kind of puzzle, but it's the same "squish" idea. Second, you already own a real two-hidden-layer network: <code>neuro9.py</code> (784 → 128 → 64 → 10) is this widget's architecture scaled up to read handwritten digits. The spiral is the classic depth demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can build networks up to six layers deep in your browser.</p>
+<h3>What just happened</h3>
+<p>Each network begins from the same fixed set of "random" starting weights every time you select it, so your numbers should match these:</p>
+<table>
+  <tr><th>network</th><th>stored numbers</th><th>after 2,000 epochs</th><th>after 4,000 epochs</th></tr>
+  <tr><td>1 layer × 8</td><td>33</td><td>75%</td><td>79%</td></tr>
+  <tr><td>2 layers × 4 + 4</td><td>37</td><td>84%</td><td>97%</td></tr>
+  <tr><td>1 layer × 16</td><td>65</td><td>98%</td><td>99%</td></tr>
+  <tr><td>2 layers × 8 + 8</td><td>105</td><td>98%</td><td>99%</td></tr>
+</table>
+<p>Look at the first two rows. Both networks have 8 hidden neurons and nearly the same number of stored numbers. The one-layer network stalls, and more training barely helps: it is still at 83% after 8,000 epochs. The two-layer network finds the spiral.</p>
+<p>The little neuron maps show why. In the one-layer network every map is a stripe, and the output can only add eight stripes together. In the two-layer network, layer 1 makes four stripes and layer 2 turns them into four <em>bent</em> shapes, and bent shapes are what a spiral is made of.</p>
+
+<h3>Is deeper always better?</h3>
+<p>No, and the other two rows show it. Give a single layer 16 neurons and it solves the spiral too. That is a famous result called the <strong>universal approximation theorem</strong>: one hidden layer can fit almost any shape, as long as it is wide enough. Depth is not the only way to get there. It is a way to get there with fewer neurons.</p>
+<p>Luck matters too. Press "new random start" and train again, and the same network can end up somewhere different. To be fair to all four, we ran each one from 60 random starts, for 8,000 epochs each:</p>
+<ul>
+  <li><strong>1 layer × 8</strong> never reached 95%. Its best run got to 92%.</li>
+  <li><strong>2 layers × 4 + 4</strong> reached 95% in 25 of its 60 starts.</li>
+  <li><strong>1 layer × 16</strong> reached 95% every single time.</li>
+  <li><strong>2 layers × 8 + 8</strong> reached 95% in 53 of its 60 starts. Most of the others got stuck near a coin flip and stayed there.</li>
+</ul>
+<p>So the honest summary has two halves. Stacking layers lets the same neurons do more. But deep networks are touchier to train, and more of them get stuck. Much of the engineering in modern deep learning (ReLU from {{ch:activations}}, and the tricks you will meet in {{ch:scale}}) exists to make deep networks train reliably.</p>
+<p>Then why is every serious network deep? Because the saving grows with the problem. On a small puzzle like this one, going wide costs a few extra neurons. On large problems with layers of structure, such as pictures made of objects made of parts made of edges, a shallow network can need impossibly many neurons to do what a deep one does with a modest number. A two-color spiral is too small to show that. It can only show you the start of it.</p>
+<p style="font-size: 14px; color: var(--muted);">Three footnotes for the curious. The hidden activation in this widget is <strong>tanh</strong>, sigmoid's cousin that outputs −1 to +1 instead of 0 to 1 (that is why the little maps have both blue and red). The training method is Adam from {{ch:descent}}; plain gradient descent fast enough to watch was so jumpy here that the result depended on which browser you used. And the spiral is the classic demo from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, where you can stack up to six hidden layers. This book has its own version in {{ch:playground}}.</p>
+
+<div class="bigidea"><p>Each layer builds on the one before it: lines, then shapes made of lines, then shapes made of shapes. That lets the same number of neurons go further. It is not magic: a wide enough single layer can do the same job, and deeper networks are harder to train.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>What's the smallest brain that gets above 95% on the spiral? And give the one-layer × 16 brain a truly fair shot: press "train 5,000" four times in a row. Does it ever escape?</p>
+  <p>Check our survey. Pick "2 layers × 4 + 4," press "new random start," train 8,000 epochs (four presses), and note whether it passed 95%. Do that ten times. Then do the same for "1 layer × 8." Last, keep pressing "new random start" on "2 layers × 8 + 8" until you find a start that gets stuck near 50%. What do its layer-2 neuron maps look like compared with a run that worked?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>In a network with two hidden layers, what do the neurons in the second hidden layer receive as inputs?</p>
+    <button data-opt="a">The raw inputs, same as the first layer</button>
+    <button data-opt="b">The outputs of the first hidden layer</button>
+    <button data-opt="c">The right answers from the training data</button>
+    <p class="why">Each layer feeds the next. Layer 2 never sees x and y directly; it sees what layer 1 made of them, which is what lets it build shapes out of shapes.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Eight neurons in one layer stalled on the spiral. The same eight neurons as two layers of four solved it. What is the best explanation?</p>
+    <button data-opt="a">One layer can only add stripes together; a second layer can bend and combine them</button>
+    <button data-opt="b">The two-layer network was trained for longer</button>
+    <button data-opt="c">Networks with two layers always beat networks with one</button>
+    <p class="why">Same data, same training, same neuron count. The difference is the arrangement. And "always" is too strong: with 16 neurons, the one-layer network solved the spiral as well.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>One hidden layer of 16 neurons solved the spiral without any help from depth. So why are big networks built deep instead of just wide?</p>
+    <button data-opt="a">Because a single layer cannot learn curved shapes</button>
+    <button data-opt="b">Because deep networks never get stuck during training</button>
+    <button data-opt="c">Because on hard problems a single layer would need far more neurons than a deep network does</button>
+    <p class="why">A single layer can learn curves, as you saw, and deep networks get stuck more often, not less. The case for depth is efficiency: the harder and more layered the problem, the more neurons depth saves.</p>
+  </div>
 </div>

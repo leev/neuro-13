@@ -1,0 +1,23 @@
+{
+  "class": "One of the possible answers a network can choose between, like fruit, chips or cookie.",
+  "cross-entropy": "A loss for networks that output probabilities: minus the log of the probability the model gave to the right answer, so confident mistakes cost the most.",
+  "squared error": "A simple loss: the gap between the truth and the prediction, multiplied by itself, so bigger misses count much more.",
+  "derivative": "The slope of a curve at one point: how fast the output changes when the input changes a tiny bit.",
+  "saturated": "Describes a sigmoid neuron pushed so far to one end that its curve is almost flat, so it barely learns.",
+  "hyperparameter": "A setting chosen by the person building the network before training starts, like the learning rate or the number of hidden neurons.",
+  "gradient descent": "The learning rule: find the slope of the loss for every weight, then move each weight a small step in the downhill direction.",
+  "loss landscape": "A picture of the loss for every possible setting of the weights: hills where the network is wrong, valleys where it does well.",
+  "local minimum": "A dip in the loss landscape that is lower than everything right next to it but is not the lowest point overall.",
+  "momentum": "Gradient descent with a memory: each step keeps most of the previous step's velocity, so steady slopes build up speed.",
+  "Adam": "The most widely used training method: momentum plus an automatic step size for every weight.",
+  "mini-batch": "A small handful of training examples used to work out one quick, roughly right gradient step.",
+  "stochastic gradient descent": "Gradient descent that takes each step using a random mini-batch instead of the whole training set.",
+  "standardize": "To rescale a column of inputs so its average is 0 and its spread is about 1, which puts every input on an equal footing.",
+  "standard deviation": "A measure of how spread out a set of numbers is around their average.",
+  "baseline": "The score you would get with no skill at all, such as by guessing. A result only means something compared with it.",
+  "universal approximation theorem": "A proof that one hidden layer can fit almost any shape if it is wide enough. It says nothing about how to find the weights.",
+  "tanh": "An activation shaped like sigmoid that outputs between −1 and +1 instead of 0 and 1.",
+  "scaling law": "A measured rule for how a model's performance improves as its size, data and computing grow.",
+  "GPU": "A graphics chip with thousands of simple cores that can do huge numbers of small sums at the same time, which is what neural networks need.",
+  "residual connection": "A shortcut that lets a signal skip past a layer, which keeps gradients alive in very deep networks."
+}

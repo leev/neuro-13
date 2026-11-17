@@ -1,11 +1,30 @@
-<p>You've been hearing about <strong>sigmoid</strong> — the function that squishes any number into the range 0-1. Time to actually look at what it does, and meet its modern replacement, <strong>ReLU</strong>.</p>
+<p>Every neuron so far has ended the same way: multiply, add, then <em>squish</em> with sigmoid. The squish step has a proper name, the <strong>activation function</strong>, and it is doing two jobs you have not seen yet. This chapter looks at both, and then meets the activation that replaced sigmoid inside modern networks: <strong>ReLU</strong>.</p>
 
-<p>Here's what these functions look like when you plot them on graph paper. The horizontal axis is what goes INTO the neuron (the weighted sum). The vertical axis is what comes OUT.</p>
+<h3>Job one: the bend</h3>
+<div class="predict" data-answer="b">
+  <p>Imagine deleting the squish. Every neuron just multiplies and adds. Now stack 100 layers of those neurons. What can that network learn?</p>
+  <button data-opt="a">Almost anything: it has 100 layers</button>
+  <button data-opt="b">Only what a single layer could learn</button>
+  <button data-opt="c">Nothing at all</button>
+  <p class="why">Only what one layer could. Multiply-and-add of a multiply-and-add is still just a multiply-and-add with different numbers, so the whole stack collapses into one layer. One layer means straight-line rules only, and XOR stays impossible.</p>
+</div>
+<p>That is the first job of the activation: it puts a <em>bend</em> between the layers, so each layer hands on something that multiplying and adding alone could not have produced. It is what let the hidden neurons in {{ch:hidden}} fence off XOR's corners.</p>
+
+<h3>Job two: the slope</h3>
+<p>Here is what an activation looks like on graph paper. The horizontal axis is what goes <em>into</em> the neuron (the weighted sum). The vertical axis is what comes <em>out</em>.</p>
+
+<div class="predict" data-answer="b">
+  <p>Before you drag anything: where is the sigmoid curve steepest?</p>
+  <button data-opt="a">Far to the left, where the output is near 0</button>
+  <button data-opt="b">In the middle, where the input is 0</button>
+  <button data-opt="c">Far to the right, where the output is near 1</button>
+  <p class="why">In the middle. Out at both ends the curve has flattened against 0 or 1 and barely rises at all. Drag the dot and watch the slope number to check.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Drag the dot. Watch the curve.</h3>
-  <p>Slide the input left/right. The <span style="color: var(--bad); font-weight: 600;">red dot</span> is where the neuron sits right now. The <span style="color: #f97316; font-weight: 600;">orange dashed line</span> is the slope at that exact point — the <strong>derivative</strong>.</p>
+  <p>Slide the input left and right. The <span style="color: var(--bad); font-weight: 600;">red dot</span> is where the neuron sits right now. The <span style="color: #f97316; font-weight: 600;">orange dashed line</span> shows how steep the curve is at that exact point. That steepness is called the <strong>derivative</strong>, which is just the math word for slope.</p>
   <div class="toggle-row">
     <div class="toggle on" data-act="sigmoid">sigmoid</div>
     <div class="toggle" data-act="relu">ReLU</div>
@@ -22,35 +41,34 @@
   </div>
 </div>
 
-<h3>What does the derivative tell us?</h3>
-<p>The derivative is the <strong>slope of the curve at that point</strong>. Why this matters: during training, the network uses the slope to figure out which way to nudge the weights.</p>
+<p>Why care about the slope? Because training uses it. When blame for a mistake is passed backward through a neuron, it gets multiplied by the slope at the spot where that neuron is sitting.</p>
 <ul>
-  <li><strong>Steep slope</strong> = "big push, learn fast here"</li>
-  <li><strong>Flat slope (close to 0)</strong> = "stuck, weights barely move"</li>
+  <li><strong>Steep slope:</strong> the blame gets through, and the neuron's weights move.</li>
+  <li><strong>Flat slope (close to 0):</strong> the blame is multiplied by almost nothing, and the weights barely move.</li>
+</ul>
+<p>Now read sigmoid's slope off the widget:</p>
+<ul>
+  <li>At an input of <code>0</code> the slope is <strong>0.25</strong>, the biggest it ever gets. The neuron is at its most unsure here, and learns fastest.</li>
+  <li>At <code>+5</code> or <code>−5</code> the slope is <strong>0.007</strong>. The neuron has made up its mind, and learning has almost stopped. A neuron stuck out here is called <strong>saturated</strong>.</li>
 </ul>
 
-<p>Look at sigmoid's slope by dragging the slider:</p>
-<ul>
-  <li>At <code>x = 0</code>, slope is <strong>0.25</strong> — the biggest it ever gets. The neuron is most "unsure" here and learns fastest.</li>
-  <li>At <code>x = +5</code> or <code>x = −5</code>, slope is <strong>almost zero</strong>. The neuron is super confident — learning has basically stopped.</li>
-</ul>
+<h3>Why sigmoid struggles in deep networks</h3>
+<p>Sigmoid's slope is 0.25 <em>at best</em>, and usually much less. In a deep network the blame has to travel back through every layer, and each sigmoid layer multiplies it by a slope of at most 0.25. (The weights get multiplied in too, but the slopes are the part that always shrinks.) Even in the best case:</p>
 
-<h3>Now switch to ReLU and compare</h3>
-<p>Toggle "ReLU" above. The curve becomes a straight line: zero below x=0, then a 45° ramp upward. Its slope is either <strong>exactly 1</strong> (positive input) or <strong>exactly 0</strong> (negative input). No squishing. No flat tails.</p>
+<pre>10 layers:  0.25 × 0.25 × ... (10 times)  ≈  0.000001          (a millionth)
+20 layers:  0.25 × 0.25 × ... (20 times)  ≈  0.000000000001    (a trillionth)</pre>
 
-<h3>Why we replaced sigmoid in deep networks</h3>
-<p>The slope of sigmoid is <em>at best</em> 0.25, usually way less. When you stack 80 layers of sigmoid, backpropagation multiplies all the slopes together as the error travels backward. Picture it:</p>
+<p>By the time the signal reaches the early layers there is almost nothing left of it, so those layers stop learning. This is the famous <a href="https://en.wikipedia.org/wiki/Vanishing_gradient_problem" target="_blank" rel="noopener"><strong>vanishing gradient problem</strong></a>, and it is a big part of why deep networks were so hard to train for years after backpropagation was known. ({{Ch:backprop}} shows exactly where that multiplying happens.)</p>
 
-<pre>0.25 × 0.25 × 0.25 × ... (80 times) ≈ 0.0000000... (about 10⁻⁴⁹)</pre>
-
-<p>That's a 1 with 49 zeros in front of it. Smaller than the number of atoms in a teaspoon of water. The signal vanishes long before it reaches the early layers. Those layers stop learning. This is the famous <a href="https://en.wikipedia.org/wiki/Vanishing_gradient_problem" target="_blank" rel="noopener"><strong>vanishing gradient problem</strong></a> — a major reason deep networks didn't work for years even after backpropagation was rediscovered.</p>
-
-<p>ReLU fixed it. Its slope of 1 keeps the signal alive through many layers. You'll find ReLU (and modern relatives like <strong>GELU</strong>, used in BERT and most LLMs; <strong>SiLU</strong> / Swish, used in some Google models; and <strong>LeakyReLU</strong>, which lets a tiny bit of signal through on the negative side to avoid "dead" neurons) inside every recent neural network: image recognition, voice assistants, ChatGPT, all of them. Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page has them all in one place.</p>
+<h3>ReLU: the fix that looks too simple</h3>
+<p>Toggle "ReLU" in the widget. ReLU stands for <em>rectified linear unit</em>, and its whole rule is: <strong>if the input is negative, output 0; otherwise output the input unchanged.</strong> The curve is flat on the left, then a straight ramp. It still has a bend (at 0), so job one is covered. And its slope is either exactly <strong>1</strong> or exactly <strong>0</strong>.</p>
+<p>That slope of 1 is the point. Multiply by 1 as many times as you like and nothing shrinks, so the blame survives the trip back through many layers.</p>
+<p>It has one weakness of its own. A neuron whose input is negative for <em>every</em> example outputs 0 every time, with slope 0, so no blame ever reaches its weights. It is a <strong>dead neuron</strong> and it stays dead. Relatives of ReLU such as LeakyReLU, GELU and SiLU soften the bend to make that rarer (Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page shows them all). Sigmoid still has a job at the <em>output</em>, where you want a probability. It is in the hidden layers that ReLU took over.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ run real python</div>
   <h3>Run the ReLU version</h3>
-  <p>This is <code>neuro5.py</code>. It keeps the snack picker but swaps the hidden activation from sigmoid to ReLU. The learning rate is smaller because ReLU can move faster.</p>
+  <p>This is <code>neuro5.py</code>: the snack picker from {{ch:multi}} with ReLU in the hidden layer. Only two lines changed, one in the forward pass and one in the backward pass. Look for the <code>&lt;-</code> arrows in the code. The script also uses a smaller learning rate than before, 0.1 instead of 0.5.</p>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro5.py</span>
@@ -65,7 +83,33 @@
   <div class="terminal" id="py-out-5"><span class="dim">(click "run" to execute)</span></div>
 </div>
 
+<div class="bigidea"><p>The activation's bend is what makes extra layers worth having, and its slope decides how much of the error signal survives the trip backward. Sigmoid's flat ends choke that signal; ReLU's slope of 1 lets it through.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>In the ReLU script, try changing <code>lr = 0.1</code> to <code>0.5</code>. (<code>lr</code> is the <strong>learning rate</strong> — the "small step" from {{ch:training}}'s nudge recipe. {{Ch:descent}} digs into it properly.) If training gets worse, you have found why the size of that step matters.</p>
+  <p>In the ReLU script, <code>lr</code> is the <strong>learning rate</strong>: the "small step" from {{ch:training}}'s nudge recipe, which {{ch:descent}} digs into. Change <code>lr = 0.1</code> to <code>0.5</code> and run it. It still works. Now try <code>lr = 5</code>. Every row comes out as 0.25, 0.25, 0.50, whatever the inputs. The first giant steps pushed all six hidden neurons into dead territory, and a network with no working hidden neurons can only report how common each snack is. Count the cookies in the table and check.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="a">
+    <p>Why does a network need an activation function between its layers?</p>
+    <button data-opt="a">Without one, any stack of layers behaves exactly like a single layer</button>
+    <button data-opt="b">To keep the numbers from getting too big for the computer</button>
+    <button data-opt="c">To turn the outputs into probabilities</button>
+    <p class="why">Multiply-and-add stacked on multiply-and-add is still one multiply-and-add. The bend is what lets each new layer do something the previous ones could not.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A sigmoid neuron's weighted sum is +8 on every training example. What happens to that neuron's weights during training?</p>
+    <button data-opt="a">They change quickly, because the neuron is so confident</button>
+    <button data-opt="b">They flip to negative</button>
+    <button data-opt="c">They hardly change, because the curve is almost flat out there</button>
+    <p class="why">At +8 the sigmoid's slope is about 0.0003. Blame passing back through the neuron is multiplied by that, so almost nothing reaches its weights. It is saturated.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>What is the main reason ReLU made very deep networks easier to train than sigmoid?</p>
+    <button data-opt="a">Its outputs can be bigger than 1</button>
+    <button data-opt="b">Its slope is 1 for positive inputs, so the error signal does not shrink at every layer</button>
+    <button data-opt="c">It has no bend, so the math is simpler</button>
+    <p class="why">Sigmoid multiplies the signal by 0.25 or less at each layer; ReLU multiplies it by 1 wherever the neuron is active. (And ReLU does have a bend, at 0. Without one it would be useless.)</p>
+  </div>
 </div>

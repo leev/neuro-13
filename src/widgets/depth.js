@@ -1,9 +1,10 @@
-// ===== Interactive: depth playground — two tangled spirals =====
-(function() {
+(function depthWidget() {
   const canvas = document.getElementById('dp-canvas');
   if (!canvas) return;
   const { ctx } = Book.hidpi(canvas);
-  const SIZE = 280, RANGE = 1.3, LR = 1.5;
+  // Adam, not plain gradient descent: plain descent at a rate fast enough to
+  // finish in seconds is chaotic here, so results differed between browsers.
+  const SIZE = 280, RANGE = 1.3, LR = 0.01, BETA1 = 0.9, BETA2 = 0.999, FIRST_SEED = 30;
 
   function mulberry32(a) {
     return function() {
@@ -30,10 +31,10 @@
     return pts;
   })();
 
-  let net, epoch, dump, thumbs;
+  let net, epoch, dump, thumbs, seed = FIRST_SEED;
 
   function makeNet(sizes) {
-    const rnd = mulberry32(42);
+    const rnd = mulberry32(seed);
     const Ws = [], Bs = [];
     for (let l = 0; l < sizes.length - 1; l++) {
       const fan = sizes[l];
@@ -41,7 +42,8 @@
         Array.from({length: sizes[l + 1]}, () => (rnd() * 2 - 1) * Math.sqrt(1 / fan))));
       Bs.push(Array(sizes[l + 1]).fill(0));
     }
-    return { sizes, Ws, Bs };
+    const zeros = () => ({ W: Ws.map(W => W.map(r => r.map(() => 0))), B: Bs.map(B => B.map(() => 0)) });
+    return { sizes, Ws, Bs, mean: zeros(), spread: zeros() };
   }
 
   function forward(x) {
@@ -59,40 +61,61 @@
     return acts;
   }
 
-  function trainEpochs(n) {
-    for (let e = 0; e < n; e++) {
-      const gW = net.Ws.map(W => W.map(r => r.map(() => 0)));
-      const gB = net.Bs.map(B => B.map(() => 0));
-      for (const {x, y} of data) {
-        const acts = forward(x);
-        let delta = [acts[acts.length - 1][0] - y];   // sigmoid + cross-entropy
-        for (let l = net.Ws.length - 1; l >= 0; l--) {
-          const inp = acts[l];
-          for (let j = 0; j < delta.length; j++) {
-            gB[l][j] += delta[j];
-            for (let i = 0; i < inp.length; i++) gW[l][i][j] += inp[i] * delta[j];
+  function trainOneEpoch() {
+    const gW = net.Ws.map(W => W.map(r => r.map(() => 0)));
+    const gB = net.Bs.map(B => B.map(() => 0));
+    for (const {x, y} of data) {
+      const acts = forward(x);
+      let delta = [acts[acts.length - 1][0] - y];   // sigmoid + cross-entropy
+      for (let l = net.Ws.length - 1; l >= 0; l--) {
+        const inp = acts[l];
+        for (let j = 0; j < delta.length; j++) {
+          gB[l][j] += delta[j];
+          for (let i = 0; i < inp.length; i++) gW[l][i][j] += inp[i] * delta[j];
+        }
+        if (l > 0) {
+          const nd = [];
+          for (let i = 0; i < inp.length; i++) {
+            let s = 0;
+            for (let j = 0; j < delta.length; j++) s += delta[j] * net.Ws[l][i][j];
+            nd.push(s * (1 - inp[i] * inp[i]));     // tanh derivative
           }
-          if (l > 0) {
-            const nd = [];
-            for (let i = 0; i < inp.length; i++) {
-              let s = 0;
-              for (let j = 0; j < delta.length; j++) s += delta[j] * net.Ws[l][i][j];
-              nd.push(s * (1 - inp[i] * inp[i]));     // tanh derivative
-            }
-            delta = nd;
-          }
+          delta = nd;
         }
       }
-      const m = data.length;
-      for (let l = 0; l < net.Ws.length; l++) {
-        for (let j = 0; j < net.Bs[l].length; j++) {
-          net.Bs[l][j] -= LR * gB[l][j] / m;
-          for (let i = 0; i < net.Ws[l].length; i++) net.Ws[l][i][j] -= LR * gW[l][i][j] / m;
-        }
-      }
-      epoch++;
     }
-    render();
+    epoch++;
+    const m = data.length;
+    const fix1 = 1 - Math.pow(BETA1, epoch), fix2 = 1 - Math.pow(BETA2, epoch);
+    function adamStep(mean, spread, k, g) {
+      mean[k] = BETA1 * mean[k] + (1 - BETA1) * g;
+      spread[k] = BETA2 * spread[k] + (1 - BETA2) * g * g;
+      return LR * (mean[k] / fix1) / (Math.sqrt(spread[k] / fix2) + 1e-8);
+    }
+    for (let l = 0; l < net.Ws.length; l++) {
+      for (let j = 0; j < net.Bs[l].length; j++) {
+        net.Bs[l][j] -= adamStep(net.mean.B[l], net.spread.B[l], j, gB[l][j] / m);
+        for (let i = 0; i < net.Ws[l].length; i++) {
+          net.Ws[l][i][j] -= adamStep(net.mean.W[l][i], net.spread.W[l][i], j, gW[l][i][j] / m);
+        }
+      }
+    }
+  }
+
+  const trainButtons = [document.getElementById('dp-train1'), document.getElementById('dp-train2')];
+  let runId = 0;
+
+  async function trainEpochs(n) {
+    const mine = ++runId;
+    trainButtons.forEach(b => { b.disabled = true; });
+    let left = n;
+    while (left > 0 && mine === runId) {
+      const started = performance.now();
+      do { trainOneEpoch(); left--; } while (left > 0 && performance.now() - started < 50);
+      render();
+      await new Promise(r => setTimeout(r, 0));
+    }
+    if (mine === runId) trainButtons.forEach(b => { b.disabled = false; });
   }
 
   function accuracy() {
@@ -211,17 +234,21 @@
       ctx.stroke();
     }
     renderThumbs();
-    renderDump();
+    if (!document.getElementById('dp-model').hidden) renderDump();
     document.getElementById('dp-epoch').textContent = epoch;
     document.getElementById('dp-acc').textContent = (accuracy() * 100).toFixed(0) + '%';
     document.getElementById('dp-params').textContent = paramCount();
   }
 
-  function reset() {
+  function reset(newSeed) {
     const archStr = document.querySelector('#dp-arch .toggle.on').dataset.arch;
     const arch = archStr.split(',').map(Number);
+    runId++;
+    trainButtons.forEach(b => { b.disabled = false; });
+    seed = newSeed;
     net = makeNet([2].concat(arch, [1]));
     epoch = 0;
+    document.getElementById('dp-start').textContent = seed === FIRST_SEED ? "the book's" : 'a random one';
     buildThumbs();
     makeDumpForArch();
     render();
@@ -231,17 +258,19 @@
     t.addEventListener('click', () => {
       document.querySelectorAll('#dp-arch .toggle').forEach(o => o.classList.remove('on'));
       t.classList.add('on');
-      reset();
+      reset(FIRST_SEED);
     });
   });
-  document.getElementById('dp-train1').addEventListener('click', () => trainEpochs(500));
-  document.getElementById('dp-train2').addEventListener('click', () => trainEpochs(5000));
-  document.getElementById('dp-reset').addEventListener('click', reset);
+  document.getElementById('dp-train1').addEventListener('click', () => trainEpochs(250));
+  document.getElementById('dp-train2').addEventListener('click', () => trainEpochs(2000));
+  document.getElementById('dp-reset').addEventListener('click', () => reset(FIRST_SEED));
+  document.getElementById('dp-reseed').addEventListener('click', () => reset(1 + Math.floor(Math.random() * 1e9)));
   document.getElementById('dp-dump-toggle').addEventListener('click', () => {
     const el = document.getElementById('dp-model');
     el.hidden = !el.hidden;
+    if (!el.hidden) renderDump();
     document.getElementById('dp-dump-toggle').textContent = el.hidden ? 'show the numbers' : 'hide the numbers';
   });
-  reset();
+  reset(FIRST_SEED);
 })();
 

@@ -1,0 +1,121 @@
+<p>At the start of this part a network could say yes or no about four examples you could hold in your head. Since then you have made one choose from a list, looked inside its activation function, rolled a ball down a loss landscape, passed blame backward by hand, trained on real flowers, watched a network memorize, and stacked layers until a spiral came apart. This is the place to check it all stuck, and then to try it on data that is yours.</p>
+
+<h3>Eight things to remember</h3>
+<ol>
+  <li>To choose between several answers, a network gives each one its own output neuron, and softmax turns the scores into probabilities that add up to 1.</li>
+  <li>The loss is one number for how wrong the network is, and cross-entropy sets it by how surprised the network was by the right answer.</li>
+  <li>An activation function puts a bend between layers, which is what makes extra layers worth having, and its slope decides how much of the error signal survives the trip backward.</li>
+  <li>Words go into a network as one-hot inputs, and the hidden layer learns which combinations of clues matter.</li>
+  <li>Learning is gradient descent: find the slope of the loss for every weight and move each one a small step downhill, with the learning rate setting the size of the step.</li>
+  <li>Backpropagation finds all of those slopes in one sweep, by passing the blame for a mistake backward from the output with the chain rule.</li>
+  <li>The only score that counts is the one on a test set the network never trained on, because a network can ace its training data just by memorizing it.</li>
+  <li>Depth lets each layer build on the one before, and scaling up changes how much there is of everything (layers, parameters, data, chips) but not the math.</li>
+</ol>
+
+<h3>Mixed quiz</h3>
+<p>Seven questions from all over Part 2. If one trips you up, the "why" under it says which chapter to revisit.</p>
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A network looks at a picture and says: cat 0.7, dog 0.2, fox 0.1. The picture is a dog. Which number sets the cross-entropy loss for this example?</p>
+    <button data-opt="a">The 0.7, because that was its top answer</button>
+    <button data-opt="b">The 0.2, because that is what it gave to the right answer</button>
+    <button data-opt="c">All three count equally</button>
+    <p class="why">The loss is −log of the probability given to the <em>right</em> answer, here −log(0.2) ≈ 1.61. The network was fairly surprised, so the loss is fairly big. See {{ch:multi}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>After a lot of training, the last layers of a deep sigmoid network have changed a great deal, but its first layers have hardly moved. What is the most likely reason?</p>
+    <button data-opt="a">The first layers were already perfect</button>
+    <button data-opt="b">The learning rate is too big</button>
+    <button data-opt="c">The error signal shrank at every layer on the way back, and almost none of it arrived</button>
+    <p class="why">Each sigmoid layer multiplies the signal by a slope of 0.25 at best. A few layers of that and there is almost nothing left. This is the vanishing gradient from {{ch:activations}}, and ReLU's slope of 1 is the usual cure.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Which of these does training <em>not</em> change?</p>
+    <button data-opt="a">The number of hidden neurons</button>
+    <button data-opt="b">The weights going into the hidden neurons</button>
+    <button data-opt="c">The biases of the output neurons</button>
+    <p class="why">The shape of the network is a hyperparameter: a person picks it before training starts. Training only adjusts the weights and biases inside that shape. See {{ch:meals}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Your loss is going down smoothly, but so slowly that an hour of training has barely moved it. Which knob would you try first?</p>
+    <button data-opt="a">Make the learning rate smaller</button>
+    <button data-opt="b">Make the learning rate bigger</button>
+    <button data-opt="c">Hold back a bigger test set</button>
+    <p class="why">Smooth but slow means the steps are too short. Bigger steps cover the ground faster, up to the point where they start to overshoot. You saw both ends on the slider in {{ch:descent}}.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>During backpropagation on one example, a weight's input happened to be 0. What nudge does that weight get?</p>
+    <button data-opt="a">The same as every other weight in its layer</button>
+    <button data-opt="b">A bigger one, to make up for sitting idle</button>
+    <button data-opt="c">None at all</button>
+    <p class="why">A wire's share of the blame is multiplied by what was flowing through it. An input of 0 means it carried nothing and contributed nothing to the mistake, so there is nothing to correct. See {{ch:backprop}}.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>A network scores 99% on its training set and 62% on its test set. What has happened, and what might help?</p>
+    <button data-opt="a">Nothing is wrong: 99% is an excellent model</button>
+    <button data-opt="b">It has memorized the training set. More data, a smaller network, or stopping earlier could help</button>
+    <button data-opt="c">It has not trained long enough. Keep going until the test score catches up</button>
+    <p class="why">A big gap between the two scores is the signature of overfitting, and training for longer usually widens it. The three cures are in {{ch:overfitting}}.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A one-hidden-layer network gets 55% on a tangled two-color puzzle with equal numbers of each color. What should you make of that score?</p>
+    <button data-opt="a">It has learned almost nothing, since guessing would score 50%. Try a bigger or deeper network</button>
+    <button data-opt="b">It is right more often than wrong, so it mostly works</button>
+    <button data-opt="c">The test set must be broken</button>
+    <p class="why">A score only means something next to its baseline, and five points above a coin flip is close to nothing. More neurons, or the same neurons in two layers, give the network more to work with, as on the spiral in {{ch:depth}}.</p>
+  </div>
+</div>
+
+<h3>Build it: your own dataset</h3>
+<p>Every dataset in this part was chosen for you. Time to make one. You are going to write a small table, hold part of it back, train a network on the rest, and find out whether it learned your pattern or just memorized your rows.</p>
+<ol>
+  <li><strong>Pick a question</strong> that has a short list of answers and that you can answer for lots of things. <em>Would I like this game? Which of my friends would pick this snack? Is this animal a good pet for a small apartment?</em></li>
+  <li><strong>Pick three or four clues</strong>, each one a word from a short list, like <code>pace</code>: calm or frantic.</li>
+  <li><strong>Write about 20 rows.</strong> Real opinions make the best data.</li>
+</ol>
+<p>The script comes with a starter table so you can see it work first. It is made up: the taste in games of an imaginary friend who will happily play almost anything with other people, can't stand puzzles in a group, and likes only calm games when playing alone. There are 20 rows, one for every mix of five kinds of game, solo or with friends, calm or frantic.</p>
+
+<div class="predict" data-answer="b">
+  <p>The script will hide 5 of the 20 rows and train on the other 15. One hidden row is <em>puzzle, friends, frantic</em>, where the truth is "no." Almost every other game with friends is a "yes." What will the network say about a row it has never seen?</p>
+  <button data-opt="a">Yes: playing with friends nearly always means yes</button>
+  <button data-opt="b">No: it can work out the puzzle exception from the other puzzle rows</button>
+  <button data-opt="c">It will be split 50/50</button>
+  <p class="why">It says no. The row <em>puzzle, friends, calm</em> is still in the training set, and that was enough for the network to learn that "puzzle" and "friends" together mean trouble. Run it and look for that line.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Train a network on your own table</h3>
+  <p>This is <code>my_data.py</code>. The table is <code>MY_TABLE</code> near the top: each row is a few clue words and then the answer. Press run with the starter table first and read the output from top to bottom: the loss falling, the five test rows with the network's guess for each, the two scores, the baseline, and a verdict.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">my_data.py</span>
+      <span class="code-status" id="py-status-mydata">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-mydata" spellcheck="false" rows="30" data-src="my_data.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="mydata">▶ run</button>
+    <button class="secondary" data-py-reset="mydata">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-mydata"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<h3>What you should have seen</h3>
+<p><strong>It learned.</strong> With random starting weights the network gets 6 of the 15 training rows and 2 of the 5 test rows. By epoch 300 it has all 15 and all 5. The baseline, always answering "yes," would have scored 2 of 5 on those test rows. And the hidden puzzle row comes out as "no," 85% sure.</p>
+<p><strong>Now break it.</strong> Change <code>SCRAMBLE = False</code> to <code>True</code> and run again. This shuffles the answers so they have nothing to do with the clues. The network <em>still</em> gets 15 of 15 training rows right. But on the test rows it scores 1 of 5, when the baseline would have scored 4. It memorized fifteen random answers. Notice that the training score was perfect both times. Only the held-back rows could tell learning from memorizing.</p>
+<p><strong>Now doubt it.</strong> Put <code>SCRAMBLE</code> back to <code>False</code> and change <code>SEED</code>, which decides which five rows are hidden and what the starting weights are. With the starter table, the seeds from 0 to 15 give test scores all the way from 0 of 5 (try <code>SEED = 15</code>) to 5 of 5. Five test rows make a very blurry measuring stick, and with only 20 rows in total, hiding the wrong five can remove exactly the examples the network needed. This is why real test sets have thousands of rows.</p>
+<p><strong>Now make it yours.</strong> Replace the rows in <code>MY_TABLE</code> with your own, and change <code>COLUMNS</code> and <code>ASK</code> to match. A few tips:</p>
+<ul>
+  <li>The answer goes last in every row, and you can have more than two different answers.</li>
+  <li>Spelling counts. To the network, <code>"Calm"</code> and <code>"calm"</code> are two different words.</li>
+  <li>If the verdict says it memorized, that is a real finding, not a failure. Either your clues do not predict the answer, or 15 rows were not enough to show how.</li>
+</ul>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Add a column that cannot possibly matter, such as the day of the week you typed each row. Does the test score change? Then, with your own table, try <code>HIDDEN = 64</code> and <code>EPOCHS = 5000</code>. Look at how sure the network is about each test row, right or wrong. Is a bigger network trained for longer a better one here? And one with no computer at all: explain how a network learns to someone at home, using only these six words for the technical parts: input, weight, mistake, nudge, layer, prediction.</p>
+</div>
+
+<h3>Next: machines that read and write</h3>
+<p>Your table was made of words, and the script turned every one of them into a yes/no switch: nine switches for the starter table. That works for a handful of words. A language has hundreds of thousands, and they arrive in sentences of any length, where the order matters. Part 3 is about how networks cope with that. It starts with turning text into numbers ({{ch:tokens}}), builds a small model that invents names one letter at a time ({{ch:names}}), and works up to what a chatbot is really doing when it answers you ({{ch:chatbots}}).</p>

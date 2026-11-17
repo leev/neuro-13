@@ -1,50 +1,120 @@
-<p>You've been hearing "nudge the weights in the right direction" for eleven chapters — and back in {{ch:training}} you even performed a nudge by hand. Time to pin down the full rule behind it. This is the math that powers every other chapter in this book.</p>
+<p>Ever since {{ch:training}} this book has said that training "nudges the weights in the right direction," and you even did a nudge by hand. This chapter pins down the full rule. It is short, it is the same for a three-weight neuron and a chatbot, and every other chapter in the book leans on it.</p>
 
 <h3>The loss landscape</h3>
-<p>Imagine every weight in the network is a knob you can turn. A tiny network might have 20 knobs; ChatGPT has hundreds of billions. For each combination of knob positions, you can measure how wrong the network is on your training data. That single number is called the <strong>loss</strong> (sometimes "cost" or "error" — same idea).</p>
-<p>If you could plot loss against every possible knob setting, you'd get a <strong>landscape</strong> — bumpy, hilly terrain stretching out in millions of dimensions. High places are bad (the network gets stuff wrong); low places are good. Training a network is the search for a low spot in that landscape.</p>
-<p>Humans can't picture a 175-billion-dimensional landscape. Nobody can. But the rule for getting downhill is the same whether you're in 2 dimensions or 2 billion: at your current spot, figure out which direction goes <em>downward fastest</em>, take a small step that way, repeat.</p>
+<p>Training needs a score to improve. That score is the <strong>loss</strong>: one number that says how wrong the network is on its training examples. You have met two kinds. A single yes/no neuron can use <strong>squared error</strong>, <code>(truth − prediction)²</code>, averaged over the examples. A network that picks from a list uses <strong>cross-entropy</strong>, <code>−log(probability it gave the right answer)</code>, from {{ch:multi}}. Either way: 0 is perfect, and bigger is worse.</p>
+<p>Now imagine every weight in the network is a knob. For each setting of all the knobs, the network has some loss. If you could draw the loss for every possible setting you would get a <strong>landscape</strong>: hills where the network is badly wrong, valleys where it does well. Training is a search for a low place.</p>
+<p>A network with two weights has a landscape you could build out of clay. The largest language models have hundreds of billions of weights, and nobody can picture a landscape with that many directions. Luckily the rule for getting downhill does not care how many directions there are.</p>
 
 <h3>The gradient is just the slope</h3>
-<p>The word <strong>gradient</strong> sounds fancy. It just means "slope, in every direction at once." If you're standing on a hillside, the gradient is the arrow that points straight downhill from where you're standing, along with how steep that direction is.</p>
-<p>For each weight in the network, the gradient says: <em>"if you increase this weight a tiny bit, the loss goes up (or down) by this much."</em> Calculus (specifically, the chain rule we met in {{ch:hidden}}) is the tool that computes the gradient for every weight at once. The algorithm that does this efficiently for a deep network is — you guessed it — <a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noopener">backpropagation</a>.</p>
-<p>Once you have the gradient, the update rule is comically simple:</p>
-<pre>new_weight = old_weight  −  (learning_rate × gradient)</pre>
-<p>That's it. Every line of "training" in every script in this book is doing some version of that. The minus sign is what makes it <em>descent</em> — you're moving the weight <em>against</em> the gradient, toward smaller loss. And compare it to {{ch:training}}'s hand-made recipe, <code>nudge = small step × error × input</code>: that was this exact formula in disguise. The "small step" is the learning rate, and "error × input" <em>is</em> the gradient for a one-neuron network.</p>
+<p>Stand anywhere on a hillside and you can feel which way is downhill and how steep it is. The <strong>gradient</strong> is that information for the loss landscape: for every weight, it says how much the loss would rise or fall if you turned that one knob up a tiny bit. Working out all those slopes at once is the job of backpropagation, which gets its own chapter next ({{ch:backprop}}).</p>
+<p>Once you have the gradient, the rule for learning is one line:</p>
+<pre>new_weight = old_weight − (learning_rate × gradient)</pre>
+<p>The minus sign is what makes it <em>descent</em>: if turning a knob up would raise the loss, turn it down, and the other way around. The <strong>learning rate</strong> sets how far to turn. Do that for every weight, and you have taken one step of <strong>gradient descent</strong>.</p>
+<p>You have already used this rule. The recipe from {{ch:training}} was <code>nudge = small step × error × input</code>. The "small step" is the learning rate, and "error × input" is nearly the whole gradient for a single neuron. That chapter's honesty note mentioned one more factor, and now you can see where it comes from: it is the sigmoid's slope from {{ch:activations}}. The prediction passes through the sigmoid, so the gradient picks up the sigmoid's slope on the way back. (Squaring the error also adds a factor of 2, which everyone folds into the learning rate.)</p>
+
+<div class="predict" data-answer="b">
+  <p>In the widget below, the learning rate sets how big each step is. What do you expect to happen if you make it much too big?</p>
+  <button data-opt="a">The ball reaches the bottom in one big step and stays there</button>
+  <button data-opt="b">Each step overshoots, and the ball bounces higher and higher</button>
+  <button data-opt="c">Nothing bad: the steps shrink by themselves near the bottom</button>
+  <p class="why">It bounces higher and higher. A step that is too long lands further up the far side than where it started. The slope is steeper up there, so the next step is longer still. Find the spot on the slider where this starts.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Roll the ball downhill</h3>
-  <p>The curve is the loss. Horizontal position is the value of one weight. The red dot is where the network currently sits. Click "step" to take one gradient-descent step. Watch the dot find the bottom — and watch the steps get smaller as the slope flattens out, because the gradient itself shrinks near the minimum.</p>
-  <canvas id="gd-canvas" width="640" height="260" style="width:100%; max-width:640px; background:#f9fafb; border-radius:8px;"></canvas>
-  <div style="margin-top: 10px;">
-    <button id="gd-step">step downhill</button>
-    <button id="gd-fast">step 20 times</button>
-    <button class="secondary" id="gd-reset">put dot back on top</button>
+  <p>The curve is the loss. Left to right is the value of one weight. The red ball is where the network is now, and each step moves it by <code>learning rate × slope</code>. The faint dots show where it has been. Start by pressing "step downhill" a few times and watching the gaps between the dots.</p>
+  <div class="toggle-row" id="gd-hill" style="font-size: 13px;">
+    <div class="toggle on" data-hill="bowl">smooth bowl</div>
+    <div class="toggle" data-hill="bumpy">bumpy valley</div>
   </div>
+  <canvas id="gd-canvas" width="640" height="260" style="width:100%; max-width:640px; background:#f9fafb; border-radius:8px;"></canvas>
+  <div class="slider-row">
+    <label>learning rate</label>
+    <input type="range" id="gd-lr" min="0" max="100" step="1" value="47">
+    <span class="value" id="gd-lr-v">0.15</span>
+  </div>
+  <div class="toggle-row" style="font-size: 13px;">
+    <div class="toggle" id="gd-momentum">momentum</div>
+  </div>
+  <div>
+    <button id="gd-step">step downhill</button>
+    <button id="gd-fast">▶ roll until it stops</button>
+    <button class="secondary" id="gd-reset">put the ball back</button>
+  </div>
+  <div class="stat-row">
+    <span>steps: <strong id="gd-steps">0</strong></span>
+    <span>weight: <strong id="gd-weight">?</strong></span>
+    <span>loss: <strong id="gd-loss">?</strong></span>
+    <span>slope: <strong id="gd-slope">?</strong></span>
+  </div>
+  <p id="gd-msg" style="font-size: 14px; color: var(--muted); min-height: 1.5em; margin: 8px 0 0;"></p>
 </div>
 
-<h3>Why we take small steps (learning rate)</h3>
-<p>That <code>learning_rate</code> in the update is the size of each step. It's one of the most important knobs in deep learning — and it's a knob <em>you</em> pick, not the network.</p>
+<h3>What just happened</h3>
+<p>The steps got shorter as the ball came down, even though the learning rate never changed. That is because each step is <code>learning rate × slope</code>, and the slope flattens out near the bottom. Gradient descent slows itself down as it arrives.</p>
+<p>Now put the ball back and try the slider on the smooth bowl:</p>
 <ul>
-  <li><strong>Too small</strong> (say <code>0.0001</code>): the network learns, but excruciatingly slowly. It might take a million steps to get where a good learning rate would get in a thousand.</li>
-  <li><strong>Too big</strong> (say <code>10</code>): the network <em>overshoots</em> the minimum. Imagine rolling a ball down a hill so hard it flies up the other side, then back across, then up again. The loss bounces around and never settles. Sometimes it even explodes to infinity.</li>
-  <li><strong>Just right</strong> (often <code>0.001</code> to <code>0.1</code>, depending on the model): steady downhill progress.</li>
+  <li><strong>Too small (0.01):</strong> after 300 steps the ball still has not reached the bottom. It is learning, just painfully slowly.</li>
+  <li><strong>About right (0.15):</strong> it settles in 44 steps.</li>
+  <li><strong>Big (about 2):</strong> every step jumps clean over the bottom to the other side. It zigzags in and still gets there.</li>
+  <li><strong>Too big (3 and up):</strong> each bounce lands higher than the last, the ball leaves the map, and the loss keeps growing without limit. This is what people mean when they say training "blew up."</li>
 </ul>
-<p>In <code>neuro1.py</code> the learning rate was implicitly 1 (we didn't write it — the toy data was friendly). In <code>neuro3.py</code> we wrote <code>lr = 0.5</code>. In <code>neuro5.py</code> we used <code>lr = 0.1</code> because ReLU is more sensitive. In real training people use schedules that <em>shrink</em> the learning rate over time — start big to make fast progress, end small to settle into a good minimum.</p>
+<p>The learning rate is a hyperparameter: you choose it, the network does not. The exact numbers above belong to this one bowl. Real networks need their own, usually far smaller, anywhere from 0.1 down to 0.00001. A common trick is a <strong>schedule</strong>: start with bigger steps to cover ground, then shrink them to settle in.</p>
 
-<h3>Local minima — why we don't usually care</h3>
-<p>The landscape isn't a simple bowl. It has lots of dips, valleys, plateaus, ridges. A "local minimum" is a dip that's lower than everything around it but not the lowest place in the whole landscape. For decades, people worried that gradient descent would get stuck in bad local minima.</p>
-<p>Here's the surprising empirical finding: in really high-dimensional landscapes (the kind real networks live in), most local minima turn out to be roughly as good as the global minimum. Bad minima are rare. There's also a lot of geometry where the network can wiggle around until it finds a path out. Modern networks just train, find a low spot, and the low spot is good enough. Nobody has a clean theory for why this works as well as it does — but it does.</p>
+<h3>Getting stuck: local minima</h3>
+<div class="predict" data-answer="b">
+  <p>Switch the widget to "bumpy valley" (momentum off, learning rate back near 0.15) and look at the shape before you roll. Where will the ball end up?</p>
+  <button data-opt="a">In the deepest valley on the right</button>
+  <button data-opt="b">In the small dip partway down</button>
+  <button data-opt="c">Nowhere: it will roll back and forth forever</button>
+  <p class="why">In the small dip. At the bottom of the dip the slope is zero, so the step is zero, and plain gradient descent has no way of knowing that something better lies just over the bump.</p>
+</div>
+<p>A dip like that is called a <strong>local minimum</strong>: lower than everything right next to it, but not the lowest point on the map. For decades people worried that real networks would get trapped in them.</p>
+<p>It turns out to matter much less than this drawing suggests. Our ball has one weight, so it can only go left or right. A real network has millions of weights, which means millions of directions to move in, and a spot is only a true trap if <em>every one</em> of them slopes upward at once. That is rare. In practice big networks nearly always find somewhere low enough to work well, even though nobody can prove it is the lowest point. Exactly why this goes so smoothly is still not fully understood.</p>
+
+<h3>Gradient descent with a memory: momentum and Adam</h3>
+<p>Plain gradient descent has no memory. Each step looks only at the slope under its feet. That is why it crawled on gentle slopes and parked in the first dip.</p>
+<p><strong>Momentum</strong> gives it a memory by making it behave like a heavy ball. The ball keeps a <strong>velocity</strong>. At each step, most of the old velocity carries over, and the slope adds a new push:</p>
+<pre>velocity   = 0.9 × velocity − (learning_rate × gradient)
+new_weight = old_weight + velocity</pre>
+<p>When the slope keeps pointing the same way, the pushes pile up and the ball gathers speed: up to ten times the plain step. When the slope keeps flipping, the pushes cancel out.</p>
+<p>Turn on "momentum" in the widget and roll the bumpy valley again. This time the ball carries enough speed to coast through the small dip, and it settles in the deepest valley (88 steps at a learning rate of 0.15). Then try momentum on the smooth bowl. The ball sails past the bottom and sloshes back and forth before it settles: 94 steps, where plain descent took 44. Momentum is a trade, not a free win.</p>
+<p><strong>Adam</strong> is the method most networks are trained with today. It uses momentum, and adds a second memory: each weight also keeps track of how big its own recent gradients have been, and its step gets divided by that typical size. Weights with huge, jumpy gradients take cautious steps. Weights with tiny gradients take bolder ones. In effect every weight gets its own learning rate, tuned automatically, while you still choose one overall rate. The PyTorch scripts that come with this book use Adam.</p>
 
 <h3>Mini-batches: noisy descent</h3>
-<p>So far we've described "compute the loss on all your training data, then take a step." That's called <strong>full-batch gradient descent</strong>. With 60,000 training examples it's wildly expensive — every step requires running the entire network on the entire dataset.</p>
-<p>The fix everyone uses: shuffle the data, take a tiny chunk (say 32 or 128 examples — a <strong>mini-batch</strong>), compute the gradient on just that chunk, take a step, grab the next chunk, repeat. This is called <strong>stochastic gradient descent</strong> (SGD), or really mini-batch SGD.</p>
-<p>Picture-wise: instead of a smooth ball rolling cleanly downhill, imagine a slightly drunk ball wobbling downhill. Each step's direction is approximately correct but jittery, because it was computed from a small sample. The surprising thing is the noise actually <em>helps</em> — it shakes the ball out of small bad pockets and tends to find broader, flatter minima, which generalize better to new data. So mini-batching is faster AND finds better solutions. Win.</p>
+<p>So far a "step" has meant: run <em>every</em> training example through the network, average the gradients, then move. With 60,000 examples that is a great deal of work for a single step.</p>
+<p>What everyone does instead is shuffle the examples, take a small handful (say 32), work out the gradient from just those, step, and move on to the next handful. Each handful is a <strong>mini-batch</strong>, and the method is called <strong>stochastic gradient descent</strong>, or SGD. ("Stochastic" means "involving chance.")</p>
+<p>Each step is now only roughly right, because 32 examples are a small sample of the whole set. Picture the ball wobbling its way downhill instead of rolling smoothly. But you get nearly two thousand wobbly steps for the price of one perfect one, which is a far better deal. There is also evidence that the wobble helps, by shaking the ball out of narrow dips and into wide, flat valleys that hold up better on new data.</p>
+<p>That is the whole of gradient descent: find the slope, step against it, repeat. The idea is older than computers. The French mathematician Augustin-Louis Cauchy described it in 1847.</p>
 
-<p>That's gradient descent. Every learning algorithm you'll meet — Adam, RMSprop, momentum, AdamW — is the same loop with smarter rules about <em>how much to step</em> and <em>which direction to actually go</em> (often a smoothed blend of recent gradients). The core idea — "compute the slope, step against it" — has not changed since 1847.</p>
+<div class="bigidea"><p>Learning is rolling downhill on the loss. Find the slope for every weight, move each one a small step against its slope, and repeat. The learning rate sets the step size, and getting it wrong in either direction is the most common way for training to fail.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Click "step downhill" slowly and watch the steps shrink near the bottom. Why do they shrink? (Hint: <code>step = lr × gradient</code>, and the gradient is the slope — what's the slope of a flat line?)</p>
+  <p>On the bumpy valley with momentum <em>off</em>, raise the learning rate a little at a time, putting the ball back and rolling it each time. Find the smallest learning rate that gets the ball over the small dip without any momentum at all. Why might that be a reason to start training with big steps and shrink them later?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="a">
+    <p>What does the gradient tell you?</p>
+    <button data-opt="a">For each weight, which way the loss changes if you nudge it, and how steeply</button>
+    <button data-opt="b">The correct final value of each weight</button>
+    <button data-opt="c">How many more steps training will need</button>
+    <p class="why">The gradient is only local information: the slope right where you are standing. It points downhill from here. It does not know where the bottom is or how far away.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>You start training a network and the loss jumps around wildly, then climbs to enormous numbers. What is the most likely cause?</p>
+    <button data-opt="a">The learning rate is too small</button>
+    <button data-opt="b">The network needs more hidden neurons</button>
+    <button data-opt="c">The learning rate is too big</button>
+    <p class="why">Steps that are too long overshoot, land somewhere steeper, and overshoot by even more. A learning rate that is too small does the opposite: the loss falls, but very slowly.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>What does momentum add to plain gradient descent?</p>
+    <button data-opt="a">A more accurate gradient</button>
+    <button data-opt="b">A memory of recent steps, so steady slopes build speed and small dips get coasted through</button>
+    <button data-opt="c">A guarantee of finding the lowest point on the map</button>
+    <p class="why">Momentum uses exactly the same gradient. It just does not forget the previous steps. Nothing guarantees the lowest point, and on the smooth bowl you saw momentum take longer.</p>
+  </div>
 </div>

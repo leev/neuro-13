@@ -1,28 +1,33 @@
-<p>Everything so far has used hand-picked toy examples — 4 rows for the screen-time rule, 8 for the snack picker. Real machine learning trains on much bigger datasets. A classic benchmark called <a href="https://archive.ics.uci.edu/dataset/53/iris" target="_blank" rel="noopener"><strong>iris</strong></a> (collected by the statistician Ronald Fisher in 1936) has 150 flowers with 4 measurements each. <a href="http://yann.lecun.com/exdb/mnist/" target="_blank" rel="noopener"><strong>MNIST</strong></a> (handwritten digits, curated by Yann LeCun) has 60,000 training images. <a href="https://www.image-net.org/" target="_blank" rel="noopener"><strong>ImageNet</strong></a> has 1.2 million labelled training images (14 million across all the variants). The text used to train GPT-3 was over 300 billion tokens — somewhere around 500 million pages of writing.</p>
+<p>Every dataset so far was typed in by hand: 4 rows for the screen-time rule, 8 for the snack picker, 8 meals. Real machine learning learns from data somebody collected out in the world, and that changes how careful you have to be.</p>
+<p>The classic first real dataset is <a href="https://archive.ics.uci.edu/dataset/53/iris" target="_blank" rel="noopener"><strong>iris</strong></a>. In the 1930s the botanist Edgar Anderson measured 150 iris flowers, 50 from each of three species, and the statistician Ronald Fisher made the table famous in a 1936 paper. Each flower has four measurements in centimeters: the length and width of a petal, and the length and width of a sepal (the green leaf-like part under the petals). The job is to name the species from those four numbers.</p>
+<p>It is tiny by modern standards ({{ch:scale}} has the numbers), but it is big enough to need the four habits that every real project depends on.</p>
 
-<p>Once you stop being your own dataset author, four disciplines kick in. None are hard, but each matters.</p>
+<h3>Habit 1: hold back a test set</h3>
+<p>You cannot find out how well a network learned by testing it on the same examples it trained on. That is like marking your own homework with the answer sheet open. So before training, set some of the data aside (here 30 flowers out of 150) and never train on it. The 120 you train on are the <strong>training set</strong>. The 30 you hold back are the <strong>test set</strong>. Accuracy on the test set is the only number that tells you how the network will do on flowers it has never seen.</p>
 
-<h3>1. Train / test split</h3>
-<p>You can't measure how well a network learned by testing it on the same data you trained on. That's like marking your own homework. Hold back, say, 20% of the data, train on the other 80%, and only check accuracy on the held-out portion. That number is the only honest measure.</p>
-<p>If your network gets 100% on training data and 60% on held-out test data, you're <strong>overfitting</strong> — it memorized the answers instead of learning the rule.</p>
+<h3>Habit 2: put the inputs on the same scale</h3>
+<p>Iris petals are between 1.0 and 6.9 cm long but only 0.1 to 2.5 cm wide. A network multiplies inputs by weights, so a column with bigger numbers shouts louder and gets bigger weight updates, for no good reason. The fix is to <strong>standardize</strong> each column: subtract the column's average, then divide by its <strong>standard deviation</strong> (a measure of how spread out the column is). Afterward every column is centered on 0 with about the same spread.</p>
+<p>One detail matters: work out the average and spread from the <em>training</em> flowers only, then apply that same shift to the test flowers. If the test flowers helped set the scale, a little information about them would have leaked into training.</p>
 
-<h3>2. Feature scaling</h3>
-<p>Iris flowers' petal length is in centimeters (1–7 cm range). Sepal width is also centimeters but a different range (0.1–4.5). If one input column has values 10× bigger than another, its weight update will dominate training. Standardize each column to mean 0, standard deviation 1 — compute the average and spread on the training set only, then apply the same shift to both train and test.</p>
+<h3>Habit 3: feed it in mini-batches</h3>
+<p>You met mini-batches in {{ch:descent}}: shuffle the training set, take a small handful, do forward pass, backward pass and weight update on just that handful, then move on. The script below uses handfuls of 16 flowers. One trip through all 120 training flowers is still one epoch; it now contains 8 weight updates instead of 1.</p>
 
-<h3>3. Mini-batches</h3>
-<p>Toy networks could feed all 4 (or 8) examples through at once each epoch. With 60,000 examples you'd run out of memory. Solution: slice the dataset into small batches (say, 16 or 128 rows). Run forward + backward + weight update on one batch. Move to next batch. After all batches, that's one epoch.</p>
-<p>Mini-batches also make training smoother — many small updates beat one huge swing.</p>
+<h3>Habit 4: watch both scores, on both sets</h3>
+<p>Loss is what the math pushes down. <strong>Accuracy</strong>, the fraction of examples the network gets right, is what people care about. Print accuracy for the training set <em>and</em> the test set as you go. When the two stay close, the network is learning something general. When training accuracy keeps climbing while test accuracy stalls or drops, the network has started memorizing. That is overfitting, and it is the whole subject of {{ch:overfitting}}.</p>
 
-<h3>4. Watch loss AND accuracy</h3>
-<p>Loss is what the math optimizes. Accuracy is what humans care about. Print both. When training accuracy keeps climbing but test accuracy plateaus or drops — that's overfitting happening in real time.</p>
-
-<p>Run <code>neuro7.py</code> in this folder to train iris for real (requires <a href="https://scikit-learn.org/" target="_blank" rel="noopener">scikit-learn</a> — install with <code>pip install scikit-learn</code>). After 200 epochs of mini-batch training, expect ~97% accuracy on the held-out test set. Same network shape as the snack picker (just <code>4 → 16 → 3</code> instead of <code>3 → 6 → 3</code>), same math you already know, now eating real flower measurements. Iris is also a <em>very easy</em> dataset — pretty much any model gets above 95%, so don't read this as evidence you've built something amazing. It's the warm-up.</p>
+<div class="predict" data-answer="b">
+  <p>Before you run anything: there are three species with the same number of flowers each. What accuracy would a "model" get by guessing at random?</p>
+  <button data-opt="a">About 50%</button>
+  <button data-opt="b">About 33%</button>
+  <button data-opt="c">About 0%</button>
+  <p class="why">One in three. That number is the <strong>baseline</strong>: the score you get for knowing nothing. An accuracy only means something compared with its baseline. 60% would be poor for a coin-flip question and impressive for a hundred-way one.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ run real python</div>
-  <h3>Run iris training</h3>
-  <p>This is <code>neuro7.py</code>. It uses numpy plus <a href="https://scikit-learn.org/stable/auto_examples/datasets/plot_iris_dataset.html" target="_blank" rel="noopener">scikit-learn's built-in iris dataset</a>.</p>
-  <p style="font-size: 13px; color: var(--muted);">Heads up: in the browser, the first time you click "run" here, the page downloads scikit-learn through Pyodide. That's roughly 10 megabytes and takes 20–40 seconds on a typical home connection. Later runs are fast.</p>
+  <h3>Train on 150 real flowers</h3>
+  <p>This is <code>neuro7.py</code>. It is the snack picker's network grown slightly (<code>4 → 16 → 3</code> instead of <code>3 → 6 → 3</code>) with all four habits added. It loads iris from <a href="https://scikit-learn.org/" target="_blank" rel="noopener">scikit-learn</a>, a popular Python toolkit, and prints training and test accuracy every 20 epochs.</p>
+  <p style="font-size: 13px; color: var(--muted);">Heads up: the first run on this page has to download scikit-learn into your browser as well as Python, so it takes noticeably longer than the other scripts. Later runs are quick. To run it on your own computer instead, get the code download described in {{title:projects}}.</p>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro7.py</span>
@@ -37,7 +42,37 @@
   <div class="terminal" id="py-out-7"><span class="dim">(click "run" to execute)</span></div>
 </div>
 
+<h3>What just happened</h3>
+<p>After a single epoch the network is already at 0.567 on the test flowers, well above the one-in-three baseline. It then climbs and levels off at <strong>0.967 on both sets</strong>: 116 of the 120 training flowers and 29 of the 30 test flowers. Training and test accuracy finishing together is exactly what you hope to see. The network learned something about irises in general, not just about the 120 it studied.</p>
+<p>Keep the result in proportion, though. Iris is a very easy dataset: almost any method scores above 90% on it. It is a warm-up, and the habits are the point.</p>
+
+<div class="bigidea"><p>The only score that counts is the one on examples the network never trained on. Hold back a test set, scale your inputs using the training set alone, train in mini-batches, and watch training and test scores side by side.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Change <code>test_size=0.2</code> to <code>0.5</code>. Does the test accuracy become noisier when the model has fewer training examples?</p>
+  <p>In the call to <code>train_test_split</code>, change <code>random_state=1</code> to 2, then 3, 4 and 5, running the script each time. That number picks <em>which</em> 30 flowers are held back. The final test accuracy comes out as 1.000, 0.867, 1.000 and 0.967. The network and the training recipe did not change at all. So what does that spread tell you about trusting a score measured on only 30 examples?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="c">
+    <p>Why is a test set held back and never used for training?</p>
+    <button data-opt="a">Training on fewer examples is faster</button>
+    <button data-opt="b">The test examples are harder than the others</button>
+    <button data-opt="c">It is the only way to see how the network does on examples it has not seen</button>
+    <p class="why">A network can score well on its training examples just by memorizing them. Only unseen examples can show whether it learned the pattern.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>One input column runs from 0 to 1 and another from 0 to 1,000. What is the risk if you train without scaling them?</p>
+    <button data-opt="a">The big-number column dominates the weighted sums and the weight updates</button>
+    <button data-opt="b">The network will ignore the big-number column</button>
+    <button data-opt="c">Nothing: the weights will sort it out right away</button>
+    <p class="why">Inputs are multiplied by weights, so a column a thousand times bigger pushes a thousand times harder, both on the output and on its own weight's gradient. Training can still work, but it becomes lopsided and touchy. Standardizing puts every column on an equal footing.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Your model scores 97% on a test set of 30 flowers. A friend's scores 93% on the same 30. Is yours definitely the better model?</p>
+    <button data-opt="a">Yes: higher accuracy means a better model</button>
+    <button data-opt="b">Not necessarily: with 30 flowers, that gap is a single flower</button>
+    <button data-opt="c">No: the lower score is always more honest</button>
+    <p class="why">Each test flower is worth 3.3 points, so 97% against 93% is 29 right against 28 right. A different choice of 30 test flowers could easily flip it. Small test sets give blurry scores.</p>
+  </div>
 </div>

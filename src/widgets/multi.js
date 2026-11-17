@@ -1,5 +1,4 @@
-// ===== Interactive 5: snack picker (trains live on page load) =====
-(function() {
+(function snackWidget() {
   const dataset = [
     {x:[0,0,0], y:0}, {x:[1,0,0], y:0},
     {x:[0,1,0], y:1}, {x:[1,1,0], y:1},
@@ -38,7 +37,7 @@
       for (let j=0;j<H;j++) z += h[j]*W2[j][k];
       z2.push(z);
     }
-    return { h, p: softmax(z2) };
+    return { h, z2, p: softmax(z2) };
   }
 
   function train(epochs) {
@@ -88,7 +87,7 @@
   bindToggle('s-weekend', 'weekend');
 
   function update() {
-    const { p } = forward([state.hungry, state.school, state.weekend]);
+    const { z2, p } = forward([state.hungry, state.school, state.weekend]);
     const names = ['fruit', 'chips', 'cookie'];
     const ids = ['s-fruit', 's-chips', 's-cookie'];
     for (let i=0;i<3;i++) {
@@ -97,7 +96,45 @@
     }
     const best = p.indexOf(Math.max(...p));
     document.getElementById('s-pick').textContent = names[best];
+    document.getElementById('s-scores').textContent = z2.map(v => v.toFixed(1)).join(', ');
   }
+  let loss = 0;
+  for (const {x, y} of dataset) loss -= Math.log(forward(x).p[y]);
+  document.getElementById('s-loss').textContent = (loss / dataset.length).toFixed(4);
   update();
+})();
+
+(function softmaxWidget() {
+  const names = ['fruit', 'chips', 'cookie'];
+  const sliders = [0, 1, 2].map(k => document.getElementById('sm-z' + k));
+  if (!sliders[0]) return;
+  let truth = 0;
+
+  function render() {
+    const z = sliders.map(s => +s.value);
+    const e = z.map(v => Math.exp(v));
+    const total = e[0] + e[1] + e[2];
+    const p = e.map(v => v / total);
+    for (let k = 0; k < 3; k++) {
+      document.getElementById('sm-z' + k + '-v').textContent = z[k].toFixed(1);
+      document.getElementById('sm-p' + k + '-bar').style.width = (p[k] * 100) + '%';
+      document.getElementById('sm-p' + k).textContent = p[k].toFixed(2);
+    }
+    const shown = p[truth] < 0.005 ? p[truth].toExponential(1) : p[truth].toFixed(2);
+    document.getElementById('sm-loss').innerHTML =
+      'probability given to ' + names[truth] + ' = <strong>' + shown + '</strong><br>' +
+      'loss = −log(' + shown + ') = <strong>' + (-Math.log(p[truth])).toFixed(2) + '</strong>';
+  }
+
+  sliders.forEach(s => s.addEventListener('input', render));
+  document.querySelectorAll('#sm-truth .toggle').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#sm-truth .toggle').forEach(o => o.classList.remove('on'));
+      t.classList.add('on');
+      truth = +t.dataset.k;
+      render();
+    });
+  });
+  render();
 })();
 
