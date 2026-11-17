@@ -452,6 +452,9 @@
     $('sa-missed').textContent = missed;
     $('sa-false').textContent = falseAlarms;
     $('sa-quiet').textContent = quiet;
+    $('sa-caught-label').textContent = caught === 1 ? 'fire caught' : 'fires caught';
+    $('sa-missed-label').textContent = missed === 1 ? 'fire missed' : 'fires missed';
+    $('sa-false-label').textContent = falseAlarms === 1 ? 'false alarm' : 'false alarms';
     setMeter('acc', right / HOUSES, (100 * right / HOUSES).toFixed(1) + '%');
     setMeter('catch', caught / FIRES, `${caught} of ${FIRES}`);
     setMeter('real', alarms ? caught / alarms : 0, alarms ? `${caught} of ${alarms.toLocaleString('en-US')}` : 'no alarms rang');
