@@ -1,0 +1,233 @@
+<p>Every model you've trained in this book has been wrong some of the time. The headline sorter in {{ch:decide}} got about 18 of every 100 unseen headlines wrong, and that was a model working exactly as designed. A model finds patterns, and patterns have exceptions.</p>
+<p>So "is this model ever wrong?" is the wrong question. It always is. The useful questions are: wrong <em>how</em>, wrong <em>for whom</em>, and would anybody notice? This chapter walks through four ways models go wrong. Two of them you can watch happen right here. It ends with a short field guide for using AI well.</p>
+
+<h3>Confidently making things up</h3>
+<p>In {{ch:names}} you trained a model to invent names, one letter at a time. A lot of what it wrote were names nobody has ever had. That wasn't a bug. Its whole job was to produce letters that <em>look like</em> a name, and it had no way to check whether a name was real. That's why the names needed "new" and "real" badges: the model couldn't have told you which was which.</p>
+<p>Now remember what {{ch:chatbots}} said a chatbot does: predict the next token, add it on, repeat. That is the name inventor's job, scaled up enormously. Ask a chatbot for a book about the history of your town and it will write a title that looks like a real title, by an author whose name looks like a real name. Sometimes that book exists. Sometimes nobody ever wrote it. When a language model states something false as if it were a fact (a book that doesn't exist, a quote nobody said, a wrong date) it's called a <strong>hallucination</strong>.</p>
+<p>The model isn't lying. Lying means knowing the truth and hiding it. It is doing what it was trained to do: continue the text in the most plausible way. A fact it saw a thousand times in training and a "fact" it is improvising come out through the same machinery, one token at a time.</p>
+<p><strong>Why does it sound just as sure either way?</strong> Think about what those next-token probabilities measure. They say how likely each token is to come next <em>in text like this</em>. They don't say how likely the sentence is to be <em>true</em>. And the text a chatbot learned from is full of people stating things firmly: encyclopedias, textbooks, news. A confident tone is simply what plausible text sounds like. The tone tells you about the training data, not about the facts.</p>
+<p>This fools adults too. In 2023, two lawyers in New York gave a judge a document that pointed to earlier court cases to back up their argument. Six of those cases did not exist. A chatbot had written them, complete with realistic names and quotes. One of the lawyers had even asked the chatbot whether a case was real, and it answered that yes, it was. The judge fined the lawyers and their firm $5,000. (The case is <a href="https://en.wikipedia.org/wiki/Mata_v._Avianca,_Inc." target="_blank" rel="noopener">Mata v. Avianca</a>.)</p>
+<p>Notice what didn't work there: asking the model "are you sure?" The reply to that question is made the same way as everything else.</p>
+<p>Two things do help:</p>
+<ul>
+  <li><strong>Give the model a way to look things up.</strong> Many chatbots can now run a web search or read a document you hand them, and answer from what they found instead of from memory. {{Ch:frontier}} shows how those tools work. It helps a lot. It isn't a cure: the model can still misread a page, and the page itself can be wrong.</li>
+  <li><strong>Check the source yourself.</strong> Ask where a claim came from, then actually open the link or find the book. If the source doesn't exist, or doesn't say what the chatbot said it says, you've caught one.</li>
+</ul>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: chatbots get a great many things right, because true statements about common topics show up again and again in their training text. Made-up answers tend to appear exactly where they're hardest to spot: rare topics, exact numbers, names, quotes and links.</p>
+
+<h3>A model only knows its data</h3>
+<p>Everything a model knows about the world came in through its training data. If the data is off, the model is off in the same direction, and it has no way to tell. Three common ways data lets a model down:</p>
+<ul>
+  <li><strong>Old data.</strong> The headlines in {{ch:decide}} are from 2004, so that model has never heard of TikTok. Every chatbot has a <strong>cutoff date</strong>, the day its training text ends. Ask about something that happened later and, unless it can search, it has nothing to go on except a plausible guess.</li>
+  <li><strong>Missing data.</strong> Whatever never made it into the pile doesn't exist for the model. The headline sorter couldn't even <em>see</em> a word that wasn't in its dictionary.</li>
+  <li><strong>Lopsided data.</strong> The pile has plenty of one kind of example and hardly any of another. This is the sneaky one, because the model can still look great on paper. Let's watch it happen.</li>
+</ul>
+<p>A game studio is building a game that watches you through a camera: jump over things, duck under things. One small model has one job. Is the player <strong>standing</strong> or <strong>ducking</strong>? For each player it gets two measurements: how high their head is, and how wide their shoulders are.</p>
+<p>The studio collects 1,000 examples to train on. The people in the office that week are all grown-ups. The people who will actually play include little kids: about 1 player in 20.</p>
+<p>Here's the trap. A grown-up's head is around 168 cm off the floor when they stand and around 128 cm when they duck. A six-year-old standing up straight has their head at around 118 cm. To a model that has only ever met grown-ups, a standing six-year-old looks just like a ducking adult.</p>
+
+<div class="predict" data-answer="c">
+  <p>The model trains on 1,000 grown-ups and 0 kids. Then 2,000 new players show up: 1,900 grown-ups and 100 kids. It gets about 95% of them right. What is its score on just the kids?</p>
+  <button data-opt="a">About 95%, the same as everyone</button>
+  <button data-opt="b">A bit lower, maybe 85%</button>
+  <button data-opt="c">About 50%, no better than a coin flip</button>
+  <p class="why">It can be that bad without denting the overall score, because the kids are only 100 of the 2,000 players. Train it below and see for yourself.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Who got left out?</h3>
+  <p>The model is a small network: 2 inputs, 8 hidden neurons and 1 output, with 33 weights and biases in all. Every time you move the slider it trains again from scratch in your browser, with 600 rounds of the same downhill nudging as {{ch:descent}}. It always starts from the same random weights, so the <em>only</em> thing that changes is what's in the pile.</p>
+  <p>Look at the three bars with 0 kids in the pile. Then drag the slider up slowly and watch the left-hand side of both pictures.</p>
+  <div class="slider-row"><label for="lo-kids">kids in the training pile</label><input type="range" id="lo-kids" min="0" max="200" step="1" value="0"><span class="value" id="lo-kids-v">0</span></div>
+  <div class="lo-presets" id="lo-presets">
+    <button class="secondary" data-kids="0">0 kids</button>
+    <button class="secondary" data-kids="10">10</button>
+    <button class="secondary" data-kids="50">50</button>
+    <button class="secondary" data-kids="100">100</button>
+    <button class="secondary" data-kids="200">200</button>
+  </div>
+  <div class="lo-panels" id="lo-panels">
+    <figure>
+      <figcaption><strong>What the model studied</strong><span id="lo-pile">1,000 grown-ups + 0 kids</span></figcaption>
+      <canvas id="lo-train" width="318" height="270" role="img" aria-label="Scatter plot of the training pile: head height against shoulder width, colored by standing or ducking"></canvas>
+    </figure>
+    <figure>
+      <figcaption><strong>Who showed up to play</strong>1,900 grown-ups + 100 kids it has never seen</figcaption>
+      <canvas id="lo-test" width="318" height="270" role="img" aria-label="Scatter plot of the 2,000 new players, with the ones the model got wrong ringed"></canvas>
+    </figure>
+  </div>
+  <p class="lo-key">
+    <span><i class="lo-stand"></i>really standing</span>
+    <span><i class="lo-duck"></i>really ducking</span>
+    <span><i class="lo-tint"></i>background: what the model would say there</span>
+    <span><i class="lo-miss"></i>dark ring: the model got this player wrong</span>
+  </p>
+  <div class="lo-bars" id="lo-bars">
+    <div class="bar-container">
+      <span class="label">everyone</span>
+      <div class="bar-track"><div class="bar" id="lo-bar-all" style="width: 0;"></div></div>
+      <span class="pct"><strong id="lo-pct-all">?</strong><small id="lo-count-all"></small></span>
+    </div>
+    <div class="bar-container">
+      <span class="label">grown-ups</span>
+      <div class="bar-track"><div class="bar" id="lo-bar-adults" style="width: 0;"></div></div>
+      <span class="pct"><strong id="lo-pct-adults">?</strong><small id="lo-count-adults"></small></span>
+    </div>
+    <div class="bar-container">
+      <span class="label">kids</span>
+      <div class="bar-track"><div class="bar" id="lo-bar-kids" style="width: 0;"></div></div>
+      <span class="pct"><strong id="lo-pct-kids">?</strong><small id="lo-count-kids"></small></span>
+    </div>
+  </div>
+  <div class="stat-row">
+    <span>training round: <strong id="lo-round">0</strong> / 600</span>
+    <span>kids: <strong id="lo-share">0.0%</strong> of the pile</span>
+    <span>crowd <strong id="lo-crowd-n">1</strong> of 20</span>
+  </div>
+  <div style="margin-top: 10px;">
+    <button class="secondary" id="lo-crowd">meet a different crowd</button>
+  </div>
+  <p style="font-size: 13px; color: var(--muted); margin: 10px 0 0;">The measurements are invented for this demo by a random recipe; they are not real people. The training is real: nothing here is pre-computed.</p>
+</div>
+
+<h3>What just happened</h3>
+<p>With 0 kids in the pile, the model got 95.4% of the new players right. If that were the only number you saw, you'd ship the game. The bars underneath tell a different story: 97.8% for grown-ups, 50.0% for kids.</p>
+<p>And that 50% isn't even guessing. Look at the right-hand picture: the model says "ducking" for every single kid. Half the kids in the test really were ducking, so it gets those right by accident. As far as this game is concerned, a kid who is standing up straight is ducking, every single time.</p>
+<p>The dark line in the pictures shows why. For grown-ups, "head lower than about 150 cm means ducking" is an excellent rule, and nothing in the pile ever disagreed with it. The model was never shown a single short person standing up.</p>
+<p>Now add kids. Ten change nothing at all. On every round of training, each example in the pile gets one vote on which way to nudge the weights, and 10 kids among 1,000 grown-ups are outvoted 100 to 1. Somewhere past 20 the votes start to count: the line bends down on the left-hand side, and with 50 kids in the pile the kids' score reaches 86%. With 200 it is 92%, and the grown-ups' score hasn't dropped at all.</p>
+<p>Now look at what the overall score did during all of that. It went from 95.4% to 97.6%. That's about two points, while the kids' score moved by forty-two. <strong>One overall number can hide exactly who the model is failing.</strong></p>
+<p>Press "meet a different crowd" to run the whole experiment again with different random people and different starting weights. There are 20 crowds, and the exact numbers shift from one to the next. The story doesn't. With no kids in the pile, the overall score is always between 94.9% and 96.0%, and the kids' score is exactly 50% in all 20. With 200 kids in the pile, the kids score between 90% and 98%.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: this is a tiny problem with a tiny model, and the 600-round limit matters. When we let the same network train ten times longer, 10 kids in the pile were enough to lift the kids' score to 75%, 85% and 95% in the three crowds we tried. Real problems are far harder than "standing or ducking", and there a handful of examples of a group is rarely enough however long you train.</p>
+<p>More data was one fix. There was a cheaper one: <em>measure each group separately</em>, which is all the three bars do. The studio could have caught the problem on day one, but only if kids were in the test crowd and somebody thought to look.</p>
+<p>A model that works clearly worse for some groups of people than for others is often called <strong>biased</strong>. (Careful: that's a different meaning from the neuron's bias in {{ch:neuron}}. Same word, unrelated idea.)</p>
+<p>This is not only a toy problem. In 2018 the researchers Joy Buolamwini and Timnit Gebru tested three commercial programs that look at a photo of a face and guess whether it shows a man or a woman. For lighter-skinned men, the error rate was never more than 0.8%. For darker-skinned women it was as high as 34.7%. They also checked two collections of face photos that were being used to test this kind of program: 79.6% of the faces in one and 86.2% in the other were lighter-skinned. If the test is mostly one group, a program that mostly works for that group gets a great score. Their study is called <a href="https://proceedings.mlr.press/v81/buolamwini18a.html" target="_blank" rel="noopener">Gender Shades</a>.</p>
+
+<h3>Accuracy can lie</h3>
+<p>The game studio's mistake was trusting one number. Here is a second way that number misleads, and this one needs no hidden group at all. It only needs the thing you're looking for to be <em>rare</em>.</p>
+<p>A town has 1,000 houses. Tonight, 10 of them are on fire. Every house has a smart smoke alarm, and the model inside gives its house a <em>smoke score</em> from 0 to 1. Then a line decides who gets woken up: if the score is at or above the line, the alarm rings. The pros call that line a <strong>threshold</strong>.</p>
+
+<div class="predict" data-answer="c">
+  <p>Someone builds the laziest "model" possible: it never rings the alarm, whatever happens. With 10 fires in 1,000 houses, what is its accuracy?</p>
+  <button data-opt="a">0%, because it missed every fire</button>
+  <button data-opt="b">About 50%</button>
+  <button data-opt="c">99%</button>
+  <p class="why">It is right about all 990 houses that aren't on fire and wrong about the 10 that are. That's 990 out of 1,000. Press the lazy button below and check.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>The smoke alarm</h3>
+  <p>Every dot is a house, placed by its smoke score. The 10 big dots along the top are the houses that really are on fire. The small squares underneath are the other 990. Drag the line (or use the slider) and watch the four boxes: every house lands in exactly one of them.</p>
+  <canvas id="sa-town" width="620" height="270" role="img" aria-label="1,000 houses placed by smoke score, with a movable line. Houses to the right of the line get an alarm."></canvas>
+  <div class="slider-row sa-slider"><label for="sa-line">ring when the score is at least</label><input type="range" id="sa-line" min="0" max="100" step="1" value="50"><span class="value" id="sa-line-v">0.50</span></div>
+  <div>
+    <button id="sa-lazy">the lazy model: never ring</button>
+    <button class="secondary" id="sa-jumpy">the jumpy model: always ring</button>
+    <button class="secondary" id="sa-middle">back to 0.50</button>
+  </div>
+  <p class="sa-note" id="sa-note"></p>
+  <div class="sa-boxes">
+    <div class="sa-box sa-is-missed"><strong id="sa-missed">?</strong><span>fires missed</span><small>on fire, alarm stayed quiet</small></div>
+    <div class="sa-box sa-is-caught"><strong id="sa-caught">?</strong><span>fires caught</span><small>on fire, alarm rang</small></div>
+    <div class="sa-box"><strong id="sa-quiet">?</strong><span>quiet and fine</span><small>no fire, no alarm</small></div>
+    <div class="sa-box sa-is-false"><strong id="sa-false">?</strong><span>false alarms</span><small>no fire, alarm rang anyway</small></div>
+  </div>
+  <div class="sa-measures">
+    <div class="sa-measure">
+      <span>Accuracy: of all 1,000 houses, how many did it get right?</span>
+      <div class="bar-track"><div class="bar" id="sa-acc-bar"></div></div>
+      <strong id="sa-acc">?</strong>
+    </div>
+    <div class="sa-measure">
+      <span>Of the real fires, how many did we catch?</span>
+      <div class="bar-track"><div class="bar" id="sa-catch-bar" style="background: var(--good);"></div></div>
+      <strong id="sa-catch">?</strong>
+    </div>
+    <div class="sa-measure">
+      <span>Of the alarms, how many were real?</span>
+      <div class="bar-track"><div class="bar" id="sa-real-bar" style="background: var(--warn);"></div></div>
+      <strong id="sa-real">?</strong>
+    </div>
+  </div>
+  <p style="font-size: 13px; color: var(--muted); margin: 12px 0 0;">The 1,000 scores are invented for this demo by a fixed random recipe, the same every time you load the page. Burning houses mostly score high, most other houses score low, and a few have burnt toast or a steamy shower. Everything else on screen is counted from those scores.</p>
+</div>
+
+<h3>A 99% that catches nothing</h3>
+<p>Start with the line at 0.50. The alarm catches 9 of the 10 fires. One slow, smoldering fire scores just over 0.25 and slips through. It also wakes 49 families for nothing: of the 58 alarms that rang, only 9 were real. Accuracy: 95.0%.</p>
+<p>Now the lazy model. Accuracy 99.0%, and it caught none of the fires. By the accuracy number it's the better alarm.</p>
+<p>Slide the line down to 0.25, the highest setting that catches all ten fires. Accuracy drops to 85.9%, because 141 houses now get a false alarm. According to accuracy, the alarm that catches every fire is far worse than the one that catches none.</p>
+<p>And the best accuracy you can reach by moving the line is 99.3%, somewhere between 0.91 and 0.94. At that setting the alarm misses 6 of the 10 fires.</p>
+<p>Accuracy isn't broken. It is answering a question nobody asked. When 99 houses in 100 are fine, "say fine every time" scores 99%, and accuracy can't tell that from a model that actually works. That's why the widget shows two more numbers, and why they have names:</p>
+<ul>
+  <li><strong>Recall</strong> is "of the real fires, how many did we catch?" A missed fire lowers it.</li>
+  <li><strong>Precision</strong> is "of the alarms, how many were real?" A <strong>false alarm</strong>, where the model says yes and the truth is no, lowers it.</li>
+</ul>
+<p>Moving the line trades one for the other. Lower it and you catch more fires and wake more people for nothing. Raise it and the nights are quieter and more fires get through. Unless the scores separate fires from everything else perfectly, which almost never happens, you can't max out both. So you have to decide <em>which mistake is worse</em>, and that depends on the job:</p>
+<ul>
+  <li><strong>A smoke alarm.</strong> A missed fire can cost a home. A false alarm costs some sleep. Put the line low and live with the burnt-toast alarms.</li>
+  <li><strong>A spam filter.</strong> A false alarm hides a real message from a real person. A miss means one junk email in your inbox. Put the line high.</li>
+</ul>
+<p>This is the same decision you made with the "sure enough" slider in {{ch:decide}}. The model supplies the scores. Where the line goes is a human choice about which mistakes you can live with, and no formula makes it for you.</p>
+<p>So the next time someone tells you a model is "99% accurate", you have two questions ready. How rare is the thing it's looking for? And accurate for whom?</p>
+
+<h3>Learning the wrong shortcut</h3>
+<p>In the early 1900s a horse in Germany called Clever Hans became famous for doing arithmetic. Ask him a sum and he tapped out the answer with his hoof. In 1904 a panel of thirteen experts examined him and found no trick. Then in 1907 a psychologist named Oskar Pfungst noticed that Hans only got the answer right when he could see a questioner who knew the answer. Hans wasn't adding. He was watching for the tiny, unconscious change in a person's face and posture when he reached the right number of taps. Nobody was cheating, including the horse. He had found something much easier than arithmetic that earned the same reward.</p>
+<p>Neural networks do this all the time. Training rewards whatever pattern gets the training examples right. It has no way of knowing whether that pattern is the real <em>reason</em> for the answer or something that just happens to travel alongside it. When a model learns the easy accidental pattern instead of the real one, it's called <strong>shortcut learning</strong>.</p>
+<p>It nearly happened in this book. The 10,000 news stories in {{ch:decide}} were picked from a collection of 120,000. In the raw collection, about one headline in seven ends with a tag in brackets, nearly always the name of the news agency or website it came from, like <code>(Reuters)</code> or <code>(AP)</code>. And some sources only write about one thing. All 451 stories tagged <code>(Canadian Press)</code> are filed under world news. All 190 tagged <code>(PC World)</code> are scitech. Of the 1,955 tagged <code>(AFP)</code>, 1,512 are world news.</p>
+<p>A model trained on that doesn't have to read the story. It can read the label on the envelope. So the script that builds our dataset, <code>tools/make_headlines.py</code>, deletes those tags before the model ever sees a headline.</p>
+<p>We checked what would have happened without that step. We trained the model from {{ch:decide}} on the same 10,000 stories twice, once with the tags deleted (as in the book) and once with them left in, ten runs each from different random starting weights:</p>
+<table class="mk-compare">
+  <tr><th></th><th>tags deleted (the book's model)</th><th>tags left in</th></tr>
+  <tr><td>test accuracy</td><td>81.6% to 82.9%</td><td>82.4% to 83.3%</td></tr>
+  <tr><td><code>Local bakery wins award for best bread</code></td><td>sports, 51% to 80% sure</td><td>sports, 48% to 89% sure</td></tr>
+  <tr><td><code>Local bakery wins award for best bread (AFP)</code></td><td>can't decide: sports or world, never more than 65% sure</td><td><strong>world</strong>, 97% to 99% sure, in all ten runs</td></tr>
+</table>
+<p>Read the last row again. Neither model knows what to do with a bakery (four topics, and none of them is "bread"). But add five characters to the end and the tag-trained model becomes almost certain it is reading world news. It learned the agency, exactly as feared.</p>
+<p>Now read the first row, because it's the sneaky part. The model with the shortcut scored <em>higher</em> on the test, in nine of the ten pairs of runs. Of course it did: the test headlines carry the same tags. A shortcut that is also in your test data makes your score better, not worse.</p>
+<p>The same thing has been caught in pictures. In 2019 a team of researchers took apart an image classifier that was good at spotting horses in a well-known photo collection. (It was an older design, not a neural network, but it learned from examples in the same way.) About one in five of the horse photos carried the same small source tag, and the classifier had learned to look for the tag. Remove the tag and it no longer saw a horse. Paste the tag onto a photo of a car and it said "horse". The researchers' name for a model like this is a <a href="https://www.nature.com/articles/s41467-019-08987-4" target="_blank" rel="noopener">Clever Hans predictor</a>.</p>
+<p>The way to catch a shortcut is the same every time: test the model on examples where the shortcut is missing or points the wrong way. A horse with no tag. A bakery with <code>(AFP)</code> on the end. A six-year-old standing up straight.</p>
+
+<h3>A field guide for using AI well</h3>
+<p>None of this means "don't use AI". It means use it the way you'd use any powerful tool: knowing where it slips. Eight habits worth having:</p>
+<ol>
+  <li><strong>Check anything that matters.</strong> For a joke or a brainstorm, who cares. For facts in your homework, health, money, or anything you'd be embarrassed to get wrong, confirm it somewhere else.</li>
+  <li><strong>Ask where it came from.</strong> Then open the source. A real page you can read beats a confident paragraph.</li>
+  <li><strong>A confident voice is not evidence.</strong> It sounds exactly as sure when it's wrong. Asking "are you sure?" gets you another plausible sentence, not a fact-check.</li>
+  <li><strong>It is not a person, and it doesn't know you.</strong> It can sound warm and caring. It is predicting text. It has never met you and knows only what you typed. For big feelings and big decisions, talk to a person who knows you.</li>
+  <li><strong>Keep private things private.</strong> No passwords, no home address, no one else's secrets. What you type is sent to a company's computers and may be kept.</li>
+  <li><strong>Use it to learn, not to skip learning.</strong> Ask it to explain, to quiz you, to find the hole in your argument. If it writes the essay, the essay gets written and you learn nothing.</li>
+  <li><strong>Ask who might be left out.</strong> When something works "for most people", find out who the rest are.</li>
+  <li><strong>When the stakes are high, a human decides.</strong> A model can sort, suggest and flag. Choices about someone's health, safety, grades or freedom need a person who can be asked "why?" and who answers for the result.</li>
+</ol>
+
+<div class="bigidea"><p>A model learns whatever its data and its score reward, which isn't always what you meant. So don't trust a confident voice or a single number. Ask what it learned from, who it was tested on, and which mistakes matter.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>You run the town's fire department and you only have enough trucks to answer 25 alarms a night. Where do you put the line, and how many fires do you still miss? Then switch jobs: same scores, but now the "fires" are spam messages and the alarm sends a message to the junk folder. Would you put the line in the same place? Write one sentence saying why.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A chatbot gives you a quote from a famous scientist, along with the year and the book it's from. Why should you still check it?</p>
+    <button data-opt="a">Chatbots are wrong about science most of the time</button>
+    <button data-opt="b">It builds text that looks right, and a made-up quote looks just as right as a real one</button>
+    <button data-opt="c">It only makes things up when it sounds unsure, so you have to listen for doubt</button>
+    <p class="why">Fluent, confident text is what the model produces either way, so the tone can't help you. Finding the quote in the actual book can.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A new voice assistant understood 96% of the people who tried it. What is the most useful question to ask next?</p>
+    <button data-opt="a">How do we get it to 97%?</button>
+    <button data-opt="b">Is 96% better than other voice assistants?</button>
+    <button data-opt="c">Who are the other 4%, and are they the same kind of people every time?</button>
+    <p class="why">If the misses are spread around evenly, 96% may be fine. If they are all people with one accent, the product is broken for that group, and the overall number was hiding it.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A bank's model checks 10,000 payments a day. About 5 of them are fraud. The bank says the model is "99.9% accurate". What should you ask first?</p>
+    <button data-opt="a">How many of the real frauds does it catch?</button>
+    <button data-opt="b">Nothing. 99.9% is close to perfect</button>
+    <button data-opt="c">Is it faster than the old model?</button>
+    <p class="why">A model that never flags anything would be right about 9,995 payments out of 10,000. That's 99.95%, with every fraud missed. When the thing you're hunting is rare, accuracy can't tell a useless model from a good one.</p>
+  </div>
+</div>

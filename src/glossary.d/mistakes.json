@@ -1,0 +1,11 @@
+{
+  "hallucination": "When a language model states something false as if it were a fact, like a quote nobody said or a book that was never written.",
+  "cutoff date": "The day a model’s training data ends. It has seen nothing that happened after it.",
+  "biased": "A biased model works clearly worse for some groups than for others, usually because of what was (and wasn’t) in its training data. Not the same thing as a neuron’s bias.",
+  "accuracy": "The share of answers a model got right. Handy, but one accuracy number can hide who the model fails, and it means little when the thing you are looking for is rare.",
+  "threshold": "The line a score has to reach before the model’s answer counts as a yes. Moving it trades one kind of mistake for another.",
+  "false alarm": "The model said yes and the truth was no. Also called a false positive.",
+  "recall": "Of all the real yeses, the share the model caught. Missing a real one lowers it.",
+  "precision": "Of everything the model flagged as a yes, the share that really was one. False alarms lower it.",
+  "shortcut learning": "When a model learns an easy pattern that happens to go along with the right answer in its training data, instead of the real reason for the answer."
+}

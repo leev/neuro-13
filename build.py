@@ -126,6 +126,8 @@ def main():
         for f in sorted((out / 'py').rglob('*')):
             if f.is_file():
                 z.write(f, Path('neuro13') / f.relative_to(out / 'py'))
+        for f in sorted((ROOT / 'tools').glob('make_*.py')):
+            z.write(f, Path('neuro13') / 'tools' / f.name)
 
     digest = hashlib.sha1()
     for f in sorted((out / 'assets').rglob('*')):
