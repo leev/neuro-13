@@ -27,6 +27,7 @@ MAPPING = {
     'py-code-7': 'neuro7.py',
     'py-code-8': 'neuro8.py',
     'py-code-9': 'neuro9.py',
+    'py-code-10': 'neuro10.py',
 }
 
 

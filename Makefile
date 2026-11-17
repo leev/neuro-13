@@ -8,7 +8,8 @@ pages: html
 	mkdir -p public
 	cp neuro-13.html public/index.html
 	cp neuro1.py neuro2.py neuro3.py neuro4.py neuro5.py \
-	   neuro6.py neuro7.py neuro8.py neuro9.py public/
+	   neuro6.py neuro7.py neuro8.py neuro9.py neuro10.py \
+	   headlines.csv public/
 
 # Deploy public/ to Cloudflare as a Worker with the Assets binding (see wrangler.toml).
 # Worker is bound to the custom domain only — no *.workers.dev or *.pages.dev URL.
@@ -20,9 +21,9 @@ watch:
 	@command -v fswatch >/dev/null || { echo "install fswatch: brew install fswatch"; exit 1; }
 	@fswatch -o neuro*.py | xargs -n1 -I{} python3 build.py
 
-# Run all the non-PyTorch scripts (1-7) end to end.
+# Run all the non-PyTorch scripts (1-7 and 10) end to end.
 run-all:
-	@for f in neuro1.py neuro2.py neuro3.py neuro4.py neuro5.py neuro6.py neuro7.py; do \
+	@for f in neuro1.py neuro2.py neuro3.py neuro4.py neuro5.py neuro6.py neuro7.py neuro10.py; do \
 		echo "--- $$f ---"; \
 		python3 $$f; \
 		echo; \

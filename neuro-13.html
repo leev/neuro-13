@@ -779,6 +779,7 @@
       <li><a href="#real-data">Deeper: real datasets</a></li>
       <li><a href="#pytorch">Deeper: PyTorch</a></li>
       <li><a href="#depth">Deeper: why depth</a></li>
+      <li><a href="#decide">Deeper: models that decide</a></li>
       <li><a href="#bigger">Deeper: bigger networks</a></li>
     </ol>
   </div>
@@ -2341,14 +2342,14 @@ for idx in p.argsort()[::-1][:4]:
     <p>The same training idea that solved the screen-time puzzle in chapter 4 is part of what powers ChatGPT. The real systems are much bigger and add specialized architecture and engineering.</p>
 
     <div class="callout">
-      <strong>Don't stop here — there's more.</strong> The next four chapters are the "going deeper" sections. They cover training on real datasets (the iris flowers), using PyTorch (the framework every real ML project uses), stacking hidden layers (watch a deep network crack a puzzle a shallow one can't), and the architectures behind image models and LLMs (CNNs and transformers). They include some of the strongest material in the book. Keep going.
+      <strong>Don't stop here — there's more.</strong> The next five chapters are the "going deeper" sections. They cover training on real datasets (the iris flowers), using PyTorch (the framework every real ML project uses), stacking hidden layers (watch a deep network crack a puzzle a shallow one can't), building a model that makes decisions instead of writing (trained on 10,000 real headlines), and the architectures behind image models and LLMs (CNNs and transformers). They include some of the strongest material in the book. Keep going.
     </div>
 
     <div class="challenge">
       <strong>Challenge</strong>
       <p>Explain neural networks to someone else using only these words: input, weight, mistake, nudge, layer, prediction.</p>
     </div>
-    <p style="margin-top: 36px; color: var(--muted); font-size: 14px; text-align: center;">If you want to build the real toy version in Python, look at <code>neuro1.py</code> through <code>neuro9.py</code> in this folder. Each one adds one new idea on top of the previous. The later chapters cover the more advanced topics — real datasets, frameworks, and networks for images and language. For a free, deeper textbook when you're ready, the Goodfellow / Bengio / Courville <em>Deep Learning</em> book is available online at <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">deeplearningbook.org</a>.</p>
+    <p style="margin-top: 36px; color: var(--muted); font-size: 14px; text-align: center;">If you want to build the real toy version in Python, look at <code>neuro1.py</code> through <code>neuro10.py</code> in this folder. Each one adds one new idea on top of the previous. The later chapters cover the more advanced topics — real datasets, frameworks, and networks for images and language. For a free, deeper textbook when you're ready, the Goodfellow / Bengio / Courville <em>Deep Learning</em> book is available online at <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">deeplearningbook.org</a>.</p>
   </section>
 
   <section id="real-data">
@@ -2720,6 +2721,305 @@ print(f"final test  accuracy: {test_acc:.3f}")
     <div class="challenge">
       <strong>Challenge</strong>
       <p>What's the smallest brain that gets above 95% on the spiral? And give the one-layer × 16 brain a truly fair shot: press "train 5,000" four times in a row. Does it ever escape?</p>
+    </div>
+  </section>
+
+  <section id="decide">
+    <h2>Going deeper — a model that decides instead of writes</h2>
+    <p>The chatbot in chapter 14 <em>writes</em>. But a huge amount of software doesn't want an essay. It wants a <strong>decision</strong>: is this email spam? Which team should get this support ticket? How urgent is this message, from 0 to 1? Asking a chatbot those questions is like asking a novelist to tick a box. You get a paragraph back, and then your program has to dig the answer out of it.</p>
+    <p>In 2026 a new kind of model showed up built for exactly this job. The companies making them call them <strong>System One models</strong>. The name is borrowed from the psychologist Daniel Kahneman, who described two ways people think: System 1 is the fast gut reaction ("that's a dog"), System 2 is the slow, careful working-out ("what's 17 × 24?"). The first two well-known ones are <a href="https://geotoolbox.ai/blog/what-is-jev-ai" target="_blank" rel="noopener"><strong>Jev</strong></a>, from a company called TypeSafe AI (September 2026), and <a href="https://betterstack.com/community/guides/ai/jev-vs-clef-decision-model/" target="_blank" rel="noopener"><strong>Clef</strong></a>, from Cloudflare (October 2026).</p>
+    <p>You don't chat with a System One model. You hand it some text plus a list of <em>typed questions</em>, and it hands back numbers. There are three kinds of question:</p>
+    <table>
+      <tr><th>Question type</th><th>Example</th><th>What comes back</th></tr>
+      <tr><td><strong>yes / no</strong></td><td>Is this spam?</td><td><code>{"spam": 0.88}</code></td></tr>
+      <tr><td><strong>choice</strong></td><td>Which topic: world, sports, business or scitech?</td><td><code>{"choice": "sports", "confidence": 0.97}</code></td></tr>
+      <tr><td><strong>score</strong></td><td>How urgent is this, 0 to 1?</td><td><code>{"urgency": 0.31}</code></td></tr>
+    </table>
+    <p>Compare that with everything chapter 14 said about chatbots:</p>
+    <ul>
+      <li><strong>No writing loop.</strong> A chatbot runs its whole network once per token, over and over, until the story is finished. A decision model runs <em>once</em> and it's done. That's most of why it is so much faster and cheaper.</li>
+      <li><strong>It can't ramble.</strong> Every possible answer is listed in the question. The model can be <em>wrong</em>, but it can't wander off and invent something that wasn't on the list.</li>
+      <li><strong>The doubt is part of the answer.</strong> You don't get "spam". You get "88% spam", and your program decides what to do with an 88.</li>
+      <li><strong>It can't do anything else.</strong> No stories, no code, no explanations. It is a box-ticker, and proud of it.</li>
+    </ul>
+
+    <h3>Jev vs. Clef</h3>
+    <table>
+      <tr><th></th><th>Jev</th><th>Clef</th></tr>
+      <tr><td>Reads</td><td>text only</td><td>text and pictures</td></tr>
+      <tr><td>Can you download the weights?</td><td>no — you rent it over the internet</td><td>yes — the weights are public, so you can run it on your own computers</td></tr>
+      <tr><td>Size</td><td>secret</td><td>27 billion weights, made by re-training an existing chatbot-style model</td></tr>
+      <tr><td>Speed and price</td><td>faster and cheaper</td><td>slower and pricier</td></tr>
+    </table>
+    <p style="font-size: 14px; color: var(--muted);">Honesty note: these models are brand new, and most of what's known comes from the companies themselves and from early reviewers, not from independent scientists. Treat the details as "reported", not "proven".</p>
+
+    <h3>Let's build one</h3>
+    <p>Here's the good news: you already know every part. A decision model is <strong>chapter 9's snack picker, fed by chapter 14's lookup tables</strong>. We'll train one on <strong>10,000 real news headlines</strong> stored in a plain file called <code>headlines.csv</code> — one news story per row (its headline plus the first sentence or two), each labelled with one of four topics (world, sports, business, scitech). The headlines come from a famous research collection called AG News, gathered in 2004.</p>
+    <p>The whole pipeline, start to finish:</p>
+    <ol>
+      <li><strong>Chop the headline into words</strong> and look each one up in a dictionary to get its id number. The dictionary is built from the training headlines: any word seen at least 3 times gets an id.</li>
+      <li><strong>Each id grabs its row</strong> of the embedding table — 16 learned numbers per word.</li>
+      <li><strong>Average the rows</strong> into a single list of 16 numbers. That's the headline's "fingerprint".</li>
+      <li><strong>One layer turns 16 numbers into 4 scores</strong>, one per topic. Softmax turns the scores into probabilities. Done.</li>
+    </ol>
+    <p>So is a token "just a dictionary word turned into a number"? In <em>this</em> model, yes, exactly — and you're about to see why real models don't do it that way. Our dictionary has about 8,750 words. Type a word that isn't in it and the model simply can't see it. That's the problem chapter 14's word-<em>pieces</em> solve: with pieces, nothing is ever missing.</p>
+    <p>The other thing to hold on to: the id number itself means nothing. Word 3,365 isn't "bigger" than word 483. The id is only a row number. All the meaning lives in the 16 numbers in that row — and those start out random and get nudged into place by the same training you've used since chapter 4.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ try it</div>
+      <h3>Train a decision model on 10,000 headlines</h3>
+      <p>Press the button. Your browser downloads the headlines (about 2 MB), builds the dictionary, and trains the model right here: 8,000 headlines to learn from, 2,000 held back for an honest test. Nothing is pre-baked.</p>
+      <div>
+        <button id="dm-train">load 10,000 headlines &amp; train</button>
+      </div>
+      <div class="stat-row">
+        <span>epoch: <strong id="dm-epoch">0</strong> / 15</span>
+        <span>train accuracy: <strong id="dm-train-acc">?</strong></span>
+        <span>test accuracy: <strong id="dm-test-acc">?</strong></span>
+        <span>dictionary: <strong id="dm-vocab">?</strong> words</span>
+        <span>stored numbers: <strong id="dm-params">?</strong></span>
+      </div>
+      <canvas id="dm-curve" width="560" height="150" style="background: #f9fafb; border-radius: 8px; border: 1px solid var(--border); max-width: 100%;"></canvas>
+      <p style="font-size: 13px; color: var(--muted);"><span style="color: var(--accent); font-weight: 600;">Blue</span> = accuracy on the headlines it trains on. <span style="color: var(--warn); font-weight: 600;">Orange</span> = accuracy on the 2,000 it has never seen. The gap between the lines is <strong>overfitting</strong>: the part it memorized instead of learned.</p>
+
+      <div class="math-panel">
+        <h4>Ask it something</h4>
+        <input id="dm-input" type="text" value="Striker scores twice as United win the cup final" autocomplete="off" spellcheck="false" disabled style="width: 100%; padding: 10px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+        <div style="margin-top: 8px;" id="dm-examples">
+          <button class="secondary" data-text="New phone chip makes laptops faster">phone chip</button>
+          <button class="secondary" data-text="Oil prices fall as markets slide">oil prices</button>
+          <button class="secondary" data-text="President meets prime minister for peace talks">peace talks</button>
+          <button class="secondary" data-text="Apple shares jump after record iPod sales">tricky one</button>
+          <button class="secondary" data-text="My dog ate my homework">dog ate homework</button>
+        </div>
+        <div class="token-row" id="dm-pills"></div>
+        <div class="toggle-row" id="dm-question" style="font-size: 13px;">
+          <div class="toggle on" data-q="choice">choice: which topic?</div>
+          <div class="toggle" data-q="world">yes/no: is it world news?</div>
+          <div class="toggle" data-q="sports">yes/no: is it sports?</div>
+          <div class="toggle" data-q="business">yes/no: is it business?</div>
+          <div class="toggle" data-q="scitech">yes/no: is it scitech?</div>
+        </div>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">The model's entire reply:</p>
+        <pre class="model-dump" id="dm-json">(train the model first)</pre>
+        <div id="dm-bars"></div>
+      </div>
+
+      <div class="math-panel">
+        <h4>Should you believe its confidence?</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">We split the 2,000 test headlines into four groups by how sure the model said it was, then checked how often each group was actually right. If "90% sure" really means right about 9 times in 10, the model is <strong>calibrated</strong>.</p>
+        <div id="dm-calib"><span style="font-size: 13px; color: var(--muted);">(train the model first)</span></div>
+      </div>
+
+      <div class="math-panel">
+        <h4>You're the boss: set the "sure enough" line</h4>
+        <p style="font-size: 13px; color: var(--muted); margin: 0 0 8px;">Real programs don't act on every answer. They pick a line: above it, the computer decides alone; below it, a human takes a look.</p>
+        <div class="slider-row"><label>act only when at least</label><input type="range" id="dm-thresh" min="25" max="99" step="1" value="70" disabled><span class="value" id="dm-thresh-v">70%</span></div>
+        <div class="stat-row">
+          <span>computer decides: <strong id="dm-auto">?</strong></span>
+          <span>and gets right: <strong id="dm-auto-acc">?</strong></span>
+          <span>sent to a human: <strong id="dm-human">?</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <h3>What just happened</h3>
+    <p>Watch the two lines on the chart again. At the start the model is barely better than 25% — pure guessing, one in four. Then the embedding rows start to carry meaning and both lines take off. By the end it gets roughly 82 out of 100 unseen headlines right, using about 140,000 weights. Clef has 27 <em>billion</em>. Same idea, about two hundred thousand times bigger.</p>
+    <p>Three things worth poking at:</p>
+    <ul>
+      <li><strong>The grey pills.</strong> Words the dictionary has never seen are invisible to the model. Try a headline full of modern words — <em>TikTok</em>, <em>ChatGPT</em>, <em>Fortnite</em>. The training headlines are from 2004, so the model has never heard of any of them. A model only knows the world its data showed it.</li>
+      <li><strong>"My dog ate my homework."</strong> None of the four topics fits. Sometimes the model shrugs and gives a low confidence, which is the right thing to do. Sometimes it's confidently wrong. Press "train again from scratch" a few times and watch the answer change — each run starts from different random weights. The lesson: the calibration bars only hold for headlines <em>like the ones it was tested on</em>. Show a model something unlike anything in its data and its confidence stops meaning much.</li>
+      <li><strong>The "sure enough" slider.</strong> Slide it up: the computer handles fewer headlines but makes fewer mistakes. Slide it down: it handles more and gets more wrong. There's no correct setting. A spam filter can afford mistakes; a hospital can't. Choosing the line is a human's job.</li>
+    </ul>
+
+    <h3>What our toy can't do</h3>
+    <p>Our model shares the <em>shape</em> of a System One answer — typed, one pass, with a probability — but it's a long way from Jev or Clef:</p>
+    <ul>
+      <li><strong>Its questions are baked in.</strong> Ours can only ever answer "which of these four topics?" because that's what it was trained on. The real ones read your question fresh each time, so you can ask about spam today and urgency tomorrow without re-training.</li>
+      <li><strong>It ignores word order.</strong> We <em>average</em> the word rows, so "dog bites man" and "man bites dog" look identical to it. Real models keep the order, using the attention blocks from chapter 14.</li>
+      <li><strong>It only knows four boxes.</strong> Everything in the universe has to be world, sports, business or scitech. It will file your homework excuse under one of them.</li>
+    </ul>
+    <p>None of that changes the big idea. A chatbot and a decision model are the same kind of machine pointed at different jobs: one predicts the next token, again and again; the other predicts the answer, once.</p>
+
+    <div class="interactive">
+      <div class="interactive-title">▸ run real python</div>
+      <h3>Run the decision model</h3>
+      <p>This is <code>neuro10.py</code>: the same model as the widget above, in about 150 lines of numpy. It reads <code>headlines.csv</code>, trains, checks its own calibration, makes some decisions, and finishes by listing which words ended up with similar embedding rows — nobody told it that <em>football</em> belongs near <em>league</em>.</p>
+      <div class="code-editor-wrap">
+        <div class="code-header">
+          <span class="code-filename">neuro10.py</span>
+          <span class="code-status" id="py-status-10">Python loads on first run</span>
+        </div>
+        <textarea class="code-editor" id="py-code-10" spellcheck="false" rows="30">"""
+Step 10: a tiny "decision model". It never writes a sentence. It reads a
+news headline and returns a typed answer with a probability:
+
+    choice : which of four topics is this?  -> {"choice": "sports", "confidence": 0.97}
+    yes/no : is this about sports?          -> {"sports": 0.97}
+
+Data: headlines.csv, 10,000 real headlines (2,500 per topic) from the
+AG News collection. First 8,000 rows train the model, last 2,000 test it.
+
+The whole model is two grids of numbers:
+    E : one row of 16 numbers per known word   (the embedding table, chapter 14)
+    W : 16 numbers in -> 4 topic scores out    (the snack picker, chapter 9)
+
+    words -> ids -> rows of E -> average them -> @ W -> softmax -> decision
+
+Run:
+    python3 neuro10.py
+"""
+import csv
+import json
+import re
+
+import numpy as np
+
+TOPICS = ["world", "sports", "business", "scitech"]
+EMBED = 16
+EPOCHS = 15
+BATCH = 64
+LR = 1.0
+
+# numpy 2.0 on Apple Silicon prints bogus overflow warnings for `@` on
+# matrices this size, even though every value is finite.
+np.seterr(divide="ignore", over="ignore", invalid="ignore")
+
+rows = list(csv.DictReader(open("headlines.csv", encoding="utf-8")))
+texts = [r["text"] for r in rows]
+labels = np.array([TOPICS.index(r["topic"]) for r in rows])
+N_TRAIN = 8000
+print(f"{len(rows)} headlines: {N_TRAIN} to train on, {len(rows) - N_TRAIN} held back for the test")
+
+
+def words(text):
+    return re.findall(r"[a-z]+", text.lower())
+
+
+# The dictionary is built from the TRAINING rows only. A word has to show up
+# at least 3 times to earn an id. Id 0 is reserved for "blank".
+counts = {}
+for t in texts[:N_TRAIN]:
+    for w in words(t):
+        counts[w] = counts.get(w, 0) + 1
+vocab = {w: i + 1 for i, w in enumerate(sorted(w for w, c in counts.items() if c >= 3))}
+V = len(vocab) + 1
+print(f"dictionary: {len(vocab)} words")
+
+
+def to_ids(text):
+    return [vocab[w] for w in words(text) if w in vocab]
+
+
+sample = texts[0][:60]
+print(f"\nexample: {sample!r}\n  words: {words(sample)}\n  ids:   {to_ids(sample)}\n")
+
+# Every headline becomes one row of ids, padded with 0 (blank) so the rows
+# are all the same length and numpy can process a whole batch at once.
+id_lists = [to_ids(t) for t in texts]
+LONGEST = max(len(ids) for ids in id_lists)
+ids = np.zeros((len(rows), LONGEST), dtype=np.int64)
+for i, row in enumerate(id_lists):
+    ids[i, :len(row)] = row
+n_words = np.maximum((ids > 0).sum(axis=1, keepdims=True), 1)
+
+rng = np.random.default_rng(13)
+E = rng.normal(0, 0.1, (V, EMBED))
+E[0] = 0
+W = rng.normal(0, 0.1, (EMBED, len(TOPICS)))
+b = np.zeros(len(TOPICS))
+print(f"model: {E.size + W.size + b.size:,} weights ({V} x {EMBED} embedding table + a {EMBED} -> 4 layer)\n")
+
+
+def forward(id_rows, word_counts):
+    h = E[id_rows].sum(axis=1) / word_counts
+    z = h @ W + b
+    z = z - z.max(axis=1, keepdims=True)
+    p = np.exp(z)
+    return h, p / p.sum(axis=1, keepdims=True)
+
+
+def accuracy(lo, hi):
+    _, p = forward(ids[lo:hi], n_words[lo:hi])
+    return (p.argmax(axis=1) == labels[lo:hi]).mean()
+
+
+for epoch in range(1, EPOCHS + 1):
+    order = rng.permutation(N_TRAIN)
+    for start in range(0, N_TRAIN, BATCH):
+        batch = order[start:start + BATCH]
+        h, p = forward(ids[batch], n_words[batch])
+
+        # softmax + cross-entropy: the gradient at the scores is (p - truth)
+        d_scores = p
+        d_scores[np.arange(len(batch)), labels[batch]] -= 1
+        d_scores /= len(batch)
+        d_h = d_scores @ W.T
+
+        W -= LR * (h.T @ d_scores)
+        b -= LR * d_scores.sum(axis=0)
+        # h was an average of word rows, so each word in the headline gets
+        # an equal share of the blame.
+        np.add.at(E, ids[batch], -LR * (d_h / n_words[batch])[:, None, :])
+        E[0] = 0
+    print(f"epoch {epoch:2d}   train accuracy {accuracy(0, N_TRAIN):.3f}   test accuracy {accuracy(N_TRAIN, len(rows)):.3f}")
+
+_, p_test = forward(ids[N_TRAIN:], n_words[N_TRAIN:])
+confidence = p_test.max(axis=1)
+correct = p_test.argmax(axis=1) == labels[N_TRAIN:]
+print("\nhow honest is its confidence? (2,000 test headlines)")
+for lo, hi in [(0.25, 0.5), (0.5, 0.7), (0.7, 0.9), (0.9, 1.01)]:
+    mask = (confidence >= lo) &amp; (confidence < hi)
+    print(f"  says {lo:4.0%} to {min(hi, 1):4.0%} sure: {mask.sum():4d} headlines, actually right {correct[mask].mean():.0%}")
+
+
+def probabilities(text):
+    row = to_ids(text)
+    if not row:
+        return np.full(len(TOPICS), 1 / len(TOPICS))
+    return forward(np.array([row]), np.array([[len(row)]]))[1][0]
+
+
+def choice(text):
+    p = probabilities(text)
+    return {"choice": TOPICS[p.argmax()], "confidence": round(float(p.max()), 2)}
+
+
+def yes_no(text, topic):
+    return {topic: round(float(probabilities(text)[TOPICS.index(topic)]), 2)}
+
+
+print("\ndecisions:")
+for text in [
+    "Striker scores twice as United win the cup final",
+    "New phone chip makes laptops faster",
+    "Oil prices fall as markets slide",
+    "My dog ate my homework",
+]:
+    print(f"  {text}")
+    print(f"    choice -> {json.dumps(choice(text))}")
+    print(f"    is it sports? -> {json.dumps(yes_no(text, 'sports'))}")
+
+# Nobody told the model which words are related. Words that push toward the
+# same answers end up with similar rows in E.
+id_to_word = {i: w for w, i in vocab.items()}
+unit = E / np.maximum(np.linalg.norm(E, axis=1, keepdims=True), 1e-9)
+print("\nwords the model filed next to each other:")
+for w in ["football", "software", "president", "profit"]:
+    nearest = np.argsort(-(unit @ unit[vocab[w]]))[1:6]
+    print(f"  {w:10s} ~ {', '.join(id_to_word[i] for i in nearest)}")
+</textarea>
+      </div>
+      <div style="margin: 10px 0;">
+        <button data-py="10">▶ run</button>
+        <button class="secondary" data-py-reset="10">reset code</button>
+      </div>
+      <div class="terminal" id="py-out-10"><span class="dim">(click "run" to execute)</span></div>
+    </div>
+
+    <div class="challenge">
+      <strong>Challenge</strong>
+      <p>Change <code>LR = 1.0</code> to <code>LR = 4.0</code> and run it again. Training accuracy climbs faster — but look at the test accuracy and at the "how honest is its confidence?" table. What happened to the model's honesty? Then try <code>EMBED = 2</code>: how well can it do with only two numbers per word?</p>
     </div>
   </section>
 
@@ -4652,6 +4952,13 @@ makeSeparator('sep-xor',
           statusEl.textContent = 'Python ready';
           statusEl.classList.add('ready');
         }
+        if (code.includes('headlines.csv')) {
+          if (statusEl) statusEl.textContent = 'downloading headlines…';
+          const res = await fetch('headlines.csv');
+          if (!res.ok) throw new Error('could not download headlines.csv');
+          py.FS.writeFile('headlines.csv', await res.text());
+          if (statusEl) statusEl.textContent = 'Python ready';
+        }
         runBtn.textContent = '… running';
         py.setStdout({ batched: (s) => append(outEl, s + '\n') });
         py.setStderr({ batched: (s) => append(outEl, s + '\n', 'err') });
@@ -4675,6 +4982,271 @@ makeSeparator('sep-xor',
       outEl.innerHTML = '<span class="dim">(code reset — click run)</span>';
     }
   });
+})();
+
+(function decisionModelWidget() {
+  const trainBtn = document.getElementById('dm-train');
+  if (!trainBtn) return;
+  const $ = id => document.getElementById(id);
+  const TOPICS = ['world', 'sports', 'business', 'scitech'];
+  const COLORS = { world: '#2563eb', sports: '#16a34a', business: '#ea580c', scitech: '#9333ea' };
+  const K = TOPICS.length, D = 16, N_TRAIN = 8000, EPOCHS = 15, BATCH = 64, LR = 1.0;
+  const BANDS = [[0.25, 0.5], [0.5, 0.7], [0.7, 0.9], [0.9, 1.01]];
+
+  let docs = null, labels = null, vocab = null, V = 0;
+  let E, W, b, history = [], testConf = null, testRight = null, ready = false, question = 'choice';
+
+  const words = text => text.toLowerCase().match(/[a-z]+/g) || [];
+  const pct = x => Math.round(x * 100) + '%';
+
+  function gauss() {
+    return Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+  }
+
+  async function loadData() {
+    const res = await fetch('headlines.csv');
+    if (!res.ok) throw new Error('could not download headlines.csv');
+    const rows = [];
+    for (const line of (await res.text()).split(/\r?\n/).slice(1)) {
+      const m = line.match(/^"([a-z]+)","(.*)"$/);
+      if (m) rows.push([TOPICS.indexOf(m[1]), words(m[2])]);
+    }
+    if (rows.length <= N_TRAIN) throw new Error('headlines.csv is incomplete');
+    const counts = new Map();
+    for (const [, ws] of rows.slice(0, N_TRAIN)) for (const w of ws) counts.set(w, (counts.get(w) || 0) + 1);
+    const known = [...counts].filter(([, c]) => c >= 3).map(([w]) => w).sort();
+    vocab = new Map(known.map((w, i) => [w, i + 1]));
+    V = known.length + 1;
+    labels = rows.map(r => r[0]);
+    docs = rows.map(r => r[1].filter(w => vocab.has(w)).map(w => vocab.get(w)));
+  }
+
+  function initModel() {
+    E = new Float64Array(V * D);
+    for (let i = D; i < E.length; i++) E[i] = gauss() * 0.1;
+    W = new Float64Array(D * K).map(() => gauss() * 0.1);
+    b = new Float64Array(K);
+    history = [];
+  }
+
+  function embed(ids, h) {
+    h.fill(0);
+    for (const id of ids) for (let d = 0; d < D; d++) h[d] += E[id * D + d];
+    const n = Math.max(ids.length, 1);
+    for (let d = 0; d < D; d++) h[d] /= n;
+  }
+
+  function predict(ids, h, p) {
+    embed(ids, h);
+    let max = -Infinity, sum = 0;
+    for (let k = 0; k < K; k++) {
+      let z = b[k];
+      for (let d = 0; d < D; d++) z += h[d] * W[d * K + k];
+      p[k] = z;
+      if (z > max) max = z;
+    }
+    for (let k = 0; k < K; k++) { p[k] = Math.exp(p[k] - max); sum += p[k]; }
+    for (let k = 0; k < K; k++) p[k] /= sum;
+  }
+
+  function argmax(p) {
+    let best = 0;
+    for (let k = 1; k < K; k++) if (p[k] > p[best]) best = k;
+    return best;
+  }
+
+  function accuracy(lo, hi) {
+    const h = new Float64Array(D), p = new Float64Array(K);
+    let right = 0;
+    for (let i = lo; i < hi; i++) {
+      predict(docs[i], h, p);
+      if (argmax(p) === labels[i]) right++;
+    }
+    return right / (hi - lo);
+  }
+
+  function trainEpoch() {
+    const order = Array.from({ length: N_TRAIN }, (_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    const h = new Float64Array(D), p = new Float64Array(K);
+    const gW = new Float64Array(D * K), gb = new Float64Array(K);
+    for (let start = 0; start < N_TRAIN; start += BATCH) {
+      const batch = order.slice(start, start + BATCH);
+      gW.fill(0); gb.fill(0);
+      const wordGrads = [];
+      for (const i of batch) {
+        predict(docs[i], h, p);
+        p[labels[i]] -= 1;
+        const dh = new Float64Array(D);
+        for (let k = 0; k < K; k++) {
+          const g = p[k] / batch.length;
+          gb[k] += g;
+          for (let d = 0; d < D; d++) {
+            gW[d * K + k] += h[d] * g;
+            dh[d] += g * W[d * K + k];
+          }
+        }
+        wordGrads.push(dh);
+      }
+      for (let j = 0; j < W.length; j++) W[j] -= LR * gW[j];
+      for (let k = 0; k < K; k++) b[k] -= LR * gb[k];
+      batch.forEach((i, n) => {
+        const ids = docs[i], dh = wordGrads[n];
+        for (const id of ids) for (let d = 0; d < D; d++) E[id * D + d] -= LR * dh[d] / ids.length;
+      });
+    }
+  }
+
+  function drawCurve() {
+    const c = $('dm-curve'), ctx = c.getContext('2d');
+    const w = c.width, h = c.height, pad = 26;
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = '11px ui-monospace, Menlo, monospace';
+    ctx.fillStyle = '#6b7280';
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    for (const v of [0.25, 0.5, 0.75, 1]) {
+      const y = h - pad / 2 - v * (h - pad);
+      ctx.beginPath(); ctx.moveTo(pad + 10, y); ctx.lineTo(w - 6, y); ctx.stroke();
+      ctx.fillText(pct(v), 2, y + 4);
+    }
+    [['train', '#2563eb'], ['test', '#ea580c']].forEach(([key, color]) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      history.forEach((pt, i) => {
+        const x = pad + 10 + (i + 1) / EPOCHS * (w - pad - 16);
+        const y = h - pad / 2 - pt[key] * (h - pad);
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function scoreTestSet() {
+    const h = new Float64Array(D), p = new Float64Array(K);
+    testConf = []; testRight = [];
+    for (let i = N_TRAIN; i < docs.length; i++) {
+      predict(docs[i], h, p);
+      const best = argmax(p);
+      testConf.push(p[best]);
+      testRight.push(best === labels[i]);
+    }
+  }
+
+  function renderCalibration() {
+    $('dm-calib').innerHTML = BANDS.map(([lo, hi]) => {
+      let n = 0, right = 0;
+      testConf.forEach((c, i) => { if (c >= lo && c < hi) { n++; if (testRight[i]) right++; } });
+      const acc = n ? right / n : 0;
+      return `<div class="bar-container"><span class="label" style="width: 150px;">says ${pct(lo)}–${pct(Math.min(hi, 1))} sure</span>` +
+        `<div class="bar-track"><div class="bar" style="width:${acc * 100}%;"></div></div>` +
+        `<span class="pct" style="width: 120px;">right ${n ? pct(acc) : '—'} of ${n}</span></div>`;
+    }).join('');
+  }
+
+  function renderThreshold() {
+    const t = +$('dm-thresh').value / 100;
+    $('dm-thresh-v').textContent = pct(t);
+    if (!ready) return;
+    let n = 0, right = 0;
+    testConf.forEach((c, i) => { if (c >= t) { n++; if (testRight[i]) right++; } });
+    $('dm-auto').textContent = `${n} of ${testConf.length}`;
+    $('dm-auto-acc').textContent = n ? pct(right / n) : '—';
+    $('dm-human').textContent = testConf.length - n;
+  }
+
+  function renderAnswer() {
+    if (!ready) return;
+    const ws = words($('dm-input').value);
+    const ids = ws.filter(w => vocab.has(w)).map(w => vocab.get(w));
+    $('dm-pills').innerHTML = ws.map(w => vocab.has(w)
+      ? `<div class="token-pill">${w}<span class="token-id">id ${vocab.get(w)}</span></div>`
+      : `<div class="token-pill" style="background: var(--code-bg); border-color: var(--border); color: var(--muted); text-decoration: line-through;">${w}<span class="token-id" style="text-decoration: none;">not in dictionary</span></div>`
+    ).join('');
+
+    const h = new Float64Array(D), p = new Float64Array(K);
+    if (ids.length) predict(ids, h, p); else p.fill(1 / K);
+    const best = argmax(p);
+    $('dm-json').textContent = question === 'choice'
+      ? `{"choice": "${TOPICS[best]}", "confidence": ${p[best].toFixed(2)}}`
+      : `{"${question}": ${p[TOPICS.indexOf(question)].toFixed(2)}}`;
+    if (!ids.length) $('dm-json').textContent += '\n\n(no words it knows, so we give every topic an equal 25%)';
+    $('dm-bars').innerHTML = TOPICS.map((t, k) =>
+      `<div class="bar-container"><span class="label">${t}</span><div class="bar-track">` +
+      `<div class="bar" style="width:${p[k] * 100}%; background:${COLORS[t]};"></div></div>` +
+      `<span class="pct">${p[k].toFixed(2)}</span></div>`).join('');
+  }
+
+  async function train() {
+    trainBtn.disabled = true;
+    ready = false;
+    $('dm-input').disabled = true;
+    $('dm-thresh').disabled = true;
+    try {
+      if (!docs) {
+        trainBtn.textContent = '… downloading headlines';
+        await loadData();
+      }
+    } catch (err) {
+      trainBtn.disabled = false;
+      trainBtn.textContent = 'load 10,000 headlines & train';
+      $('dm-json').textContent = 'Could not load headlines.csv. If you opened this page as a file, run\n' +
+        '"python3 -m http.server" in the book folder and open http://localhost:8000/neuro-13.html';
+      return;
+    }
+    initModel();
+    $('dm-vocab').textContent = (V - 1).toLocaleString();
+    $('dm-params').textContent = (E.length + W.length + b.length).toLocaleString();
+    trainBtn.textContent = '… training';
+    try {
+      for (let epoch = 1; epoch <= EPOCHS; epoch++) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        trainEpoch();
+        const point = { train: accuracy(0, N_TRAIN), test: accuracy(N_TRAIN, docs.length) };
+        history.push(point);
+        $('dm-epoch').textContent = epoch;
+        $('dm-train-acc').textContent = pct(point.train);
+        $('dm-test-acc').textContent = pct(point.test);
+        drawCurve();
+      }
+      scoreTestSet();
+    } catch (err) {
+      trainBtn.disabled = false;
+      trainBtn.textContent = 'train again from scratch';
+      $('dm-json').textContent = 'Training stopped: ' + err.message;
+      return;
+    }
+    ready = true;
+    $('dm-input').disabled = false;
+    $('dm-thresh').disabled = false;
+    trainBtn.disabled = false;
+    trainBtn.textContent = 'train again from scratch';
+    renderCalibration();
+    renderThreshold();
+    renderAnswer();
+  }
+
+  trainBtn.addEventListener('click', train);
+  $('dm-input').addEventListener('input', renderAnswer);
+  $('dm-thresh').addEventListener('input', renderThreshold);
+  $('dm-examples').addEventListener('click', e => {
+    const btn = e.target.closest('[data-text]');
+    if (!btn) return;
+    $('dm-input').value = btn.getAttribute('data-text');
+    renderAnswer();
+  });
+  $('dm-question').addEventListener('click', e => {
+    const tog = e.target.closest('[data-q]');
+    if (!tog) return;
+    question = tog.getAttribute('data-q');
+    $('dm-question').querySelectorAll('.toggle').forEach(t => t.classList.toggle('on', t === tog));
+    renderAnswer();
+  });
+  drawCurve();
 })();
 
 // ===== Interactive: depth playground — two tangled spirals =====
