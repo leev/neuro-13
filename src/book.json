@@ -65,7 +65,8 @@
       "chapters": [
         {"slug": "pytorch", "title": "What the professionals use", "hook": "Build your own mini-PyTorch in 60 lines, then read the real thing."},
         {"slug": "playground", "title": "The playground", "hook": "Pick the data, the layers and the knobs. Break it. Fix it."},
-        {"slug": "frontier", "title": "The frontier", "hook": "Reasoning models, tools, looking inside, and the story so far."},
+        {"slug": "timeline", "title": "The story so far", "hook": "Eighty-three years on one line, and you have built a small version of almost all of it."},
+        {"slug": "frontier", "title": "The frontier", "hook": "Models that think first, tools and agents, looking inside, and what nobody knows yet."},
         {"slug": "projects", "title": "Build your own", "hook": "Three capstone projects, from an afternoon to a weekend."},
         {"slug": "next", "title": "Where to go next", "hook": "The best videos, courses and books for after this one."}
       ]

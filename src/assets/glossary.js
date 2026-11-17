@@ -6,7 +6,8 @@
   // lowercase lookup (so "ReLU"/"relu" both resolve) and a length-sorted alternation
   const byLower = {};
   Object.keys(GLOSSARY).forEach(k => { byLower[k.toLowerCase()] = k; });
-  const terms = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length);
+  const skipHere = new Set(window.GLOSSARY_SKIP || []);
+  const terms = Object.keys(GLOSSARY).filter(t => !skipHere.has(t)).sort((a, b) => b.length - a.length);
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // \b TERM (optional plural) \b  — matches "bias", "biases", "weight", "weights", ...
   const RE = new RegExp('\\b(' + terms.map(esc).join('|') + ')(es|s)?\\b', 'gi');

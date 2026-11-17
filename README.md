@@ -134,6 +134,8 @@ The build fills the textarea from `py/<data-src>`. `data-files` lists datasets (
 
 Add terms in `src/glossary.d/<slug>.json` as `{"term": "one plain sentence"}`. The reader sees them as dotted-underlined words with a hover definition, and on the glossary page.
 
+Some terms are also everyday words ("class", "filter", "recall"). List those in `src/glossary-scope.json` with the pages where the technical meaning applies (`only`) or does not (`not`), so that "spam filter" and "your class" are left alone.
+
 Underlines are added to prose automatically, including text a widget writes at runtime. They are never added inside SVG, code, buttons, links, headings, the terminal or the code editor. Put `data-no-gloss` on any other container whose text must be left alone.
 
 ### Before you call it done

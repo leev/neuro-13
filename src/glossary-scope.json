@@ -1,0 +1,12 @@
+{
+  "class": {"only": ["multi", "meals", "real-data", "recap-learning", "hidden", "digits", "decide"]},
+  "filter": {"not": ["decide", "mistakes", "recap-language"]},
+  "recall": {"only": ["mistakes", "recap-language"]},
+  "precision": {"only": ["mistakes", "recap-language"]},
+  "noise": {"not": ["playground", "overfitting"]},
+  "attention": {"not": ["xor-fail"]},
+  "agent": {"not": ["chatbots"]},
+  "reward": {"not": ["multi"]},
+  "action": {"only": ["rl", "recap-seeing", "frontier", "timeline", "chatbots"]},
+  "policy": {"only": ["rl", "recap-seeing"]}
+}

@@ -9,6 +9,7 @@ Build the book into a static site.
     src/pages/<slug>.html    unnumbered pages (certificate, grown-ups)
     src/assets/              shared CSS, JS, fonts and images
     src/glossary.json        term -> definition (src/glossary.d/*.json are merged in)
+    src/glossary-scope.json  everyday words that should only be underlined on some pages
     py/                      Python exercises and the datasets they read
 
     python3 build.py                 -> public/
@@ -76,7 +77,8 @@ def fill_code(text, where):
 
 def plain_text(fragment):
     fragment = re.sub(r'<(script|style|textarea|svg)\b.*?</\1>', ' ', fragment, flags=re.S)
-    return re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', fragment))).strip()
+    text = re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', fragment))).strip()
+    return re.sub(r'\s+([,.;:!?)])', r'\1', text)
 
 
 def nav_tree(book, current=None):
@@ -114,6 +116,15 @@ def main():
     glossary = json.loads((SRC / 'glossary.json').read_text())
     for extra in sorted((SRC / 'glossary.d').glob('*.json')):
         glossary.update(json.loads(extra.read_text()))
+
+    scope = json.loads((SRC / 'glossary-scope.json').read_text())
+    for term in scope:
+        if term not in glossary:
+            sys.exit(f'glossary-scope.json names "{term}", which is not a glossary term')
+
+    def glossary_skip(slug):
+        return sorted(t for t, rule in scope.items()
+                      if ('only' in rule and slug not in rule['only']) or slug in rule.get('not', ()))
 
     if out.exists():
         shutil.rmtree(out)
@@ -184,14 +195,15 @@ def main():
         else:
             missing.append(slug)
             raw = body = '<p class="lede">This chapter is still being written.</p>'
-        widgets += body.count('class="interactive"')
+        widgets += len(re.findall(r'class="interactive[" ]', body))
         search.append({
             'slug': slug, 'number': ch['number'], 'title': ch['title'], 'hook': ch['hook'],
             'headings': [plain_text(h) for h in re.findall(r'<h3[^>]*>(.*?)</h3>', raw, flags=re.S)],
             'text': plain_text(expand_refs(raw, by_slug, src.name)),
         })
 
-        extra_head, scripts = [], list(base_scripts) + [script('assets/glossary.js')]
+        extra_head, scripts = [], list(base_scripts) + [
+            f'<script>window.GLOSSARY_SKIP = {json.dumps(glossary_skip(slug))};</script>', script('assets/glossary.js')]
         if (SRC / 'widgets' / f'{slug}.css').exists():
             extra_head.append(css(f'assets/widgets/{slug}.css'))
         if (SRC / 'widgets' / f'{slug}.js').exists():
