@@ -1,0 +1,204 @@
+<p>Every network in this book so far has eaten numbers. Piano done? <code>1</code>. Petal length? <code>4.7</code>. But what you type into a chatbot is not a number. It is "tell me a story about a dragon who likes pizza", and a network can't multiply a weight by the word <em>dragon</em>.</p>
+<p>So before a language model does anything at all, your text has to be turned into numbers. The trick is to chop the text into chunks and give every kind of chunk its own id number. One chunk is called a <strong>token</strong>. The full list of chunks a model knows is its <strong>vocabulary</strong> (we'll mostly call it the dictionary), and the tool that does the chopping is a <strong>tokenizer</strong>.</p>
+<p>That leaves one question, which sounds boring and turns out not to be: <em>what should the chunks be?</em></p>
+
+<h3>Three ways to chop</h3>
+<p><strong>One token per letter.</strong> The dictionary is tiny: a few dozen letters, digits and punctuation marks, and nothing you type can ever be missing from it. But the lists get long (the dragon sentence is 46 characters, so 46 tokens), and a single letter carries almost no meaning. The model has to learn to spell before it can learn anything else. {{Ch:names}} chops text this way on purpose, because its job is small.</p>
+<p><strong>One token per word.</strong> Now the sentence is only 10 tokens and each one means something. The catch is the dictionary. English has hundreds of thousands of words, and people add more every day: names, slang, typos. A word that isn't in the dictionary has no id, so the model cannot see it at all. {{Ch:decide}} uses a whole-word dictionary, and you'll watch this problem bite.</p>
+<p><strong>One token per piece.</strong> Somewhere in between. Common words get a token of their own. Rare words are spelled out of smaller pieces. And the single characters stay in the dictionary as a last resort, so nothing is ever missing. Almost every modern language model works this way.</p>
+<table class="chop-table">
+  <tr><th></th><th>Letters</th><th>Whole words</th><th>Pieces</th></tr>
+  <tr><td>Dictionary size</td><td>tiny</td><td>enormous, and never finished</td><td>whatever size you pick</td></tr>
+  <tr><td>Tokens in the dragon sentence</td><td>46</td><td>10</td><td>between the two</td></tr>
+  <tr><td>A brand-new word?</td><td>no problem</td><td>invisible</td><td>spelled in pieces</td></tr>
+  <tr><td>The catch</td><td>long lists, and each token means very little</td><td>the dictionary always has holes</td><td>somebody has to choose the pieces</td></tr>
+</table>
+
+<h3>Nobody chooses the pieces. They are learned.</h3>
+<p>You might picture a team of language experts writing down the useful pieces: <em>ing</em>, <em>un</em>, <em>tion</em>. That is not how it's done. The pieces are worked out from a big pile of text by a counting recipe called <strong>byte-pair encoding</strong>, or <strong>BPE</strong>. There's no neural network in it. The recipe is four lines long:</p>
+<ol>
+  <li>Start with every single character as its own token.</li>
+  <li>Count every pair of tokens that sit next to each other in the text.</li>
+  <li>Take the most common pair, glue it into one new token, and add that token to the dictionary.</li>
+  <li>Go back to step 2. Stop when the dictionary is as big as you want.</li>
+</ol>
+<div class="predict" data-answer="b">
+  <p>Further down, you'll run this recipe on a 635-word story about a dragon who loves pizza. Which pair of neighbors do you think gets glued together first?</p>
+  <button data-opt="a">t + h</button>
+  <button data-opt="b">h + e</button>
+  <button data-opt="c">z + z</button>
+  <p class="why">It's h + e, which sit side by side 142 times in the story. t + h is a great guess and comes third with 116: every "the" contains both pairs, but "he" also turns up in <em>she</em>, <em>her</em>, <em>they</em> and <em>cheese</em>. Second place goes to something you might not think of as a pair at all: a space followed by a t, 120 times. And z + z only ever appears in <em>pizza</em>, 12 times.</p>
+</div>
+
+<p>Here it is by hand on two words, <code>banana bandana</code>. The dot <code>·</code> is how we'll draw a space. A space is a character like any other, and in this kind of tokenizer it rides on the front of the word that follows it.</p>
+<table class="bpe-steps">
+  <tr><th>The text right now</th><th>Neighbors, counted</th><th>What gets glued</th></tr>
+  <tr><td><code>b a n a n a</code><br><code>· b a n d a n a</code></td><td>a+n: 4 &nbsp; n+a: 3 &nbsp; b+a: 2<br>everything else: 1</td><td>a + n → <strong>an</strong></td></tr>
+  <tr><td><code>b an an a</code><br><code>· b an d an a</code></td><td>b+an: 2 &nbsp; an+a: 2<br>everything else: 1</td><td>A tie, so take the pair that shows up first:<br>b + an → <strong>ban</strong></td></tr>
+  <tr><td><code>ban an a</code><br><code>· ban d an a</code></td><td>an+a: 2<br>everything else: 1</td><td>an + a → <strong>ana</strong></td></tr>
+  <tr><td><code>ban ana</code><br><code>· ban d ana</code></td><td>every pair: 1</td><td>Nothing appears twice. Stop.</td></tr>
+</table>
+<p>Three merges, and <em>banana</em> went from six tokens to two: <code>ban</code> and <code>ana</code>. Nobody told the recipe those were handy chunks. It found them by counting.</p>
+<p>Why "byte-pair"? A <strong>byte</strong> is the unit a computer stores text in: a number from 0 to 255. Every plain English letter, digit and punctuation mark is exactly one byte. A lowercase <code>a</code> is byte 97 on practically every computer on Earth, and a space is byte 32. So "start with every single character" really means "start with the 256 possible bytes", which is why the dictionary you're about to build starts with 256 entries rather than zero. (The recipe itself was invented in 1994 as a way to make files smaller. Language models borrowed it about twenty years later.)</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Build the dictionary</h3>
+  <p>Press <strong>merge once</strong> and watch three things: which pair wins, the new token it becomes, and the story changing color underneath as letters fuse into pieces. Each colored block is one token. Then press <strong>play</strong>, or drag the slider to jump to any point. Your own sentence, at the bottom, is chopped with the dictionary exactly as it stands at that moment.</p>
+  <div>
+    <button id="bpe-once">merge once</button>
+    <button id="bpe-ten">merge ×10</button>
+    <button id="bpe-hundred">merge ×100</button>
+    <button class="secondary" id="bpe-play">▶ play</button>
+    <button class="secondary" id="bpe-reset">start over</button>
+  </div>
+  <div class="slider-row"><label for="bpe-n">merges done (of <span id="bpe-max">313</span>)</label><input type="range" id="bpe-n" min="0" max="313" step="1" value="0"><span class="value" id="bpe-n-v">0</span></div>
+  <div class="stat-row">
+    <span>dictionary: <strong id="bpe-vocab">256</strong> tokens (256 bytes + <strong id="bpe-learned">0</strong> learned)</span>
+    <span>the story: <strong id="bpe-story-chars">3,427</strong> characters → <strong id="bpe-story-tokens">3,427</strong> tokens</span>
+  </div>
+
+  <div class="math-panel">
+    <h4>The most common neighbors right now</h4>
+    <p class="bpe-key">Counted across the whole story. The <b>orange</b> row is the pair that gets glued next.</p>
+    <div id="bpe-board"></div>
+    <p class="bpe-last" id="bpe-last"></p>
+  </div>
+
+  <div class="math-panel">
+    <h4>The story, chopped with your dictionary</h4>
+    <div class="bpe-story" id="bpe-story"></div>
+  </div>
+
+  <div class="math-panel">
+    <h4>Your own sentence</h4>
+    <input class="tk-text" id="bpe-input" type="text" value="tell me a story about a dragon who likes pizza" autocomplete="off" spellcheck="false" aria-label="A sentence to chop into tokens">
+    <div id="bpe-examples" style="margin-top: 8px;">
+      <button class="secondary" data-text="tell me a story about a dragon who likes pizza">dragon sentence</button>
+      <button class="secondary" data-text="strawberry">strawberry</button>
+      <button class="secondary" data-text="a strawberry">a strawberry</button>
+      <button class="secondary" data-text="pterodactyl">pterodactyl</button>
+      <button class="secondary" data-text="THE DRAGON">THE DRAGON</button>
+      <button class="secondary" data-text="I love pizza 🍕">I love pizza 🍕</button>
+    </div>
+    <div class="token-row" id="bpe-pills"></div>
+    <p class="bpe-counts"><strong id="bpe-chars">46</strong> characters → <strong id="bpe-tokens">46</strong> tokens</p>
+    <p class="bpe-hint" id="bpe-hint"></p>
+  </div>
+
+  <details class="bpe-more" id="bpe-vocab-box">
+    <summary>see the pieces you have learned so far (<span id="bpe-vocab-count">0</span>)</summary>
+    <p class="bpe-note">Newest first. Ids 0 to 255 are the single bytes, so the first learned piece gets id 256.</p>
+    <div class="token-row" id="bpe-vocab-list"></div>
+  </details>
+
+  <details class="bpe-more">
+    <summary>read the training story, or swap in your own text (<span id="bpe-words">635</span> words)</summary>
+    <p class="bpe-note">The dictionary is learned from exactly this text and nothing else. Change it, press <strong>relearn</strong>, and you get a different dictionary. Line breaks count as spaces.</p>
+    <textarea id="bpe-corpus" spellcheck="false" maxlength="12000" aria-label="The text the dictionary is learned from"></textarea>
+    <div>
+      <button id="bpe-relearn">relearn from this text</button>
+      <button class="secondary" id="bpe-restore">put the dragon story back</button>
+    </div>
+  </details>
+</div>
+
+<h3>What just happened</h3>
+<p>With the dragon story, the first seven merges are <code>he</code>, <code>·t</code>, <code>·the</code>, <code>·a</code>, <code>er</code>, <code>in</code> and <code>·s</code>. Look at the third one: after only three merges, <em>the</em> (with its space) is already a single token. Whole words keep arriving after that, most common first: <code>·and</code> at merge 13, <code>·dragon</code> at merge 44, <code>·pizza</code> at merge 48, <code>·strawberry</code> at merge 125.</p>
+<p>After 313 merges the recipe stops by itself, because no pair of neighbors appears twice any more. By then the story has shrunk from 3,427 tokens to 1,024, which is about 3.3 characters per token. The same text, as a list less than a third as long.</p>
+<div class="callout">GPT-2, a real language model from 2019, built its dictionary with this same recipe from a mountain of internet text. Its first nine merges were ·t, ·a, he, in, re, on, ·the, er and ·s. Every one of your first seven is on that list. A 635-word story about a pizza dragon and a big slice of the internet agree on what English is made of.</div>
+<p>Three things worth poking at, with the slider all the way to 313:</p>
+<ul>
+  <li><strong>The dot matters.</strong> Type <code>dragon</code> on its own and you get four pieces, even though the story is full of dragons. That's because the story is full of <code>·dragon</code>, with a space in front, and to the tokenizer that is a different string of bytes. Real tokenizers have exactly this quirk. It also means merges never reach across a gap: the end of one word is never glued to the start of the next.</li>
+  <li><strong>Words the story never used.</strong> <code>pterodactyl</code> comes out as seven pieces. Nothing is missing; it just costs more tokens. Try the pizza emoji too. It isn't in the story, so it falls apart into the four raw bytes a computer stores it as (the gray dashed pills). This is why nothing you type into a real chatbot is ever "not in the dictionary".</li>
+  <li><strong>Capital letters.</strong> <code>the dragon</code> is 2 tokens. <code>THE DRAGON</code> is 10. The story hardly ever shouts, so the dictionary never learned how. A dictionary is only good at text that looks like what it was learned from.</li>
+</ul>
+<p>Once a dictionary is built, it is frozen. It gets made before the neural network's training starts and never changes after that. A word invented next year will simply be spelled out of pieces that already exist.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: real dictionaries are learned from billions of words, not 635, and real tokenizers add a few extra rules about punctuation. Some models use close cousins of this recipe with names like WordPiece and SentencePiece. The idea is the same in all of them: the pieces are counted out of real text, never chosen by hand.</p>
+
+<h3>An id is only a row number</h3>
+<p>Your dictionary gave <code>·dragon</code> the id 299 and <code>·pizza</code> the id 303. Does that make a pizza slightly more than a dragon? No. The ids are just the order the pieces happened to be created in. Id 299 is no more "close to" id 303 than locker 299 holds the same stuff as locker 303.</p>
+<p>So how does a number like 299 come to <em>mean</em> anything? Through a second lookup. The model owns a big grid of weights called the <strong>embedding table</strong>, with one row for every token in the dictionary. The id says which row to pull out, and that row, a list of numbers, is what the network actually computes with. The row is called the token's <strong>embedding</strong>. (A list of numbers has a math name, a <strong>vector</strong>, and a grid of them is a <strong>matrix</strong>. You'll see both words a lot from here on.)</p>
+<p>So the whole way in is <em>text → pieces → ids → rows of numbers</em>. The way out is the mirror image: the network produces a score for every id in the dictionary, one id gets picked, and the same dictionary is read backwards to turn that id into text. The network itself never touches a letter.</p>
+<p>The rows are weights like any others in this book. They start out random, and training nudges them, exactly as in {{ch:descent}}, until tokens that get used in similar ways end up with similar rows. All of the meaning lives there.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>From text to numbers, and back</h3>
+  <p>This box follows the dictionary you built above, which has <strong id="tk-size">256</strong> tokens right now. Type here or up there; both boxes hold the same sentence. Then scroll up, move the merges slider, and come back to see what changed.</p>
+  <input class="tk-text" id="tk-input" type="text" value="tell me a story about a dragon who likes pizza" autocomplete="off" spellcheck="false" aria-label="A sentence to turn into ids">
+  <div class="token-row" id="tk-pills"></div>
+  <div class="math-panel">
+    <h4>Lookup 1: what the model actually receives</h4>
+    <pre class="model-dump" id="tk-ids"></pre>
+  </div>
+  <div class="math-panel">
+    <h4>Lookup 2: each id pulls out its row of the embedding table</h4>
+    <p class="bpe-note" style="margin: 0 0 8px;">Each row here is 16 numbers, drawn as colors: <span style="color: var(--accent); font-weight: 600;">blue</span> is positive, <span style="color: var(--bad); font-weight: 600;">red</span> is negative, darker is bigger. <strong>These rows are random.</strong> Nothing has been trained, so similar tokens do not have similar rows yet.</p>
+    <div id="tk-embeds"></div>
+  </div>
+  <div class="math-panel">
+    <h4>And back: the same dictionary, read the other way</h4>
+    <p class="bpe-note" style="margin: 0 0 8px;">When a model writes, it never outputs letters. It outputs one id. Pretend you're the model and pick one:</p>
+    <div class="tk-rev-row">
+      <label for="tk-rev">id</label>
+      <input id="tk-rev" type="number" min="0" value="256">
+      <span id="tk-rev-out"></span>
+    </div>
+    <p class="bpe-note" id="tk-roundtrip"></p>
+  </div>
+</div>
+
+<p>The first lookup is real: those are the ids your dictionary produces, and reading them backwards always gives your sentence back exactly. Look for a token that appears twice in your sentence. It pulls out exactly the same row both times: same id, same row, wherever it sits. The second lookup is a stand-in, though. In {{ch:names}} you'll watch rows like these being learned from scratch, and in {{ch:decide}} you can explore thousands of learned word rows and see which words ended up as neighbors.</p>
+
+<h3>Why chatbots miscount the r's in strawberry</h3>
+<p>For a while, the most famous way to embarrass a chatbot was to ask it how many times the letter <em>r</em> appears in <em>strawberry</em>. Some very capable models said two. (It's three.)</p>
+<p>You can now see why. Go back to the first widget, merge all the way to 313, and press <strong>strawberry</strong>. You get four pieces, <code>st</code> <code>ra</code> <code>w</code> <code>berry</code>, which the model receives as <code>[328, 271, 119, 553]</code>. Now press <strong>a strawberry</strong>. With a space in front, the whole word is one token: id 380. GPT-2's real dictionary behaves the same way. Without the space it sees <code>st</code> <code>raw</code> <code>berry</code>; with the space, a single token.</p>
+<p>Now count the r's in <code>380</code>. You can't. They aren't in there. The model never receives ten letters. It receives a row of numbers that stands for "the strawberry token", and anything it knows about how that token is spelled, it had to pick up second-hand from text that happened to talk about spelling.</p>
+<p>Newer chatbots usually get this one right, partly because they have learned to spell a word out one letter at a time before answering. But the reason it was ever hard hasn't gone away, and it shows up again with rhymes, anagrams and writing a word backwards: <strong>a model sees tokens, not letters.</strong></p>
+
+<h3>Why everything is counted in tokens</h3>
+<p>Tokens are what a model actually reads and writes, so they are also how its work gets measured.</p>
+<ul>
+  <li><strong>Limits.</strong> A model can only read so many tokens at once. That limit is its <strong>context window</strong>, and for today's big chatbots it runs from about a hundred thousand tokens to a million or more. Paste in something longer and the extra does not fit. {{Ch:chatbots}} comes back to this, because it explains a lot about what a chatbot "remembers".</li>
+  <li><strong>Prices.</strong> Companies that rent out these models charge by the token: so much per million tokens read, and so much per million written.</li>
+  <li><strong>Speed.</strong> A chatbot writes one token at a time, so its speed is measured in tokens per second.</li>
+</ul>
+<p>A handy rule of thumb for ordinary English: one token is about four characters, or roughly three-quarters of a word. Your little dictionary reached 3.3 characters per token on its own story, which isn't far off.</p>
+
+<h3>Special tokens</h3>
+<p>A few entries in a real dictionary don't stand for text at all. They are signals, called <strong>special tokens</strong>. The most important is <strong>end-of-text</strong>. In training, it marks where one document stops and the next one starts. And when a chatbot is writing, it is how the answer ends: at some point the token the model picks is end-of-text, and the app stops asking for more. Chatbots have a few other special tokens too, marking whose turn it is to speak. You'll meet them in {{ch:chatbots}}.</p>
+<p>GPT-2's dictionary shows the whole recipe in one number. It has exactly 50,257 tokens: 256 bytes, plus 50,000 merges, plus 1 end-of-text token. Yours has 256 bytes plus 313 merges. It's the same recipe. They just kept pressing the button.</p>
+
+<div class="bigidea">
+  <p>A language model never sees letters or words. It sees a list of id numbers for pieces of text, chopped by a dictionary that was itself learned by counting. An id is only a row number; the meaning lives in the row of learned numbers it points to.</p>
+</div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Open "swap in your own text" in the first widget and paste in something of your own: a page from a book you like, or a few paragraphs in another language. Press relearn. Which whole words show up first now, and what do they tell you about the text? (Letters with accents, and whole alphabets like Greek or Japanese, are stored as two or three bytes each, so you'll see them start out as raw bytes and get glued back together by the first merges.) Then type an ordinary English sentence and compare its token count with what the dragon dictionary gave you. Which dictionary would you rather pay by the token with?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Why do language models chop text into pieces instead of whole words?</p>
+    <button data-opt="a">Pieces are easier for people to read</button>
+    <button data-opt="b">A whole-word dictionary always has holes; with pieces, any text at all can be spelled</button>
+    <button data-opt="c">A sentence always takes fewer tokens in pieces than in whole words</button>
+    <p class="why">New words, names and typos never stop arriving, and a whole-word dictionary can't see any of them. Pieces fall back to smaller pieces, and finally to single bytes, so nothing is ever missing. It usually costs a few <em>more</em> tokens than whole words would, not fewer.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>In your dictionary, <code>·dragon</code> has id 299 and <code>·pizza</code> has id 303. What does that tell you about the two words?</p>
+    <button data-opt="a">They mean similar things, because the ids are close</button>
+    <button data-opt="b">Pizza matters a little more, because its id is bigger</button>
+    <button data-opt="c">Nothing about meaning: an id only says which row of the embedding table to read</button>
+    <p class="why">The ids are just the order the pieces were created in. Meaning lives in the embedding rows, and those have to be learned.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A friend runs the same BPE recipe on a pile of Spanish text instead. What comes out?</p>
+    <button data-opt="a">A different dictionary, full of common Spanish pieces</button>
+    <button data-opt="b">The same dictionary, because the recipe is the same</button>
+    <button data-opt="c">Nothing useful, because BPE only works on English</button>
+    <p class="why">The recipe is the same, but the pieces are counted out of the text you give it. Different text, different counts, different dictionary. BPE doesn't know or care what language it is looking at.</p>
+  </div>
+</div>

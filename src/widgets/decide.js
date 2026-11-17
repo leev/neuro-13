@@ -7,7 +7,7 @@
   const K = TOPICS.length, D = 16, N_TRAIN = 8000, EPOCHS = 15, BATCH = 64, LR = 1.0;
   const BANDS = [[0.25, 0.5], [0.5, 0.7], [0.7, 0.9], [0.9, 1.01]];
 
-  let docs = null, labels = null, vocab = null, V = 0;
+  let docs = null, labels = null, vocab = null, idToWord = [], V = 0;
   let E, W, b, history = [], testConf = null, testRight = null, ready = false, question = 'choice';
 
   const words = text => text.toLowerCase().match(/[a-z]+/g) || [];
@@ -31,6 +31,7 @@
     const known = [...counts].filter(([, c]) => c >= 3).map(([w]) => w).sort();
     vocab = new Map(known.map((w, i) => [w, i + 1]));
     V = known.length + 1;
+    idToWord = ['', ...known];
     labels = rows.map(r => r[0]);
     docs = rows.map(r => r[1].filter(w => vocab.has(w)).map(w => vocab.get(w)));
   }
@@ -179,11 +180,37 @@
       `<span class="pct">${p[k].toFixed(2)}</span></div>`).join('');
   }
 
+  function renderNeighbors() {
+    if (!ready) return;
+    const word = (words($('dm-word').value)[0] || '');
+    const box = $('dm-neighbors');
+    if (!vocab.has(word)) {
+      box.innerHTML = `<span style="font-size: 13px; color: var(--muted);">${word ? `"${word}" is not in the dictionary` : 'type a word'}</span>`;
+      return;
+    }
+    const norm = id => {
+      let s = 0;
+      for (let d = 0; d < D; d++) s += E[id * D + d] * E[id * D + d];
+      return Math.sqrt(s) || 1;
+    };
+    const me = vocab.get(word), myNorm = norm(me), scored = [];
+    for (let id = 1; id < V; id++) {
+      if (id === me) continue;
+      let dot = 0;
+      for (let d = 0; d < D; d++) dot += E[me * D + d] * E[id * D + d];
+      scored.push([dot / (myNorm * norm(id)), id]);
+    }
+    scored.sort((a, b) => b[0] - a[0]);
+    box.innerHTML = scored.slice(0, 10).map(([sim, id]) =>
+      `<div class="token-pill">${idToWord[id]}<span class="token-id">${sim.toFixed(2)} alike</span></div>`).join('');
+  }
+
   async function train() {
     trainBtn.disabled = true;
     ready = false;
     $('dm-input').disabled = true;
     $('dm-thresh').disabled = true;
+    $('dm-word').disabled = true;
     try {
       if (!docs) {
         trainBtn.textContent = '… downloading headlines';
@@ -221,14 +248,17 @@
     ready = true;
     $('dm-input').disabled = false;
     $('dm-thresh').disabled = false;
+    $('dm-word').disabled = false;
     trainBtn.disabled = false;
     trainBtn.textContent = 'train again from scratch';
     renderCalibration();
     renderThreshold();
     renderAnswer();
+    renderNeighbors();
   }
 
   trainBtn.addEventListener('click', train);
+  $('dm-word').addEventListener('input', renderNeighbors);
   $('dm-input').addEventListener('input', renderAnswer);
   $('dm-thresh').addEventListener('input', renderThreshold);
   $('dm-examples').addEventListener('click', e => {

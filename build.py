@@ -149,6 +149,8 @@ def main():
     head_tpl = (SRC / 'head.html').read_text()
     sidebar_tpl = (SRC / 'sidebar.html').read_text()
     base_scripts = [script('assets/book-data.js'), script('assets/shell.js')]
+    if (SRC / 'assets' / 'search.js').exists():
+        base_scripts.append(script('assets/search.js'))
 
     def frame(title, description, slug, current=None, extra_head=()):
         page_title = book['title'] + ' — ' + book['tagline'] if slug == 'index' else f'{title} · {book["title"]}'

@@ -1,0 +1,90 @@
+.demo-label {
+  display: inline-block;
+  margin: 2px 0 10px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #fef3c7;
+  border: 1px solid #f1c36d;
+  color: #92400e;
+  font: 700 11px/1.5 var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.stage-content .demo-label { margin: 0 0 6px; }
+.interactive p.cb-note { font-size: 13px; color: var(--muted); }
+.cb-caption { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.cb-muted { color: var(--muted); font-size: 14px; }
+.interactive p.cb-done { margin: 0; padding: 10px 14px; background: #ecfdf5; border: 1px solid #86efac; border-radius: 8px; color: #14532d; }
+.cb-you {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  background: var(--part-tint);
+  border-radius: 12px 12px 12px 2px;
+  font-size: 15px;
+}
+.cb-you b { font: 700 11px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--part); margin-right: 8px; }
+.bar-container code.cb-word { width: 124px; background: none; padding: 0; color: var(--accent); white-space: pre; }
+.bar-container code.cb-word.pick { font-weight: 700; }
+.attn-line code.to { background: none; padding: 0; white-space: pre; }
+.embed-block code.name { background: none; padding: 0; white-space: pre; }
+
+.sp-sentence {
+  margin: 14px 0 6px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 17px;
+}
+.sp-sentence mark { background: #fde68a; padding: 1px 7px; border-radius: 5px; font-weight: 600; }
+.sp-blank { display: inline-block; width: 96px; border-bottom: 2px solid var(--ink-soft); }
+.sp-head, .sp-row {
+  display: grid;
+  grid-template-columns: 84px 40px minmax(48px, 1fr) 84px 42px;
+  gap: 8px;
+  align-items: center;
+}
+.sp-head { margin: 14px 0 4px; font: 600 11px/1.3 var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.sp-row { margin: 3px -6px; padding: 2px 6px; border-radius: 6px; font: 13px/1.4 var(--font-mono); }
+.sp-row.picked { background: #ffedd5; }
+.sp-word { background: none; padding: 0; color: var(--accent); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.sp-score { color: var(--muted); text-align: right; }
+.sp-track { position: relative; height: 22px; background: var(--code-bg); border-radius: 4px; overflow: hidden; }
+.sp-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; transition: width 0.15s; }
+.sp-tally { position: absolute; left: 0; bottom: 0; height: 6px; background: var(--warn); transition: width 0.15s; }
+.sp-ghost { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #111827; opacity: 0.45; }
+.sp-pct { color: var(--muted); }
+.sp-n { color: #c2410c; font-weight: 700; text-align: right; }
+.sp-row.cut .sp-word { color: var(--muted); font-weight: 400; text-decoration: line-through; }
+.sp-row.cut .sp-pct { color: var(--bad); font-size: 11px; }
+.interactive p.sp-legend { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+.sp-key { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin: 0 4px 0 10px; vertical-align: baseline; }
+.sp-key:first-child { margin-left: 0; }
+.sp-math { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: #374151; }
+.sp-math li { margin: 4px 0; }
+
+.ctx {
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: #111827;
+  border-radius: 12px;
+  color: #e5e7eb;
+  font: 13px/1.6 var(--font-mono);
+}
+.ctx-turn { display: grid; grid-template-columns: 104px 1fr; gap: 10px; padding: 5px 0; }
+.ctx-tag { color: #a78bfa; font-weight: 700; }
+.ctx-turn.sys { color: #fcd34d; }
+.ctx-turn.sys .ctx-tag { color: #f59e0b; }
+.ctx-turn p { margin: 0; }
+.ctx-cursor { color: #4ade80; }
+.ctx-aside { color: #9ca3af; font-style: italic; }
+.ctx-cap { font-size: 14px; color: var(--ink-soft); text-align: center; margin: -8px 0 18px; }
+
+.stages-table td:first-child { font-weight: 600; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .sp-head, .sp-row { grid-template-columns: 62px 30px minmax(36px, 1fr) 64px 34px; gap: 5px; font-size: 12px; }
+  .sp-head { font-size: 10px; }
+  .ctx-turn { grid-template-columns: 1fr; gap: 0; }
+  .bar-container code.cb-word { width: 96px; }
+}

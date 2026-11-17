@@ -20,7 +20,7 @@
 
   function wrapTextNode(node) {
     const text = node.nodeValue;
-    if (!text || !text.trim()) return;
+    if (!text || !text.trim() || !node.parentNode) return;
     RE.lastIndex = 0;
     let m, last = 0, frag = null;
     while ((m = RE.exec(text))) {
@@ -41,17 +41,26 @@
     }
   }
 
+  // Nodes a widget adds at runtime arrive here on their own, so the skip
+  // rules have to look at ancestors too: an HTML <span> wrapped around a word
+  // inside an SVG <text> simply makes the word disappear.
+  function insideSkipped(el) {
+    for (; el && el.nodeType === 1; el = el.parentElement) {
+      if (SKIP.has(el.tagName.toUpperCase())) return true;
+      if (el.hasAttribute('data-no-gloss')) return true;
+      if (el.classList.contains('gloss') || el.classList.contains('terminal') || el.classList.contains('CodeMirror')) return true;
+    }
+    return false;
+  }
+
   function glossarize(root) {
     if (!root) return;
+    if (insideSkipped(root.nodeType === 3 ? root.parentElement : root)) return;
     if (root.nodeType === 3) {
-      const pt = root.parentNode && root.parentNode.tagName;
-      if (pt && SKIP.has(pt.toUpperCase())) return;
       wrapTextNode(root);
       return;
     }
     if (root.nodeType !== 1) return;
-    const tag = root.tagName.toUpperCase();
-    if (SKIP.has(tag) || (root.classList && root.classList.contains('gloss'))) return;
     const textNodes = [];
     (function walk(el) {
       for (let c = el.firstChild; c; c = c.nextSibling) {

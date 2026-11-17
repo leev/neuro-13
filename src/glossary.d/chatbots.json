@@ -1,0 +1,15 @@
+{
+  "transformer": "The network design inside modern language models: dozens of stacked layers, each one attention followed by ordinary neurons.",
+  "large language model": "A very big transformer trained on text to predict the next token. ChatGPT, Claude and Gemini are built on them.",
+  "LLM": "Short for large language model: a very big network trained on text to predict the next token.",
+  "pre-training": "The first and biggest stage of training a language model: predicting the next token across an enormous pile of text.",
+  "base model": "A language model straight out of pre-training. It continues documents and has not yet been taught to act as an assistant.",
+  "fine-tuning": "Training an already-trained model some more on a smaller, special set of examples to change how it behaves.",
+  "RLHF": "Reinforcement learning from human feedback: people compare answers, and the model is nudged toward the kind they prefer.",
+  "system prompt": "Instructions placed at the top of the context window by whoever built the app. They set the assistant's role and rules, and the user usually cannot see them.",
+  "sampling": "Choosing the next token at random, with likelier tokens chosen more often, instead of always taking the top one.",
+  "logit": "A raw score a network gives to one possible answer, before softmax turns the scores into probabilities.",
+  "temperature": "A sampling knob that divides every score before softmax. Low makes the favorite win almost every time; high evens out the odds.",
+  "top-k": "A sampling knob: only the k highest-scoring tokens may be picked, and the rest are cut.",
+  "top-p": "A sampling knob: keep the likeliest tokens until their probabilities add up to p, and cut the rest. Also called nucleus sampling."
+}
