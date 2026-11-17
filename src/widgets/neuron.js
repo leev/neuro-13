@@ -1,5 +1,4 @@
-// ===== Interactive 1: neuron sandbox =====
-(function() {
+(function neuronSandbox() {
   const ids = ['n-x1','n-x2','n-w1','n-w2','n-b'];
   function update() {
     const x1 = +document.getElementById('n-x1').value;
@@ -56,11 +55,11 @@
       <line x1="414" y1="126" x2="498" y2="126" stroke="#9ca3af" stroke-width="3"/>
 
       <circle cx="62" cy="78" r="24" fill="${nodeFill(x1)}" stroke="#1f2937" stroke-width="2"/>
-      <text x="62" y="74" text-anchor="middle" font-size="12" fill="#1f2937" font-weight="700">piano</text>
-      <text x="62" y="90" text-anchor="middle" font-size="12" fill="#1f2937">${x1.toFixed(2)}</text>
+      <text x="62" y="46" text-anchor="middle" font-size="12" fill="#1f2937" font-weight="700">piano</text>
+      <text x="62" y="82" text-anchor="middle" font-size="12" fill="${x1 > 0.5 ? 'white' : '#1f2937'}">${x1.toFixed(2)}</text>
       <circle cx="62" cy="176" r="24" fill="${nodeFill(x2)}" stroke="#1f2937" stroke-width="2"/>
-      <text x="62" y="172" text-anchor="middle" font-size="11" fill="#1f2937" font-weight="700">homework</text>
-      <text x="62" y="188" text-anchor="middle" font-size="12" fill="#1f2937">${x2.toFixed(2)}</text>
+      <text x="62" y="144" text-anchor="middle" font-size="12" fill="#1f2937" font-weight="700">homework</text>
+      <text x="62" y="180" text-anchor="middle" font-size="12" fill="${x2 > 0.5 ? 'white' : '#1f2937'}">${x2.toFixed(2)}</text>
 
       <rect x="222" y="57" width="66" height="42" rx="6" fill="white" stroke="${edgeColor(c1)}" stroke-width="2"/>
       <text x="255" y="74" text-anchor="middle" font-size="11" fill="#1f2937">× ${w1.toFixed(2)}</text>

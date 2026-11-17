@@ -1,7 +1,6 @@
-<p>The fix turned out to be: use MORE neurons, in <strong>layers</strong>.</p>
-<p>Imagine you have a few neurons sitting in the middle of the network. Each one draws its own line on the graph paper. Now an output neuron looks at what those middle neurons said and combines their answers. Two lines, combined cleverly, can carve out the diagonal pattern.</p>
-
-<p>Here is the trick on the same graph paper as before. One line couldn't split the XOR corners — but <strong>two lines together</strong> can fence off exactly the diagonal stripe where the YES dots live. Each hidden neuron draws one of the lines:</p>
+<p>The fix turned out to be: use MORE neurons, arranged in <strong>layers</strong>. A layer is a group of neurons that all work at the same stage, side by side.</p>
+<p>Put a few neurons in the middle of the network. They are called hidden neurons, for a reason that is coming up. Each one draws its own line on the graph paper. Then an output neuron looks at what the hidden neurons said and combines their answers.</p>
+<p>Here is the trick on the same graph paper as in {{ch:xor-fail}}. One line couldn't split the XOR corners, but <strong>two lines together</strong> can fence off the diagonal stripe where the YES dots live. Each hidden neuron draws one of the lines:</p>
 
 <svg viewBox="0 0 460 320" xmlns="http://www.w3.org/2000/svg" aria-label="two lines together carve out the diagonal XOR stripe">
   <polygon points="74,118 164,38 326,182 236,262" fill="#dbeafe" opacity="0.5"/>
@@ -13,7 +12,7 @@
   <circle cx="290" cy="230" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="290" y="235" text-anchor="middle" font-size="12" fill="#2563eb">YES</text>
   <circle cx="110" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="110" y="75" text-anchor="middle" font-size="12" fill="#2563eb">YES</text>
   <circle cx="290" cy="70" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="290" y="75" text-anchor="middle" font-size="12" fill="#dc2626">NO</text>
-  <text x="248" y="280" font-size="12" fill="#2563eb">hidden 1's line: "at least one button?"</text>
+  <text x="452" y="304" text-anchor="end" font-size="12" fill="#2563eb">hidden 1's line: "at least one button?"</text>
   <text x="226" y="32" font-size="12" fill="#16a34a">hidden 2's line: "not both buttons?"</text>
   <text x="196" y="158" text-anchor="middle" font-size="12" fill="#1d4ed8" font-weight="700" transform="rotate(42 196 158)">YES stripe — between the lines</text>
   <text x="100" y="278" font-size="11" fill="#374151">left=0</text>
@@ -22,49 +21,51 @@
   <text x="20" y="74" font-size="11" fill="#374151">right=1</text>
 </svg>
 
-<p>Hidden neuron 1 asks "<em>is at least one button pressed?</em>" — everything above the blue line. Hidden neuron 2 asks "<em>is it NOT both buttons?</em>" — everything below the green line. The output neuron then asks the easiest question of all: "<em>did BOTH hidden neurons say yes?</em>" The only dots that pass both tests are the two YES corners, sitting in the stripe between the lines. Three easy straight-line questions, chained together, make a shape that no single line could ever make.</p>
+<p>Hidden neuron 1 asks "<em>is at least one button pressed?</em>" That is everything above the blue line. Hidden neuron 2 asks "<em>is it NOT both buttons?</em>" That is everything below the green line. The output neuron then asks the easiest question of all: "<em>did BOTH hidden neurons say yes?</em>" The only dots that pass both tests are the two YES corners, in the stripe between the lines. Three easy straight-line questions, chained together, make a shape that no single line could ever make.</p>
+<p>The picture needed two hidden neurons. The network you are about to train has four, wired like this:</p>
 
-<svg viewBox="0 0 460 220" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="40" cy="60" r="20" fill="#fff" stroke="#374151" stroke-width="2"/>
-  <text x="25" y="65" font-size="12" fill="#374151">in 1</text>
-  <circle cx="40" cy="160" r="20" fill="#fff" stroke="#374151" stroke-width="2"/>
-  <text x="25" y="165" font-size="12" fill="#374151">in 2</text>
-  <circle cx="220" cy="50" r="20" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-  <text x="208" y="55" font-size="11" fill="#2563eb">hid 1</text>
-  <circle cx="220" cy="110" r="20" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-  <text x="208" y="115" font-size="11" fill="#2563eb">hid 2</text>
-  <circle cx="220" cy="170" r="20" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-  <text x="208" y="175" font-size="11" fill="#2563eb">hid 3</text>
-  <circle cx="400" cy="110" r="22" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
-  <text x="386" y="115" font-size="12" fill="#dc2626">output</text>
+<svg viewBox="0 0 460 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="a network with 2 inputs, a hidden layer of 4 neurons, and 1 output neuron; every input connects to every hidden neuron, and every hidden neuron connects to the output">
   <g stroke="#9ca3af" stroke-width="1">
-    <line x1="60" y1="60" x2="200" y2="50"/>
-    <line x1="60" y1="60" x2="200" y2="110"/>
-    <line x1="60" y1="60" x2="200" y2="170"/>
-    <line x1="60" y1="160" x2="200" y2="50"/>
-    <line x1="60" y1="160" x2="200" y2="110"/>
-    <line x1="60" y1="160" x2="200" y2="170"/>
-    <line x1="240" y1="50" x2="380" y2="110"/>
-    <line x1="240" y1="110" x2="380" y2="110"/>
-    <line x1="240" y1="170" x2="380" y2="110"/>
+    <line x1="60" y1="75" x2="202" y2="35"/><line x1="60" y1="75" x2="202" y2="85"/><line x1="60" y1="75" x2="202" y2="135"/><line x1="60" y1="75" x2="202" y2="185"/>
+    <line x1="60" y1="145" x2="202" y2="35"/><line x1="60" y1="145" x2="202" y2="85"/><line x1="60" y1="145" x2="202" y2="135"/><line x1="60" y1="145" x2="202" y2="185"/>
+    <line x1="238" y1="35" x2="378" y2="110"/><line x1="238" y1="85" x2="378" y2="110"/><line x1="238" y1="135" x2="378" y2="110"/><line x1="238" y1="185" x2="378" y2="110"/>
   </g>
-  <text x="20" y="208" font-size="11" fill="#6b7280">inputs</text>
-  <text x="195" y="208" font-size="11" fill="#6b7280">hidden layer</text>
-  <text x="380" y="208" font-size="11" fill="#6b7280">output</text>
+  <g font-size="12" text-anchor="middle">
+    <circle cx="40" cy="75" r="20" fill="#fff" stroke="#374151" stroke-width="2"/><text x="40" y="79" fill="#374151">left</text>
+    <circle cx="40" cy="145" r="20" fill="#fff" stroke="#374151" stroke-width="2"/><text x="40" y="149" fill="#374151">right</text>
+    <g fill="#dbeafe" stroke="#2563eb" stroke-width="2">
+      <circle cx="220" cy="35" r="18"/><circle cx="220" cy="85" r="18"/><circle cx="220" cy="135" r="18"/><circle cx="220" cy="185" r="18"/>
+    </g>
+    <g fill="#2563eb" font-size="11">
+      <text x="220" y="39">h1</text><text x="220" y="89">h2</text><text x="220" y="139">h3</text><text x="220" y="189">h4</text>
+    </g>
+    <circle cx="400" cy="110" r="22" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="400" y="114" fill="#dc2626">output</text>
+    <g font-size="11" fill="#6b7280">
+      <text x="40" y="228">2 inputs</text><text x="220" y="228">hidden layer: 4 neurons</text><text x="400" y="228">1 output neuron</text>
+    </g>
+  </g>
 </svg>
 
-<p>We call the middle neurons <strong>hidden</strong> because we don't tell them what they should mean. They figure out their own job during training. After training, you might peek inside and find:</p>
+<p>Why <strong>hidden</strong>? Because nobody tells these neurons what they should mean. The training data has an answer column for the output and nothing at all for the middle. Each hidden neuron finds its own job during training. Afterwards you might peek inside and find something like this:</p>
 <ul>
   <li>Hidden neuron 1 learned to mean "<em>left button AND NOT right button</em>"</li>
   <li>Hidden neuron 2 learned to mean "<em>right button AND NOT left button</em>"</li>
   <li>The output neuron learned: "<em>fire if either hidden neuron fires</em>"</li>
 </ul>
-<p>Nobody told the network those rules. It discovered them by being a tiny bit less wrong over and over. (Notice that's a <em>different</em> two-line solution from the stripe picture above — there, the lines fenced off the middle; here, each hidden neuron fenced off one YES corner and the output ORs them together. There are several ways to carve out those corners, and training can land on any of them.)</p>
+<p>Nobody told the network those rules. It discovers them by being a tiny bit less wrong over and over. Notice that this is a <em>different</em> solution from the stripe picture: there, the lines fenced off the middle; here, each hidden neuron fences off one YES corner and the output ORs them together. There are several ways to carve out those corners, and training can land on any of them. With four hidden neurons the jobs are usually messier than either story, shared out and overlapping.</p>
+
+<div class="predict" data-answer="c">
+  <p>The lone neuron stored 3 numbers. In this network every wire is a weight, and each hidden neuron and the output neuron has a bias of its own. How many numbers does it store?</p>
+  <button data-opt="a">7: one for each circle in the diagram</button>
+  <button data-opt="b">12: one for each wire</button>
+  <button data-opt="c">17</button>
+  <p class="why">8 wires from the inputs to the hidden layer, 4 wires from the hidden layer to the output, and 5 biases: 8 + 4 + 5 = 17. The two inputs are not neurons. They are just the numbers going in, so they have no bias.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Now watch it succeed</h3>
-  <p>Same XOR data as last time. New network: 4 hidden neurons + 1 output neuron. Click "train" and watch the predictions actually converge.</p>
+  <p>Same XOR data that defeated the lone neuron. New network: 4 hidden neurons and 1 output neuron, starting from random weights. Press "train 1,000 steps" and watch the four predictions. If any of them still has a ✗, press it again.</p>
   <div>
     <button id="h-step">step once</button>
     <button id="h-fast">train 1,000 steps</button>
@@ -73,7 +74,7 @@
   <div class="prediction-line" id="h-predictions" style="margin-top: 14px;"></div>
   <div class="math-panel">
     <h4>The bigger model</h4>
-    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;">Solving XOR costs <strong>17 stored numbers</strong> instead of 3: 8 input→hidden weights, 4 hidden biases, 4 hidden→output weights, 1 output bias. More neurons just means a longer list — it's still nothing but numbers being rewritten.</p>
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 6px;"><strong>17 stored numbers</strong> instead of 3: 8 input→hidden weights, 4 hidden biases, 4 hidden→output weights, 1 output bias. More neurons means a longer list. It is still nothing but numbers being rewritten.</p>
     <pre class="model-dump" id="h-model"></pre>
   </div>
   <div class="stat-row">
@@ -81,18 +82,31 @@
   </div>
 </div>
 
-<p><strong>This is the central trick of deep learning.</strong> Layers of neurons build up more and more sophisticated ideas without anyone programming those ideas in directly.</p>
+<h3>What just happened</h3>
+<p>The puzzle that no amount of training could teach one neuron is now solved, usually in a single press. We tried 2,000 random starts: 93% had all four right after 1,000 steps, and every one of them had after 3,000. By then the YES rows sit at about 0.96 and the NO rows at about 0.04, and they keep creeping toward 1 and 0 for as long as you train.</p>
+<p>Press "reset weights" and train again, and compare the dark panel with last time. The predictions land on the same sides. The 17 numbers are completely different. Different random starts find different ways to carve up the graph paper.</p>
+
+<div class="bigidea"><p>Each hidden neuron draws its own line, and the output neuron combines them into shapes that no single line can make. Nobody tells the hidden neurons what to look for. Training finds jobs for them.</p></div>
+
+<p>This is the central trick of deep learning: layers of neurons build up more and more sophisticated ideas without anyone programming those ideas in.</p>
 
 <h3>The piece of math that makes this work: the chain rule</h3>
-<p>You might be wondering: <em>how</em> does the network know which way to nudge the hidden-layer weights? With one neuron it was kind of obvious — there's only one output, you can see which direction makes it more right. But the hidden neurons are buried in the middle. They don't talk to the output directly. How do you blame them for a mistake?</p>
-<p>The trick is a piece of calculus called the <strong>chain rule</strong>. The kid-friendly version: imagine the error at the very end of the network, and then ask <em>"how did each layer contribute to that error?"</em> You start at the output, where you can see the error directly. You compute how the output layer's weights affected the error — same as in {{ch:training}}. Then you push that blame <em>backward</em> through the network: each hidden neuron gets credit (or blame) proportional to how strongly it was connected to the output neurons that mattered. Then you can nudge the hidden weights too.</p>
-<p>This whole "compute the error, then pass blame backward layer by layer" idea is called <strong>backpropagation</strong>. It's the algorithm that came out of that 1986 paper we mentioned in {{ch:xor-fail}} — the one that ended the first AI winter. The interactive above is running backprop on every "step + animate" click. You're literally watching the algorithm that unlocked modern AI.</p>
-<p>If you want to see the chain rule drawn out beautifully, Chris Olah wrote <a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noopener">"Calculus on Computational Graphs: Backpropagation"</a> — the clearest gentle-but-real explainer of backprop on the open web.</p>
+<p>How does the network know which way to nudge the <em>hidden</em> weights? With one neuron it was easy: compare its output with the right answer. But there is no right-answer column for a hidden neuron. It is buried in the middle. How do you blame it for a mistake?</p>
+<p>The trick is a piece of calculus called the <strong>chain rule</strong>. Start at the output, where the error is in plain view, and work out how each output weight contributed to it, the same as in {{ch:training}}. Then push the blame <em>backward</em>: each hidden neuron gets a share of the error in proportion to how strongly it is wired to the output. Now every hidden neuron has an error of its own, and its weights can be nudged in the usual way.</p>
+<p>"Work out the error, then pass the blame backward, layer by layer" is called <strong>backpropagation</strong>. It is the method from the 1986 paper in {{ch:xor-fail}}, and both widgets on this page run it on every step. (For a beautifully drawn explanation, see Chris Olah's <a href="https://colah.github.io/posts/2015-08-Backprop/" target="_blank" rel="noopener">"Calculus on Computational Graphs: Backpropagation"</a>.) In {{ch:backprop}} you will step through the whole thing yourself, with real numbers.</p>
+
+<div class="predict" data-answer="b">
+  <p>The network below starts from fresh random weights. Press "train 200 (fast)" once, then click through the four examples. What will its predictions look like after those 200 steps?</p>
+  <button data-opt="a">All four on the correct side: 200 steps is plenty for four examples</button>
+  <button data-opt="b">All four bunched near 0.5, like the lone neuron's</button>
+  <button data-opt="c">The two YES examples right, the two NO examples wrong</button>
+  <p class="why">For the first few hundred steps this network looks every bit as stuck as the single neuron was. Then the hidden neurons start to pull apart into different jobs, and the error collapses. Keep pressing and watch for the moment it breaks free.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Watch the wires light up</h3>
-  <p>Same XOR network, but now you can SEE the neurons. Pick which example to feed in. The lines are the weights — <strong style="color: var(--accent);">thick blue</strong> = strong positive, <strong style="color: var(--bad);">thick red</strong> = strong negative, thin = weak. Click "step" to train for one round and watch the forward pass animate.</p>
+  <p>Same kind of network, but now you can see inside it. Pick which example to feed in. The lines are the weights: <strong style="color: var(--accent);">thick blue</strong> is strong positive, <strong style="color: var(--bad);">thick red</strong> is strong negative, thin is weak. "Step + animate" shows the signal flowing forward and then trains for one round. "Train 200 (fast)" does 200 rounds at once.</p>
 
   <div class="toggle-row" id="net-input-picker" style="font-size: 12px;">
     <div class="toggle on" data-input="0,0">left=0, right=0 → want NO</div>
@@ -121,15 +135,18 @@
   </div>
 
   <div class="run-note">
-    <strong>How to read it:</strong> blue wires are positive weights and red wires are negative weights. Red does not mean wrong. A hidden neuron can still light up because of its bias and all incoming weights together. Then the right-side wires act like votes: active hidden neurons with blue output wires push the final answer toward YES; active hidden neurons with red output wires push it toward NO. The output is the combined vote from all hidden neurons. (The "YES/NO vote" picture works here because there is one output neuron deciding yes-or-no. When we add more output classes in {{ch:multi}}, the votes turn into a list of scores instead.)
+    <strong>How to read it:</strong> blue wires are positive weights and red wires are negative weights. Red does not mean wrong. A hidden neuron can still light up because of its bias and all incoming weights together. Then the right-side wires act like votes: active hidden neurons with blue output wires push the final answer toward YES; active hidden neurons with red output wires push it toward NO. The output is the combined vote from all hidden neurons. (The "YES/NO vote" picture works here because there is one output neuron deciding yes-or-no. With more output classes, in {{ch:multi}}, the votes turn into a list of scores instead.)
   </div>
 </div>
+
+<h3>What just happened</h3>
+<p>After the first 200 steps, the predictions are almost always still hugging 0.5. Then, usually on the third or fourth press, the wires thicken, the hidden neurons stop agreeing with each other, and the predictions pull away to the correct sides. In 3,000 test runs, all four were on the correct side by the fifth press 93% of the time, and the unluckiest start needed 26 presses.</p>
+<p>Learning is often like this: a long flat stretch where nothing seems to happen, then a sudden drop. The flat stretch is not wasted. The weights are drifting, a little at a time, toward a place where the hidden neurons can start to disagree.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ run real python</div>
   <h3>Run a real 2-layer network on XOR</h3>
-  <p>This is <code>neuro3.py</code>. Same XOR data as before, but now with a hidden layer of 4 neurons. The predictions will converge to ~0.99 for YES and ~0.01 for NO.</p>
-  <p style="font-size: 13px; color: var(--muted);">Heads up: the <strong>first time</strong> you click "run" on any Python block in this book, your browser downloads Python itself (about 10 megabytes). That takes 10–20 seconds and requires an internet connection. After the first run on this page, every later run is instant.</p>
+  <p>This is <code>neuro3.py</code>: the same XOR data, a hidden layer of 4 neurons, and 20,000 rounds of training. The "backward" part of the loop is the blame-passing described above. The predictions end at about 0.99 for YES and 0.01 for NO.</p>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro3.py</span>
@@ -145,5 +162,29 @@
 </div>
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>In the Python code, change the hidden layer from 4 neurons to 2. Does it still learn XOR? What happens if you try 1?</p>
+  <p>In the Python code, change the hidden layer from 4 neurons to 2. Does it still learn XOR? What happens if you try 1? Explain the result with lines on graph paper.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Why can a network with hidden neurons solve XOR when a single neuron cannot?</p>
+    <button data-opt="a">It gets more rounds of training</button>
+    <button data-opt="b">Each hidden neuron draws its own line, and the output neuron combines the lines into a shape that one line cannot make</button>
+    <button data-opt="c">Hidden neurons use a different, more powerful kind of arithmetic</button>
+    <p class="why">Every neuron in the network does the same multiply, add and squish. The power comes from combining several lines, not from better neurons or longer training.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Who decides what each hidden neuron ends up meaning?</p>
+    <button data-opt="a">The programmer, who gives each hidden neuron a job before training</button>
+    <button data-opt="b">The training data, which lists the right answer for every hidden neuron</button>
+    <button data-opt="c">Nobody. Training finds jobs for them, and a different random start can find different jobs.</button>
+    <p class="why">The data only says what the final output should be. The middle of the network is left to sort itself out, which is why two trained copies can solve the same puzzle in different ways.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>There is no "right answer" column for a hidden neuron. So how do its weights get nudged?</p>
+    <button data-opt="a">The error at the output is passed backward, and each hidden neuron gets a share of the blame according to how strongly it is wired to the output</button>
+    <button data-opt="b">Hidden weights stay random. Only the output neuron's weights are trained.</button>
+    <button data-opt="c">Each hidden neuron is trained separately first, on its own small puzzle</button>
+    <p class="why">That backward pass is backpropagation. It lets every weight in the network, however deep, find out which way to move.</p>
+  </div>
 </div>

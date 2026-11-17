@@ -1,0 +1,125 @@
+<p>Eight chapters ago, "neuron" was just a word. Since then you have dragged one around by hand, trained one, watched one fail, and fixed it with a team of them. Before the networks get bigger, this is the place to check that the foundations are solid.</p>
+
+<h3>Eight things to remember</h3>
+<ol>
+  <li>A network only does arithmetic, so everything it handles (pictures, text, sound) has to be turned into numbers first.</li>
+  <li>A neuron multiplies each input by a weight, adds a bias, and squishes the total with sigmoid into a number between 0 and 1.</li>
+  <li>A weight says how much an input matters, a negative weight argues against, and the bias is the neuron's lean before any input arrives.</li>
+  <li>Training is a loop: predict, measure the error, and nudge every number that took part a little in the direction that shrinks the error.</li>
+  <li>Training changes only the weights and biases, while the examples and the shape of the network are chosen by a human.</li>
+  <li>One neuron's decision boundary is a single straight line, so it can learn only linearly separable rules: OR and AND yes, XOR never.</li>
+  <li>Hidden neurons each draw their own line and an output neuron combines them, which lets a network make shapes that no single line can.</li>
+  <li>Nobody tells hidden neurons what to mean, and backpropagation is how they get trained anyway: it passes the blame for each mistake backward through the network.</li>
+</ol>
+
+<h3>Mixed quiz</h3>
+<p>Six questions from all over Part 1. If one of them trips you up, the "why" under it tells you which idea to revisit.</p>
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A neuron has weight 1 = 2, weight 2 = −3 and bias = 0.5. Both inputs are 1. What does it say?</p>
+    <button data-opt="a">YES, because both inputs are switched on</button>
+    <button data-opt="b">NO: the total is 2 − 3 + 0.5 = −0.5, which is below 0</button>
+    <button data-opt="c">Exactly 0.5, because a positive weight and a negative weight cancel out</button>
+    <p class="why">Inputs being on is not enough: what counts is the total after the weights have had their say. A total below 0 comes out of sigmoid below 0.5, which means NO. This is the arithmetic from {{ch:neuron}}.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>On example A the neuron's error is 0.6. On example B it is 0.05. The same inputs are switched on in both. Which example moves the weights more?</p>
+    <button data-opt="a">A, because the size of a nudge follows the size of the error</button>
+    <button data-opt="b">B, because it is nearly perfect and deserves the finishing touch</button>
+    <button data-opt="c">Neither: every nudge is the same small step</button>
+    <p class="why">The recipe from {{ch:training}} is nudge = small step × error × input. A big mistake pulls hard, and an example that is nearly right barely pulls at all. That is why training slows down as it succeeds.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A friend says: "My network got smarter during training because it grew new connections, like a brain." What really changed?</p>
+    <button data-opt="a">They are right: new connections appear wherever the network needs them</button>
+    <button data-opt="b">The training examples were rewritten to be easier</button>
+    <button data-opt="c">Only the numbers on the connections it already had</button>
+    <p class="why">The shape of a network is fixed by a human before training starts. Training only rewrites weights and biases. See {{ch:what-changes}}.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>New rule: YES only when input 1 is on <em>and input 2 is off</em>. Can a single neuron learn it?</p>
+    <button data-opt="a">Yes. Only one of the four dots is a YES, and a straight line can always cut one corner off from the other three.</button>
+    <button data-opt="b">No. The rule contains a NOT, and NOT needs a hidden layer.</button>
+    <button data-opt="c">No. Like XOR, it treats the two inputs differently.</button>
+    <p class="why">The test is never how complicated the rule sounds. It is whether one straight line can split the YES dots from the NO dots, as in {{ch:tables-dots}}. A negative weight on input 2 does the job here.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A single neuron trained on XOR ends up answering 0.5 to everything. What does that tell you?</p>
+    <button data-opt="a">It needs more training steps</button>
+    <button data-opt="b">It started from unlucky random weights</button>
+    <button data-opt="c">No setting of its three numbers fits the rule, so it has settled on the least-wrong answer</button>
+    <p class="why">This is the wall from {{ch:xor-fail}}. More steps or a new start change nothing, because the problem is the shape of the model, not the effort.</p>
+  </div>
+  <div class="q" data-answer="b">
+    <p>Two friends train the same hidden-layer network on XOR. Both networks get every row right, but their weights look nothing alike. What happened?</p>
+    <button data-opt="a">One of them must have a bug</button>
+    <button data-opt="b">There are several ways to carve out XOR with lines, and different random starts found different ones</button>
+    <button data-opt="c">With enough neurons, the weights stop mattering</button>
+    <p class="why">The weights matter completely. They are the whole model. But nobody assigns the hidden neurons their jobs, so two runs can share the work out differently and both be right. See {{ch:hidden}}.</p>
+  </div>
+</div>
+
+<h3>Build it: teach a neuron your own rule</h3>
+<p>Time to run the whole of Part 1 yourself, on a rule nobody has tried before, because you are about to make it up.</p>
+<ol>
+  <li><strong>Invent a house rule</strong> with two yes/no inputs and a yes/no answer. Three to get you started:
+    <ul>
+      <li><em>Sleepover</em>: you can go if your room is clean AND your homework is done.</li>
+      <li><em>Bike</em>: you may ride to school unless it is raining AND dark.</li>
+      <li><em>Teams</em>: you and a friend each pick a shirt, 0 for red or 1 for blue. You are on the same team if the shirts match.</li>
+    </ul>
+  </li>
+  <li><strong>Write its truth table</strong>: four rows, one for each pair of inputs.</li>
+  <li><strong>Draw the four dots</strong> on paper and <strong>predict</strong>: can one straight line split the YES dots from the NO dots?</li>
+  <li><strong>Run the experiment</strong> and find out.</li>
+</ol>
+<p>Here are the three starter rules as tables. Their usual names are AND, NAND ("not and") and SAME.</p>
+<table>
+  <tr><th>input 1</th><th>input 2</th><th>Sleepover (AND)</th><th>Bike (NAND)</th><th>Teams (SAME)</th></tr>
+  <tr><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+  <tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+  <tr><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+  <tr><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+</table>
+
+<div class="predict">
+  <p>Before you run anything: which of the three will one neuron fail to learn?</p>
+  <button data-opt="a">Sleepover (AND)</button>
+  <button data-opt="b">Bike (NAND)</button>
+  <button data-opt="c">Teams (SAME)</button>
+  <button data-opt="d">None. It will learn all three.</button>
+  <p class="why">Locked in. Now run all three below and see whether you were right.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Teach a neuron your own rule</h3>
+  <p>This is <code>my_rule.py</code>: one neuron with two weights and a bias, and a four-row table called <code>ANSWERS</code> near the top. It starts as the sleepover rule. Press run and read the output from top to bottom: the error shrinking, the three stored numbers, the four predictions, and a map of the neuron's answer across the whole graph paper.</p>
+  <p>Then change the four answers to the bike rule (<code>1, 1, 1, 0</code>) and run it again. Then the teams rule (<code>1, 0, 0, 1</code>). Then your own. Change <code>RULE</code>, <code>INPUT_1</code> and <code>INPUT_2</code> to match, so the printout speaks your language.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">my_rule.py</span>
+      <span class="code-status" id="py-status-rule">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-rule" spellcheck="false" rows="30" data-src="my_rule.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="rule">▶ run</button>
+    <button class="secondary" data-py-reset="rule">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-rule"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<h3>What you should have seen</h3>
+<p><strong>Sleepover</strong> is learned. The script ends with weight 1 = 6.52, weight 2 = 6.52 and bias = −9.87. One input alone adds 6.52, which cannot beat a bias of −9.87. Both together add 13.04, which can. On the map, the 9s are squeezed into the top-right corner and a straight edge cuts them off from the 0s.</p>
+<p><strong>Bike</strong> is learned too, and look at the numbers: −6.52, −6.52 and 9.87. They are the sleepover numbers with every sign flipped. Flip the signs and every YES becomes a NO, which is all the "N" in NAND means.</p>
+<p><strong>Teams</strong> gets stuck. The error stops at 0.2500, all three stored numbers end at zero, every row says "shrug," and the map is a wall of 5s. You have met this wall before. Swap YES and NO in the secret door from {{ch:xor-fail}} and you get the teams rule: its YES dots sit on opposite corners too, and no straight line can split them.</p>
+<p>Here is the surprising part. With two yes/no inputs there are only 16 possible rules, because each of the four rows is either YES or NO and 2 × 2 × 2 × 2 = 16. We ran this script on every one. A single neuron learns 14 of them. The only two it cannot learn are XOR and SAME. If the rule you invented got stuck, it was one of those two in disguise.</p>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Invent a rule where one of the inputs makes no difference to the answer. Before you run it, predict what that input's weight will be at the end. Then find a rule whose two weights end up with opposite signs.</p>
+</div>
+
+<h3>Next: more of everything</h3>
+<p>Everything in Part 1 had two inputs, one yes-or-no answer, and four examples you could hold in your head. Part 2 lets go of all three. In {{ch:multi}} a network picks from a list instead of answering yes or no. Then come deeper networks and real, messy data, and in {{ch:backprop}} you will step through the blame-passing that makes hidden neurons trainable, one number at a time. The neuron itself does not change. There are just going to be a lot more of them.</p>

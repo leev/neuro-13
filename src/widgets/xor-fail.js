@@ -1,4 +1,3 @@
-// Interactive 3: XOR fail
 makeSingleTrainer({
   data: [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],0]],
   labels: ['left','right'],
@@ -6,10 +5,12 @@ makeSingleTrainer({
   statIds: { epoch: 'x-epoch', err: 'x-err' },
   btnIds: { step: 'x-step', fast: 'x-fast', reset: 'x-reset' },
   modelId: 'x-model',
+  markUnsure: true,
 });
 
 
 makeSeparator('sep-xor',
   [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],0]],
-  ['left','right']);
+  ['left','right'],
+  { start: [-1, 1, 0.5] });
 

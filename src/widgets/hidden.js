@@ -1,5 +1,4 @@
-// ===== Interactive 4: XOR with hidden layer =====
-(function() {
+(function hiddenTrainer() {
   const data = [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],0]];
   const H = 4;
   const lr = 0.5;
@@ -88,8 +87,7 @@
 })();
 
 
-// ===== Interactive: animated XOR network =====
-(function() {
+(function wiresWidget() {
   const svg = document.getElementById('net-svg');
   if (!svg) return;
   const SW = 600, SH = 340;
@@ -215,7 +213,6 @@
 
     let html = '<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
 
-    // edges input -> hidden
     for (let i = 0; i < 2; i++) {
       for (let j = 0; j < H; j++) {
         const w = W1[i][j];
@@ -230,7 +227,6 @@
         html += weightLabel(xStart, yStart, xEnd, yEnd, w, i === 0 ? -7 : 7);
       }
     }
-    // edges hidden -> output
     for (let j = 0; j < H; j++) {
       const w = W2[j];
       const hl = highlights.fwd2;
@@ -244,7 +240,6 @@
       html += weightLabel(xStart, yStart, xEnd, yEnd, w, j < 2 ? -7 : 7);
     }
 
-    // input nodes
     for (let i = 0; i < 2; i++) {
       const v = currentInput[i];
       const filt = highlights.fwd1 ? 'filter="url(#glow)"' : '';
@@ -253,7 +248,6 @@
       html += `<text x="${inputX-32}" y="${inputY[i]+4}" font-size="11" fill="#6b7280" text-anchor="end">${i===0?'left':'right'}</text>`;
     }
 
-    // hidden nodes
     for (let j = 0; j < H; j++) {
       const v = h[j];
       const filt = highlights.fwd2 ? 'filter="url(#glow)"' : '';
@@ -261,16 +255,14 @@
       html += `<text x="${hiddenX}" y="${hiddenY[j]+5}" text-anchor="middle" font-size="11" fill="${v > 0.5 ? 'white' : '#1f2937'}" font-weight="700">${v.toFixed(2)}</text>`;
     }
 
-    // output node
     const oFilt = highlights.outOk || highlights.outErr ? 'filter="url(#glow)"' : '';
     const oFill = highlights.outErr ? '#fee2e2' : highlights.outOk ? '#d1fae5' : nodeFill(o);
     html += `<circle cx="${outputX}" cy="${outputY}" r="28" fill="${oFill}" stroke="#1f2937" stroke-width="2" ${oFilt}/>`;
     html += `<text x="${outputX}" y="${outputY+5}" text-anchor="middle" font-size="14" fill="${o > 0.5 ? 'white' : '#1f2937'}" font-weight="700">${o.toFixed(2)}</text>`;
 
-    // labels
-    html += `<text x="${inputX}" y="320" text-anchor="middle" font-size="11" fill="#6b7280">inputs</text>`;
-    html += `<text x="${hiddenX}" y="320" text-anchor="middle" font-size="11" fill="#6b7280">hidden layer (4 neurons)</text>`;
-    html += `<text x="${outputX}" y="320" text-anchor="middle" font-size="11" fill="#6b7280">output</text>`;
+    html += `<text x="${inputX}" y="335" text-anchor="middle" font-size="11" fill="#6b7280">inputs</text>`;
+    html += `<text x="${hiddenX}" y="335" text-anchor="middle" font-size="11" fill="#6b7280">hidden layer (4 neurons)</text>`;
+    html += `<text x="${outputX}" y="335" text-anchor="middle" font-size="11" fill="#6b7280">output</text>`;
 
     svg.innerHTML = html;
 

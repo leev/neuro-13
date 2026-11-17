@@ -91,9 +91,11 @@ function makeSingleTrainer(opts) {
       const o = sigmoid(w1*x1 + w2*x2 + b);
       const ok = (o>0.5) === (y>0.5);
       total += (y-o)*(y-o);
-      const mark = ok
-        ? '<span class="ok-mark">✓</span>'
-        : '<span class="bad-mark">✗</span>';
+      const mark = opts.markUnsure && o.toFixed(3) === '0.500'
+        ? '<span style="color: var(--muted);">?</span>'
+        : ok
+          ? '<span class="ok-mark">✓</span>'
+          : '<span class="bad-mark">✗</span>';
       html += `${labels[0]}=${x1}, ${labels[1]}=${x2}  →  predicted <strong>${o.toFixed(3)}</strong>  (truth ${y})  ${mark}<br>`;
     }
     document.getElementById(predIds).innerHTML = html;
@@ -112,9 +114,11 @@ function makeSingleTrainer(opts) {
 
 
 // ===== Shared widget: draw a separating line =====
-function makeSeparator(containerId, data, featureLabels) {
+function makeSeparator(containerId, data, featureLabels, opts = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
+  const [startW1, startW2, startB] = opts.start || [0.3, 0.3, 0];
+  const nearMiss = opts.nearMiss || 'so close — but no line gets all 4 here';
   const W = 360, H = 280;
   const xMin = -0.3, xMax = 1.3;
   const yMin = -0.3, yMax = 1.3;
@@ -125,17 +129,17 @@ function makeSeparator(containerId, data, featureLabels) {
     <svg id="${containerId}-svg" viewBox="0 0 ${W} ${H}" style="background:#f9fafb;border-radius:8px;display:block;margin:0 auto 12px;max-width:${W}px;"></svg>
     <div class="slider-row">
       <label>weight 1 (${featureLabels[0]})</label>
-      <input type="range" id="${containerId}-w1" min="-3" max="3" step="0.01" value="0.3">
+      <input type="range" id="${containerId}-w1" min="-3" max="3" step="0.01" value="${startW1}">
       <span class="value" id="${containerId}-w1-v">0.30</span>
     </div>
     <div class="slider-row">
       <label>weight 2 (${featureLabels[1]})</label>
-      <input type="range" id="${containerId}-w2" min="-3" max="3" step="0.01" value="0.3">
+      <input type="range" id="${containerId}-w2" min="-3" max="3" step="0.01" value="${startW2}">
       <span class="value" id="${containerId}-w2-v">0.30</span>
     </div>
     <div class="slider-row">
       <label>bias</label>
-      <input type="range" id="${containerId}-b" min="-3" max="3" step="0.01" value="0">
+      <input type="range" id="${containerId}-b" min="-3" max="3" step="0.01" value="${startB}">
       <span class="value" id="${containerId}-b-v">0.00</span>
     </div>
     <div class="stat-row">
@@ -211,8 +215,9 @@ function makeSeparator(containerId, data, featureLabels) {
       : correct === data.length - 1 ? 'var(--warn)' : 'var(--bad)';
     const msgEl = document.getElementById(`${containerId}-msg`);
     if (correct === data.length) msgEl.textContent = '✓ all separated by one line!';
-    else if (correct === data.length - 1) msgEl.textContent = 'so close — but no line gets all 4 here';
+    else if (correct === data.length - 1) msgEl.textContent = nearMiss;
     else msgEl.textContent = '';
+    msgEl.hidden = !msgEl.textContent;
   }
 
   ['w1','w2','b'].forEach(name => {

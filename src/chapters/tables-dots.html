@@ -1,55 +1,100 @@
-<p>The next chapter is about XOR, which is where lots of people first get confused. The trick is to slow down and see how a truth table turns into dots on graph paper.</p>
-<p>When there are two yes/no inputs, there are only four possible input pairs:</p>
+<p>{{Ch:xor-fail}} is about a puzzle called XOR, and it is where lots of people first get confused. The cure is to slow down and watch a table of answers turn into dots on graph paper.</p>
+<p>With two yes/no inputs there are only four possible input pairs, and each pair is a dot. A rule is nothing more than a YES or NO label on each of the four dots. A table that lists every possible input with its answer is called a <strong>truth table</strong>. Here are the truth tables for three rules at once:</p>
 <table>
-  <tr><th>input 1</th><th>input 2</th><th>dot on graph paper</th></tr>
-  <tr><td>0</td><td>0</td><td><code>(0, 0)</code></td></tr>
-  <tr><td>1</td><td>0</td><td><code>(1, 0)</code></td></tr>
-  <tr><td>0</td><td>1</td><td><code>(0, 1)</code></td></tr>
-  <tr><td>1</td><td>1</td><td><code>(1, 1)</code></td></tr>
+  <tr><th>input 1</th><th>input 2</th><th>dot</th><th>OR</th><th>AND</th><th>XOR</th></tr>
+  <tr><td>0</td><td>0</td><td><code>(0, 0)</code></td><td>NO</td><td>NO</td><td>NO</td></tr>
+  <tr><td>1</td><td>0</td><td><code>(1, 0)</code></td><td>YES</td><td>NO</td><td>YES</td></tr>
+  <tr><td>0</td><td>1</td><td><code>(0, 1)</code></td><td>YES</td><td>NO</td><td>YES</td></tr>
+  <tr><td>1</td><td>1</td><td><code>(1, 1)</code></td><td>YES</td><td>YES</td><td>NO</td></tr>
 </table>
-<p>A rule like OR, AND, or XOR just labels each of those four dots as YES or NO.</p>
+<p><strong>OR</strong> says YES when either input is on. <strong>AND</strong> says YES only when both are on. <strong>XOR</strong> (short for "exclusive or") says YES when exactly one is on, and NO when both are.</p>
 
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" aria-label="OR, AND, and XOR as dots on graph paper">
+<div class="predict" data-answer="c">
+  <p>For one of these three rules, no single straight line can put all the YES dots on one side and all the NO dots on the other. Which one? Sketch the four dots on paper if it helps.</p>
+  <button data-opt="a">OR</button>
+  <button data-opt="b">AND</button>
+  <button data-opt="c">XOR</button>
+  <p class="why">XOR's two YES dots sit on opposite corners, with the NO dots on the other two. Any line that keeps both YES corners on one side drags a NO corner along with them. The pictures below show all three.</p>
+</div>
+
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OR, AND, and XOR as dots on graph paper. A dashed line separates the dots for OR and for AND. No line is drawn for XOR.">
+  <defs>
+    <g id="td-axes">
+      <line x1="40" y1="35" x2="40" y2="190" stroke="#374151" stroke-width="2"/>
+      <line x1="40" y1="190" x2="190" y2="190" stroke="#374151" stroke-width="2"/>
+      <g font-size="11" fill="#6b7280" text-anchor="middle">
+        <text x="70" y="206">0</text><text x="160" y="206">1</text>
+        <text x="28" y="164">0</text><text x="28" y="74">1</text>
+      </g>
+    </g>
+  </defs>
   <g transform="translate(20,20)">
-    <text x="100" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">OR</text>
-    <line x1="40" y1="35" x2="40" y2="190" stroke="#374151" stroke-width="2"/>
-    <line x1="40" y1="190" x2="190" y2="190" stroke="#374151" stroke-width="2"/>
-    <line x1="65" y1="170" x2="170" y2="65" stroke="#2563eb" stroke-width="3" stroke-dasharray="7 5"/>
+    <text x="115" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">OR</text>
+    <use href="#td-axes"/>
+    <line x1="45" y1="95" x2="135" y2="185" stroke="#2563eb" stroke-width="3" stroke-dasharray="7 5"/>
     <circle cx="70" cy="160" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="70" y="165" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
     <circle cx="160" cy="160" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="160" y="165" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
     <circle cx="70" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="70" y="75" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
     <circle cx="160" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="160" y="75" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
-    <text x="115" y="225" text-anchor="middle" font-size="12" fill="#6b7280">one line can split it</text>
+    <text x="115" y="230" text-anchor="middle" font-size="12" fill="#6b7280">one line can split it</text>
   </g>
   <g transform="translate(260,20)">
-    <text x="100" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">AND</text>
-    <line x1="40" y1="35" x2="40" y2="190" stroke="#374151" stroke-width="2"/>
-    <line x1="40" y1="190" x2="190" y2="190" stroke="#374151" stroke-width="2"/>
+    <text x="115" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">AND</text>
+    <use href="#td-axes"/>
     <line x1="95" y1="45" x2="185" y2="135" stroke="#2563eb" stroke-width="3" stroke-dasharray="7 5"/>
     <circle cx="70" cy="160" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="70" y="165" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
     <circle cx="160" cy="160" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="160" y="165" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
     <circle cx="70" cy="70" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="70" y="75" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
     <circle cx="160" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="160" y="75" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
-    <text x="115" y="225" text-anchor="middle" font-size="12" fill="#6b7280">one line can split it</text>
+    <text x="115" y="230" text-anchor="middle" font-size="12" fill="#6b7280">one line can split it</text>
   </g>
   <g transform="translate(500,20)">
-    <text x="100" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">XOR</text>
-    <line x1="40" y1="35" x2="40" y2="190" stroke="#374151" stroke-width="2"/>
-    <line x1="40" y1="190" x2="190" y2="190" stroke="#374151" stroke-width="2"/>
+    <text x="115" y="0" text-anchor="middle" font-size="16" fill="#1f2937" font-weight="700">XOR</text>
+    <use href="#td-axes"/>
     <circle cx="70" cy="160" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="70" y="165" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
     <circle cx="160" cy="160" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="160" y="165" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
     <circle cx="70" cy="70" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="70" y="75" text-anchor="middle" font-size="11" fill="#2563eb">YES</text>
     <circle cx="160" cy="70" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/><text x="160" y="75" text-anchor="middle" font-size="11" fill="#dc2626">NO</text>
-    <text x="115" y="225" text-anchor="middle" font-size="12" fill="#6b7280">diagonal YES dots</text>
+    <text x="115" y="230" text-anchor="middle" font-size="12" fill="#6b7280">no single line can split it</text>
   </g>
 </svg>
+<p style="font-size: 14px; color: var(--muted);">In each picture, input 1 runs left to right and input 2 runs bottom to top, so the bottom-left dot is <code>(0, 0)</code>.</p>
 
-<p>A single neuron can only ask one question: <em>"is this dot on this side of my line?"</em> That works for OR and AND because one line can separate their YES dots from their NO dots.</p>
-<p>But XOR needs a different kind of question: <em>"is this dot in the top-left OR the bottom-right?"</em> One straight line cannot ask an OR-shaped question about two separate corners. That is why XOR is the puzzle that forces us to add more neurons.</p>
-<div class="callout">
-  <strong>The phrase to keep:</strong> a rule is <strong>linearly separable</strong> when one straight line can split YES examples from NO examples. OR is linearly separable. AND is linearly separable. XOR is not.
-</div>
+<h3>Why it has to be a line</h3>
+<p>A single neuron always does the same thing: multiply, add, and ask whether the total is above 0.</p>
+<pre>weight1 × input1 + weight2 × input2 + bias &gt; 0</pre>
+<p>On graph paper, the points where that total is <em>exactly</em> 0 form a straight line. (If you have met <code>y = mx + b</code> at school, this is the same thing rearranged.) On one side of the line the total is positive and the neuron says YES. On the other side it is negative and the neuron says NO. That line is the decision boundary you dragged around in {{ch:training}}.</p>
+<p>Training can slide the line, tilt it, or flip which side means YES. It cannot bend it, and it cannot draw a second one. So a single neuron can only ever ask one question: <em>"is this dot on the YES side of my line?"</em></p>
+<p>That is enough for OR and for AND. XOR needs a different kind of question: <em>"is this dot in the top-left corner or the bottom-right corner?"</em> One straight line cannot ask about two separate corners.</p>
+<p>There is a name for the rules a line can handle. A rule is <strong>linearly separable</strong> when one straight line can split its YES examples from its NO examples. OR is linearly separable. AND is linearly separable. XOR is not.</p>
+
+<div class="bigidea"><p>One neuron draws one straight line. It can learn a rule only if a single straight line can separate that rule's YES dots from its NO dots.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
   <p>Cover the labels on the three mini-graphs. Which one must be XOR? Hint: look for the two YES dots sitting on opposite corners.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>Why is a single neuron's decision boundary always straight?</p>
+    <button data-opt="a">Because the examples only have four dots, and four dots are too few for a curve</button>
+    <button data-opt="b">Because the answer flips where <code>weight1 × input1 + weight2 × input2 + bias</code> equals 0, and those points form a straight line</button>
+    <button data-opt="c">Because the neuron has not been trained for long enough to bend it</button>
+    <p class="why">The straightness comes from the neuron's arithmetic: multiplying by fixed weights and adding can only make a straight edge. More dots or more training do not change that.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Training changes a neuron's two weights and its bias. What does that do to its line?</p>
+    <button data-opt="a">Moves it, tilts it, or flips which side is YES. It stays one straight line.</button>
+    <button data-opt="b">Bends it until it fits the dots</button>
+    <button data-opt="c">Adds extra lines when one is not enough</button>
+    <p class="why">Three numbers can describe any straight line on the page, and nothing else. A bend or a second line needs more neurons.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Which of these rules is <em>not</em> linearly separable?</p>
+    <button data-opt="a">YES only when both inputs are on</button>
+    <button data-opt="b">YES when input 1 is on, whatever input 2 is doing</button>
+    <button data-opt="c">YES when the two inputs are different from each other</button>
+    <p class="why">"Different from each other" is XOR in other words: the YES dots are <code>(1, 0)</code> and <code>(0, 1)</code>, on opposite corners. The first rule is AND, and the second is split by a straight up-and-down line between input 1 = 0 and input 1 = 1.</p>
+  </div>
 </div>

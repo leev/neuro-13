@@ -1,4 +1,4 @@
-<p>Imagine a little machine. It has some inputs and one output. Each input is a number — could be the brightness of a pixel, or "did I practice piano? 1 for yes, 0 for no".</p>
+<p>Imagine a little machine. It has some inputs and one output. Each input is a number: it could be the brightness of a pixel, or "did I practice piano? 1 for yes, 0 for no".</p>
 <p>The machine does three things in order:</p>
 <ol>
   <li>Multiply each input by its own "importance number" (a <strong>weight</strong>)</li>
@@ -30,10 +30,10 @@
   </defs>
 </svg>
 
-<p>That output between 0 and 1 is how strongly the neuron "fires." It's basically how confident the neuron is that the answer is yes. That's one <strong>neuron</strong>. Yes, that's the whole thing.</p>
+<p>That output between 0 and 1 is how strongly the neuron "fires": how confident it is that the answer is yes. That's one <strong>neuron</strong>. Yes, that's the whole thing.</p>
 
 <h3>What does sigmoid actually look like?</h3>
-<p>Sigmoid is just a curve that turns "any number" into "a number between 0 and 1". Feed it a very negative number and out comes nearly 0. Feed it a very positive number and out comes nearly 1. Feed it exactly 0 and out comes exactly <strong>0.5</strong> — the perfectly-unsure middle.</p>
+<p>Sigmoid is a curve that turns "any number" into "a number between 0 and 1". Feed it a very negative number and out comes nearly 0. Feed it a very positive number and out comes nearly 1. Feed it exactly 0 and out comes exactly <strong>0.5</strong>, the perfectly unsure middle.</p>
 
 <svg viewBox="0 0 460 215" xmlns="http://www.w3.org/2000/svg" aria-label="the sigmoid curve: an S shape from 0 up to 1">
   <line x1="40" y1="170" x2="420" y2="170" stroke="#9ca3af" stroke-width="1.5"/>
@@ -53,16 +53,28 @@
   <text x="230" y="210" text-anchor="middle" font-size="12" fill="#6b7280">what goes in (the weighted total)</text>
 </svg>
 
-<p>That middle point clears up something from {{ch:basics}}. There, the neuron's question was "is the total bigger than <strong>0</strong>?" In this chapter, the decision is "is the output bigger than <strong>0.5</strong>?" Those are the <em>same question</em>, because sigmoid turns a total of exactly 0 into an output of exactly 0.5 — a total above 0 always lands above 0.5, and a total below 0 always lands below it. Two costumes, one rule.</p>
-<p>For the playground below, we'll use two simple yes/no inputs: <strong>piano done?</strong> and <strong>homework done?</strong> A value of <code>1</code> means yes, and <code>0</code> means no. The neuron is pretending to answer: <em>"should screen time be allowed?"</em> {{Ch:training}} will teach it that rule for real; here we are just moving the parts by hand so you can see what a neuron does.</p>
-<p>So what does the bias actually <em>do</em>? The weights decide how much each input matters; the bias is the neuron's built-in <em>lean</em> — how eager it is to fire before any input arrives. Picture it as the neuron's mood. A big positive bias is an optimist: it leans YES and needs the inputs to talk it out of firing. A negative bias is a skeptic: it leans NO and needs the inputs to push it over the line. In fact, if every input were 0, the bias is the <em>only</em> thing left, so it alone decides which way the neuron leans. That's why setting the bias to <code>-0.5</code> below turns the neuron into an OR gate: it starts off leaning NO, and it takes a high input to drag it past the 0.5 line.</p>
-<p>One more thing the sliders below let you do: make a weight <strong>negative</strong>. A positive weight means "this input is evidence <em>for</em> YES." A negative weight means "this input argues <em>against</em> YES" — when that input switches on, it drags the total <em>down</em>, toward NO. The screen-time rule doesn't need any negative weights, but keep the idea in your pocket: it becomes the secret ingredient when we hit the XOR puzzle in {{ch:xor-fail}}.</p>
-<p style="font-size: 14px; color: var(--muted);">Why <em>sigmoid</em> and not some other shape? Hold that question — we'll meet sigmoid's modern replacement (ReLU) in a few chapters and show why the choice of "squisher" actually matters. If you want the full zoo right now, Wikipedia's <a href="https://en.wikipedia.org/wiki/Activation_function" target="_blank" rel="noopener">activation function</a> page lists every common one.</p>
+<p>That middle point clears up something from {{ch:basics}}. There, the neuron's question was "is the total bigger than <strong>0</strong>?" Here, the decision is "is the output bigger than <strong>0.5</strong>?" Those are the <em>same question</em>, because sigmoid turns a total of exactly 0 into an output of exactly 0.5. A total above 0 always lands above 0.5, and a total below 0 always lands below it.</p>
+<p style="font-size: 14px; color: var(--muted);">Why <em>sigmoid</em> and not some other shape? Hold that question. {{Ch:activations}} introduces its modern replacement, ReLU, and shows why the choice of "squisher" matters.</p>
+
+<h3>A lean, and a vote against</h3>
+<p>The weights decide how much each input matters. The bias is the neuron's built-in <em>lean</em>: how eager it is to fire before any input arrives. A big positive bias is an optimist. It leans YES and needs the inputs to talk it out of firing. A negative bias is a skeptic. It leans NO and needs the inputs to push it over the line. If every input is 0, the bias is the <em>only</em> thing left, so it alone decides the answer.</p>
+<p>A weight can also be <strong>negative</strong>. A positive weight means "this input is evidence <em>for</em> YES." A negative weight means "this input argues <em>against</em> YES": when that input switches on, it drags the total <em>down</em>, toward NO. Keep that idea in your pocket. It becomes the secret ingredient when you reach the XOR puzzle in {{ch:xor-fail}}.</p>
+
+<h3>Your turn</h3>
+<p>The playground below uses two yes/no inputs: <strong>piano done?</strong> and <strong>homework done?</strong> A value of <code>1</code> means yes and <code>0</code> means no. The neuron is pretending to answer <em>"should screen time be allowed?"</em> {{Ch:training}} teaches it that rule for real. Here you move the parts by hand to see what a neuron does.</p>
+
+<div class="predict" data-answer="b">
+  <p>Suppose you set both weights and the bias to exactly 0. What will the output be?</p>
+  <button data-opt="a">0, because nothing goes in, so nothing comes out</button>
+  <button data-opt="b">0.5, whatever the inputs are</button>
+  <button data-opt="c">It depends on whether piano and homework are done</button>
+  <p class="why">With every weight at 0 the inputs are multiplied away, so the total is always 0, and sigmoid turns a total of 0 into exactly 0.5. The neuron has no opinion. Try it in the playground.</p>
+</div>
 
 <div class="interactive">
   <div class="interactive-title">▸ try it</div>
   <h3>Play with a neuron</h3>
-  <p>Drag the sliders. The output bar reacts live. Try setting both weights to <code>+1</code> and the bias to <code>-0.5</code> — now the neuron acts like an "OR" gate. Try setting them all to <code>0</code> — the neuron gives up and just outputs 0.5.</p>
+  <p>Drag the sliders and watch the output bar react. It starts with both weights at <code>+1</code> and the bias at <code>-0.5</code>. Flip the two inputs between 0 and 1 and see which combinations get a YES. Then make one weight negative and switch its input on.</p>
   <div class="slider-row"><label>input 1 (piano done)</label><input type="range" id="n-x1" min="0" max="1" step="0.01" value="1"><span class="value" id="n-x1-v">1.00</span></div>
   <div class="slider-row"><label>input 2 (homework done)</label><input type="range" id="n-x2" min="0" max="1" step="0.01" value="0"><span class="value" id="n-x2-v">0.00</span></div>
   <div class="slider-row"><label>weight 1</label><input type="range" id="n-w1" min="-3" max="3" step="0.01" value="1"><span class="value" id="n-w1-v">1.00</span></div>
@@ -79,7 +91,37 @@
     <span>decision: <strong id="n-decision">YES</strong></span>
   </div>
 </div>
+<h3>What just happened</h3>
+<p>With both weights at +1 and the bias at −0.5, switching on either input gives a total of 0.5 and an output of 0.62: YES. With both inputs off, only the bias is left, the total is −0.5 and the output is 0.38: NO. That is the screen-time rule, "piano OR homework," made out of three numbers. Nothing in the neuron says "or." The rule lives entirely in the weights and the bias.</p>
+<p>You set those three numbers by hand. In {{ch:training}} the neuron finds them on its own.</p>
+
+<div class="bigidea"><p>A neuron multiplies each input by a weight, adds a bias, and squishes the total into a number between 0 and 1. Change the weights and the bias, and the same little machine follows a different rule.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Make the neuron behave like AND instead of OR. Hint: both inputs should need to be high before the output crosses 0.5.</p>
+  <p>Make the neuron behave like AND instead of OR: YES only when piano <em>and</em> homework are both done. Hint: leave the weights alone and think about how skeptical the bias needs to be.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A neuron has a weight of −2 on its "it is raining" input. What happens when that input switches on?</p>
+    <button data-opt="a">The neuron breaks, because weights have to be positive</button>
+    <button data-opt="b">The total is pushed down, which makes a YES less likely</button>
+    <button data-opt="c">The neuron ignores that input</button>
+    <p class="why">A negative weight is a vote against. Ignoring an input is what a weight of 0 does.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Both inputs are 0. What decides the neuron's output?</p>
+    <button data-opt="a">The larger of the two weights</button>
+    <button data-opt="b">Nothing: with no input, the output is 0</button>
+    <button data-opt="c">The bias, and only the bias</button>
+    <p class="why">Each weight is multiplied by an input of 0, so the weights add nothing. The total is just the bias. A positive bias gives an output above 0.5, a negative bias gives one below it.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>What is sigmoid for?</p>
+    <button data-opt="a">It turns any total, however large or negative, into a number between 0 and 1 that reads like a confidence</button>
+    <button data-opt="b">It rounds the total to exactly 0 or exactly 1</button>
+    <button data-opt="c">It decides how much each input matters</button>
+    <p class="why">Sigmoid is a smooth curve, so outputs like 0.62 are normal. The yes/no decision comes afterwards, by asking whether the output is above 0.5. How much each input matters is the job of the weights.</p>
+  </div>
 </div>

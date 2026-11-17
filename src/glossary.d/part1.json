@@ -1,0 +1,9 @@
+{
+  "decision boundary": "The edge where a model’s answer flips from NO to YES. For a single neuron it is always one straight line.",
+  "truth table": "A table that lists every possible combination of inputs together with the answer for each one.",
+  "XOR": "“Exclusive or”: YES when exactly one of two inputs is on. The classic rule that a single neuron cannot learn.",
+  "perceptron": "An early learning machine from 1958: a single layer of neurons that adjusts its weights from examples.",
+  "AI winter": "A stretch of years when excitement about AI, and the money for it, drains away.",
+  "mean squared error": "A score for how wrong a model is overall: square each example’s error, then average them. Often shortened to MSE.",
+  "hidden layer": "A layer of neurons in the middle of a network, between the inputs and the output. Nobody tells it what to mean."
+}

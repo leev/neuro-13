@@ -1,10 +1,74 @@
 <p>A neural network is a very large pile of tiny math equations. Together they turn an input (like a picture, or a sentence) into an output (like "this is a cat" or the next word in a story).</p>
-<p>Why is it called a <em>neural</em> network? The name is borrowed from the brain. Your brain is a web of cells called <strong>neurons</strong> that pass tiny signals to each other, and each one "fires" when the signals arriving at it add up to enough. The math version you're about to meet was loosely inspired by that — <em>loosely</em> is the key word. What's inside ChatGPT is not a simulated brain; it's arithmetic. But the name stuck.</p>
-<p>Each tiny equation has some adjustable numbers called <strong>weights</strong>. At the start the weights are random and the network is terrible. You show it lots of examples where you already know the right answer. Each time it gets one wrong, you nudge every weight a tiny bit in the direction that would have made it slightly less wrong. (How does it know which direction is "less wrong"? In {{ch:training}} you'll do one of these nudges yourself, with real numbers — and {{ch:descent}} and {{ch:backprop}} explain how the network works the direction out for millions of weights at once.)</p>
+<p>Each tiny equation has some adjustable numbers called <strong>weights</strong>. At the start the weights are random and the network is terrible. You show it lots of examples where you already know the right answer. Each time it gets one wrong, you nudge every weight a tiny bit in the direction that would have made it slightly less wrong. (How does it know which direction is "less wrong"? In {{ch:training}} you'll do one of these nudges yourself, with real numbers, and {{ch:descent}} and {{ch:backprop}} explain how the direction is worked out for millions of weights at once.)</p>
 <p>Do this millions or billions of times and the weights end up encoding a surprising amount of knowledge about the world.</p>
 <p>That's the main idea. The rest of the book shows how far that idea can stretch.</p>
-<p style="font-size: 14px; color: var(--muted);">If you like watching things move while you read, the <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown neural networks series</a> on YouTube animates almost every idea in this book. It's the single best companion to what you're reading now.</p>
+
+<h3>Is it a brain?</h3>
+<p>The name is borrowed from the brain. Your brain is a web of cells called <strong>neurons</strong> that pass tiny signals to each other, and each one "fires" when the signals arriving at it add up to enough. The math version you're about to meet was loosely inspired by that. <em>Loosely</em> is the key word.</p>
+<p>A real neuron is a living cell, far more complicated than a line of arithmetic. Your brain has about 86 billion of them, each wired to thousands of others, and they talk in brief electrical spikes whose timing matters. The math version just passes one number along. And nobody has found the brain using the nudging method in this book; how brains learn is still an open question. What's inside ChatGPT is not a simulated brain. It's arithmetic that borrowed a name.</p>
+
+<h3>Everything becomes numbers</h3>
+<p>Arithmetic only works on numbers, so before a network can do anything with a picture, a sentence or a sound, somebody has to turn it into numbers. The rest of the book leans on this, so here are the three you'll meet most.</p>
+<p><strong>A picture is a grid of numbers.</strong> Zoom far enough into any photo and it turns into tiny squares called <strong>pixels</strong>. Each pixel is stored as a number that says how bright it is.</p>
+<svg viewBox="0 0 520 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="a tiny 8 by 8 smiley face, and the same picture written as a grid of 64 brightness numbers">
+  <text x="120" y="18" text-anchor="middle" font-size="13" fill="#374151">what you see</text>
+  <text x="400" y="18" text-anchor="middle" font-size="13" fill="#374151">what the network gets</text>
+  <text x="260" y="143" text-anchor="middle" font-size="26" fill="#9ca3af">=</text>
+  <rect x="16" y="30" width="208" height="208" fill="#fff" stroke="#d1d5db"/>
+  <path fill="#c8c8c8" d="M68 56h26v26h-26zM94 56h26v26h-26zM120 56h26v26h-26zM146 56h26v26h-26zM42 82h26v26h-26zM94 82h26v26h-26zM120 82h26v26h-26zM172 82h26v26h-26zM42 108h26v26h-26zM68 108h26v26h-26zM94 108h26v26h-26zM120 108h26v26h-26zM146 108h26v26h-26zM172 108h26v26h-26zM42 134h26v26h-26zM94 134h26v26h-26zM120 134h26v26h-26zM172 134h26v26h-26zM42 160h26v26h-26zM68 160h26v26h-26zM146 160h26v26h-26zM172 160h26v26h-26zM68 186h26v26h-26zM94 186h26v26h-26zM120 186h26v26h-26zM146 186h26v26h-26z"/>
+  <path fill="#000" d="M68 30h26v26h-26zM94 30h26v26h-26zM120 30h26v26h-26zM146 30h26v26h-26zM42 56h26v26h-26zM172 56h26v26h-26zM16 82h26v26h-26zM68 82h26v26h-26zM146 82h26v26h-26zM198 82h26v26h-26zM16 108h26v26h-26zM198 108h26v26h-26zM16 134h26v26h-26zM68 134h26v26h-26zM146 134h26v26h-26zM198 134h26v26h-26zM16 160h26v26h-26zM94 160h26v26h-26zM120 160h26v26h-26zM198 160h26v26h-26zM42 186h26v26h-26zM172 186h26v26h-26zM68 212h26v26h-26zM94 212h26v26h-26zM120 212h26v26h-26zM146 212h26v26h-26z"/>
+  <path stroke="#d1d5db" fill="none" d="M42 30v208M16 56h208M68 30v208M16 82h208M94 30v208M16 108h208M120 30v208M16 134h208M146 30v208M16 160h208M172 30v208M16 186h208M198 30v208M16 212h208"/>
+  <rect x="296" y="30" width="208" height="208" fill="#fff" stroke="#d1d5db"/>
+  <g font-size="10.5" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">
+    <g fill="#111827" font-weight="700"><text x="361" y="47">0</text><text x="387" y="47">0</text><text x="413" y="47">0</text><text x="439" y="47">0</text><text x="335" y="73">0</text><text x="465" y="73">0</text><text x="309" y="99">0</text><text x="361" y="99">0</text><text x="439" y="99">0</text><text x="491" y="99">0</text><text x="309" y="125">0</text><text x="491" y="125">0</text><text x="309" y="151">0</text><text x="361" y="151">0</text><text x="439" y="151">0</text><text x="491" y="151">0</text><text x="309" y="177">0</text><text x="387" y="177">0</text><text x="413" y="177">0</text><text x="491" y="177">0</text><text x="335" y="203">0</text><text x="465" y="203">0</text><text x="361" y="229">0</text><text x="387" y="229">0</text><text x="413" y="229">0</text><text x="439" y="229">0</text></g>
+    <g fill="#6b7280"><text x="361" y="73">200</text><text x="387" y="73">200</text><text x="413" y="73">200</text><text x="439" y="73">200</text><text x="335" y="99">200</text><text x="387" y="99">200</text><text x="413" y="99">200</text><text x="465" y="99">200</text><text x="335" y="125">200</text><text x="361" y="125">200</text><text x="387" y="125">200</text><text x="413" y="125">200</text><text x="439" y="125">200</text><text x="465" y="125">200</text><text x="335" y="151">200</text><text x="387" y="151">200</text><text x="413" y="151">200</text><text x="465" y="151">200</text><text x="335" y="177">200</text><text x="361" y="177">200</text><text x="439" y="177">200</text><text x="465" y="177">200</text><text x="361" y="203">200</text><text x="387" y="203">200</text><text x="413" y="203">200</text><text x="439" y="203">200</text></g>
+    <g fill="#b6bcc6"><text x="309" y="47">255</text><text x="335" y="47">255</text><text x="465" y="47">255</text><text x="491" y="47">255</text><text x="309" y="73">255</text><text x="491" y="73">255</text><text x="309" y="203">255</text><text x="491" y="203">255</text><text x="309" y="229">255</text><text x="335" y="229">255</text><text x="465" y="229">255</text><text x="491" y="229">255</text></g>
+  </g>
+  <text x="260" y="258" text-anchor="middle" font-size="12" fill="#6b7280">0 = black · 200 = light gray · 255 = white</text>
+</svg>
+<p>That smiley is 64 numbers. A color photo keeps three numbers per pixel (how much red, green and blue), so a 12-megapixel phone photo is 36 million numbers.</p>
+<p><strong>Text is a list of id numbers.</strong> Your computer already stores every letter as a number: <code>c</code> is 99, <code>a</code> is 97 and <code>t</code> is 116, so "cat" is <code>99, 97, 116</code>. Language models use a different list, where whole chunks of words get one id each. You'll build one of those lists in {{ch:tokens}}.</p>
+<p><strong>Sound is a list of samples.</strong> A microphone measures how hard the air is pushing on it, thousands of times a second. Each measurement is one number, called a <strong>sample</strong>. One second of CD-quality music is 44,100 of them.</p>
+<p>So when this book says a network "looks at a photo" or "reads a sentence," it means a list of numbers went in. What comes out is numbers too: <code>0.93</code> might mean "93% sure this is a cat."</p>
+
+<h3>Where this book is going</h3>
+<ol>
+  <li><strong>One neuron</strong> (you are here). The tiny machine everything else is built from: how it decides, how it learns, and the small puzzle it can't solve until it gets help in {{ch:hidden}}.</li>
+  <li><strong>How networks learn.</strong> More answers, more layers and real data, starting at {{ch:multi}}. You'll step through the one algorithm that trains every network ({{ch:backprop}}) and watch a network memorize its homework instead of learning ({{ch:overfitting}}).</li>
+  <li><strong>Machines that read and write.</strong> Turn text into numbers ({{ch:tokens}}), train a model that invents names ({{ch:names}}), and see what a chatbot is really doing ({{ch:chatbots}}).</li>
+  <li><strong>Seeing, creating, playing.</strong> A network that reads your handwriting ({{ch:digits}}), one that turns noise into pictures ({{ch:diffusion}}), and one that learns by trial and error ({{ch:rl}}).</li>
+  <li><strong>Your turn.</strong> The tools professionals use ({{ch:pytorch}}), a playground for breaking things ({{ch:playground}}), and projects of your own ({{ch:projects}}).</li>
+</ol>
+<p>Parts 1 to 4 each end with a checkpoint: what to remember, a mixed quiz, and something to build.</p>
+<p style="font-size: 14px; color: var(--muted);">If you like watching things move while you read, the <a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown neural networks series</a> on YouTube animates many of the ideas in this book. It's a great companion to what you're reading now.</p>
+
+<div class="bigidea"><p>A neural network is a huge pile of simple arithmetic with adjustable numbers called weights. It starts out random and gets good by being nudged, over and over, toward answers we already know.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Before moving on, name three problems that could be turned into "input goes in, prediction comes out." Try one from school, one from a game, and one from real life.</p>
+  <p>Before moving on, name three problems that could be turned into "numbers go in, a prediction comes out." Try one from school, one from a game, and one from real life. For each, what would the numbers going in be?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>A brand-new network that has not been trained yet is asked "is this a cat?" What does it do?</p>
+    <button data-opt="a">It refuses to answer until it has seen some examples</button>
+    <button data-opt="b">It gives a junk answer, because its weights start out random</button>
+    <button data-opt="c">It gets simple pictures right and only struggles with hard ones</button>
+    <p class="why">An untrained network still does its arithmetic and still produces an answer. The answer is just meaningless, because the weights are random numbers. Training is what makes them useful.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>During training, the network gets an example wrong. What happens next?</p>
+    <button data-opt="a">The example is saved in a list, so the network can look the answer up next time</button>
+    <button data-opt="b">A programmer writes a new rule to cover that case</button>
+    <button data-opt="c">Every weight is nudged a tiny bit in the direction that would have made the answer less wrong</button>
+    <p class="why">There is no list of saved answers and nobody writes rules. Learning is nothing more than many small nudges to the weights.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Someone says: "The network looked at my photo." What actually went into the network?</p>
+    <button data-opt="a">A long list of numbers, saying how bright each pixel is</button>
+    <button data-opt="b">The photo's file name and the date it was taken</button>
+    <button data-opt="c">A short description of the photo in words</button>
+    <p class="why">A network only does arithmetic, so everything it handles has to be numbers first: pixels for pictures, id numbers for text, samples for sound.</p>
+  </div>
 </div>

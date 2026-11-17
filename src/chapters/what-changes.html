@@ -1,19 +1,43 @@
-<p>Before we make the network harder, it is worth being very clear about what training is allowed to change.</p>
+<p>Before the puzzles get harder, be very clear about what training is allowed to change.</p>
 <p>Training does <strong>not</strong> change the examples. The input table stays the same. The right answers stay the same. If the row says <code>[1, 0] → YES</code>, training is not allowed to rewrite that row.</p>
-<p>Training also does <strong>not</strong> grow new neurons in these tiny programs. If the code says there is one neuron, training has to work with one neuron. If the code says there are 4 hidden neurons, training has to work with those 4. The network does not secretly add a fifth neuron because it gets stuck.</p>
-<p>The only things training changes are the <strong>weights</strong> and <strong>biases</strong> — the adjustable numbers inside the network. You can literally watch this: the dark "model" panels under {{ch:training}}'s trainers show the stored numbers being rewritten — and nothing else — while training runs.</p>
+<p>Training does <strong>not</strong> grow new neurons either. If the code says there is one neuron, training has to work with one neuron. If the code says there are 4 hidden neurons, training has to work with those 4. The network does not quietly add a fifth because it got stuck.</p>
+<p>The only things training changes are the <strong>weights</strong> and <strong>biases</strong>. Together they are called the model's <strong>parameters</strong>: the adjustable numbers inside the network. When you hear that a famous model has "seven billion parameters," that is a count of these numbers and nothing more. You have already watched this happen: the dark "model" panels in {{ch:training}} showed the stored numbers being rewritten, and nothing else, while training ran.</p>
 <table>
   <tr><th>Thing</th><th>Who changes it?</th></tr>
   <tr><td>Input examples, like <code>[1, 0]</code></td><td>The human writing the dataset</td></tr>
   <tr><td>Correct answers, like <code>YES</code></td><td>The human writing the dataset</td></tr>
-  <tr><td>Number of neurons</td><td>The human designing the network</td></tr>
+  <tr><td>Number of neurons, and how they connect</td><td>The human designing the network</td></tr>
   <tr><td>Weights and biases</td><td>Training</td></tr>
 </table>
-<p>So when a later exercise says to change <code>hidden = 4</code> to <code>hidden = 2</code>, that is <em>you</em> changing the network design before training starts. After that, training tries to find weights and biases that make that chosen design work.</p>
-<div class="callout">
-  <strong>Short version:</strong> the human chooses the shape of the network. Training fills that shape with useful numbers.
-</div>
+<p>So when {{ch:hidden}} asks you to change <code>hidden = 4</code> to <code>hidden = 2</code>, that is <em>you</em> changing the design before training starts. After that, training tries to find weights and biases that make your design work. Sometimes no such numbers exist, and {{ch:xor-fail}} is about exactly that.</p>
+
+<div class="bigidea"><p>The human chooses the shape of the network. Training fills that shape with useful numbers. A trained model is those numbers and nothing else.</p></div>
+
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>If a one-neuron network cannot solve a puzzle, what is training allowed to try changing? What is it not allowed to change?</p>
+  <p>If a one-neuron network cannot solve a puzzle, what is training allowed to try changing? What is it not allowed to change? Who would have to step in?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>You download a trained model from the internet. What is in the file?</p>
+    <button data-opt="a">The examples it was trained on, so it can look answers up</button>
+    <button data-opt="b">A long list of numbers: its weights and biases</button>
+    <button data-opt="c">The rules it discovered, written out as code</button>
+    <p class="why">The examples are not kept and no rules are written down. Whatever the model "knows" is stored as parameters, and the file is a list of them (plus a note describing the network's shape).</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>A network with one neuron keeps failing at a puzzle. What can training do about it?</p>
+    <button data-opt="a">Add a second neuron to help</button>
+    <button data-opt="b">Correct the rows of the table that look wrong</button>
+    <button data-opt="c">Keep adjusting that one neuron's weights and bias, and nothing else</button>
+    <p class="why">Training only turns the knobs that already exist. Adding neurons or changing the data is a decision for the human.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>You train the same network design twice on the same examples, starting from different random weights. What is certain to be the same both times?</p>
+    <button data-opt="a">The shape: how many neurons there are and how they connect</button>
+    <button data-opt="b">Every weight and bias, to the last decimal place</button>
+    <button data-opt="c">Nothing at all</button>
+    <p class="why">The shape is fixed by the human before training begins. The numbers training finds can differ from run to run, as you will see in {{ch:hidden}}.</p>
+  </div>
 </div>

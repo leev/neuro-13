@@ -1,4 +1,3 @@
-// Interactive 2: OR trainer
 makeSingleTrainer({
   data: [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],1]],
   labels: ['piano','homework'],
@@ -9,8 +8,7 @@ makeSingleTrainer({
 });
 
 
-// ===== Interactive: one nudge by hand (chapter 4) =====
-(function() {
+(function nudgeWidget() {
   const data = [
     { x: [0,0], y: 0 },
     { x: [1,0], y: 1 },
@@ -134,4 +132,5 @@ makeSingleTrainer({
 
 makeSeparator('sep-or',
   [[[0,0],0],[[1,0],1],[[0,1],1],[[1,1],1]],
-  ['piano','homework']);
+  ['piano','homework'],
+  { start: [-1, 1, 0.5], nearMiss: 'so close: one dot is still on the wrong side' });
