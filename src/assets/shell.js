@@ -301,6 +301,7 @@ window.Book = (function () {
     new MutationObserver(() => makeTogglesReachable(document)).observe(document.body, { childList: true, subtree: true });
   }
   document.addEventListener('keydown', e => {
+    if (e.defaultPrevented) return;
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.toggle[role="button"]')) {
       e.preventDefault();
       e.target.click();

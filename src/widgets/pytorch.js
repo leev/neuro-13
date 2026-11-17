@@ -329,12 +329,6 @@
     const t = e.target.closest('[data-preset]');
     if (t) choose(t.dataset.preset);
   });
-  $('ag-presets').addEventListener('keydown', e => {
-    const t = e.target.closest('[data-preset]');
-    if (!t || (e.key !== 'Enter' && e.key !== ' ')) return;
-    e.preventDefault();
-    choose(t.dataset.preset);
-  });
 
   $('ag-inputs').addEventListener('input', e => {
     const id = e.target.dataset.input;
