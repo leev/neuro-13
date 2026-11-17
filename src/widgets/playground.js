@@ -1,15 +1,85 @@
 (function playgroundWidget() {
   const KINDS = ['blobs', 'circle', 'xor', 'moons', 'spiral', 'draw'];
   const ACTS = ['tanh', 'relu', 'sigmoid'];
+  const RULES = ['plain', 'adam'];
   const LRS = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10];
   const BATCHES = [1, 2, 4, 8, 16, 32, 0];
   const DECAYS = [0, 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1];
   const DOTS = [20, 40, 60, 100, 150, 200, 300, 400];
   const MAX_LAYERS = 4, MAX_NEURONS = 16, MAX_NOISE = 30, TEST_N = 200, DRAW_MAX = 480, SCALE = 2, RANGE = 1.2 * SCALE;
-  const DEFAULTS = { kind: 'circle', noise: 0, dots: 200, hidden: [4], act: 'tanh', lr: 0.1, batch: 16, decay: 0, seed: 1, dseed: 1 };
+  const DEFAULTS = { kind: 'circle', noise: 0, dots: 200, hidden: [4], act: 'tanh', rule: 'plain', lr: 0.1, batch: 16, decay: 0, seed: 1, dseed: 1 };
+
+  // Own exp, tanh, log and cosine from + - * / only, which every browser rounds identically. Math.tanh and
+  // friends differ in the last digit between browsers, and training magnifies that into different results.
+  const LN2_HI = 0.6931471803691238, LN2_LO = 1.9082149292705877e-10, HALF_PI = Math.PI / 2;
+  const E2 = 1 / 2, E3 = 1 / 6, E4 = 1 / 24, E5 = 1 / 120, E6 = 1 / 720, E7 = 1 / 5040, E8 = 1 / 40320;
+  const E9 = 1 / 362880, E10 = 1 / 3628800, E11 = 1 / 39916800, E12 = 1 / 479001600;
+  const POW2 = new Float64Array(1090), tmp = new Float64Array(MAX_NEURONS), one = new Float64Array(1), terms = new Float64Array(DRAW_MAX);
+  POW2[64] = 1;
+  for (let i = 65; i < POW2.length; i++) POW2[i] = POW2[i - 1] * 2;
+  for (let i = 63; i >= 0; i--) POW2[i] = POW2[i + 1] / 2;
+
+  function expm1All(buf, n) {
+    for (let i = 0; i < n; i++) {
+      const x = buf[i];
+      if (!(x < 709)) {
+        buf[i] = x !== x ? x : Infinity;
+      } else if (x < -40) {
+        buf[i] = -1;
+      } else {
+        const k = Math.round(x * 1.4426950408889634), r = x - k * LN2_HI - k * LN2_LO;
+        const p = r * (1 + r * (E2 + r * (E3 + r * (E4 + r * (E5 + r * (E6 + r * (E7 + r * (E8 + r * (E9 + r * (E10 + r * (E11 + r * E12)))))))))));
+        buf[i] = k === 0 ? p : POW2[k + 64] * (1 + p) - 1;
+      }
+    }
+  }
+
+  function squashAll(buf, n) {
+    for (let i = 0; i < n; i++) {
+      const a = buf[i] < 0 ? -buf[i] : buf[i];
+      tmp[i] = a > 20 ? 40 : 2 * a;
+    }
+    expm1All(tmp, n);
+    for (let i = 0; i < n; i++) {
+      const y = tmp[i] / (tmp[i] + 2);
+      buf[i] = buf[i] < 0 ? -y : y;
+    }
+  }
+
+  function sigmoidAll(buf, n) {
+    for (let i = 0; i < n; i++) tmp[i] = -buf[i];
+    expm1All(tmp, n);
+    for (let i = 0; i < n; i++) buf[i] = 1 / (2 + tmp[i]);
+  }
+
+  function lnAll(buf, n) {
+    for (let i = 0; i < n; i++) {
+      let v = buf[i], e = 0, sum = 0;
+      if (!(v > 0) || v === Infinity) {
+        buf[i] = v === 0 ? -Infinity : v > 0 ? v : NaN;
+        continue;
+      }
+      while (v < 0.7071067811865476) { v *= 2; e--; }
+      while (v > 1.4142135623730951) { v /= 2; e++; }
+      const s = (v - 1) / (v + 1), q = s * s;
+      for (let m = 21; m >= 1; m -= 2) sum = 1 / m + q * sum;
+      buf[i] = e * LN2_HI + (e * LN2_LO + 2 * s * sum);
+    }
+  }
+
+  function cosine(x) {
+    const k = Math.round(x / HALF_PI), r = x - k * 1.5707963267341256 - k * 6.077100506506192e-11, q = r * r, turn = ((k % 4) + 4) % 4;
+    let s = 1, c = 1;
+    for (let m = 18; m >= 2; m -= 2) s = 1 - q * s / (m * (m + 1));
+    for (let m = 17; m >= 1; m -= 2) c = 1 - q * c / (m * (m + 1));
+    return turn === 0 ? c : turn === 1 ? -r * s : turn === 2 ? -c : r * s;
+  }
+  const sine = x => cosine(x - HALF_PI);
 
   function gaussian(rnd) {
-    return Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+    one[0] = 1 - rnd();
+    lnAll(one, 1);
+    return Math.sqrt(-2 * one[0]) * cosine(2 * Math.PI * rnd());
   }
 
   function makeSet(capacity) {
@@ -28,22 +98,22 @@
         spread = 0.16;
       } else if (kind === 'circle') {
         const r = c ? 0.42 * Math.sqrt(u) : 0.68 + 0.27 * u, t = 2 * Math.PI * rnd();
-        px = r * Math.cos(t);
-        py = r * Math.sin(t);
+        px = r * cosine(t);
+        py = r * sine(t);
       } else if (kind === 'xor') {
         px = (0.08 + 0.87 * u) * (rnd() < 0.5 ? -1 : 1);
         py = (0.08 + 0.87 * rnd()) * (rnd() < 0.5 ? -1 : 1);
         label = px * py > 0 ? 1 : 0;
       } else if (kind === 'moons') {
         const t = Math.PI * u;
-        px = 0.64 * (c ? 0.5 - Math.cos(t) : Math.cos(t) - 0.5);
-        py = 0.64 * (c ? 0.25 - Math.sin(t) : Math.sin(t) - 0.25);
+        px = 0.64 * (c ? 0.5 - cosine(t) : cosine(t) - 0.5);
+        py = 0.64 * (c ? 0.25 - sine(t) : sine(t) - 0.25);
         spread = 0.05;
       } else {
         const along = (Math.floor(i / 2) + u) / half;
         const r = 0.06 + 0.9 * along, t = 1.75 * along * 2 * Math.PI + c * Math.PI;
-        px = r * Math.sin(t);
-        py = r * Math.cos(t);
+        px = r * sine(t);
+        py = r * cosine(t);
         spread = 0.012;
       }
       set.x[2 * i] = SCALE * (px + spread * gaussian(rnd));
@@ -98,7 +168,8 @@
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
-    const W = [], B = [], gW = [], gB = [], A = [new Float64Array(2)], D = [new Float64Array(2)];
+    const W = [], B = [], gW = [], gB = [], mW = [], mB = [], vW = [], vB = [], A = [new Float64Array(2)], D = [new Float64Array(2)];
+    const fade = new Float64Array([1, 1]);
     for (let l = 0; l < L; l++) {
       const nIn = sizes[l], nOut = sizes[l + 1];
       const reach = Math.sqrt((actId === 1 && l < L - 1 ? 6 : 3) / nIn);
@@ -106,6 +177,10 @@
       B.push(new Float64Array(nOut));
       gW.push(new Float64Array(nIn * nOut));
       gB.push(new Float64Array(nOut));
+      mW.push(new Float64Array(nIn * nOut));
+      mB.push(new Float64Array(nOut));
+      vW.push(new Float64Array(nIn * nOut));
+      vB.push(new Float64Array(nOut));
       A.push(new Float64Array(nOut));
       D.push(new Float64Array(nOut));
     }
@@ -115,17 +190,23 @@
       A[0][0] = xs[at];
       A[0][1] = xs[at + 1];
       for (let l = 0; l < L; l++) {
-        const a = A[l], out = A[l + 1], w = W[l], b = B[l], nIn = sizes[l], nOut = sizes[l + 1], last = l === L - 1;
+        const a = A[l], out = A[l + 1], w = W[l], b = B[l], nIn = sizes[l], nOut = sizes[l + 1];
         for (let j = 0, k = 0; j < nOut; j++) {
           let z = b[j];
           for (let i = 0; i < nIn; i++, k++) z += w[k] * a[i];
-          out[j] = last ? z : actId === 0 ? Math.tanh(z) : actId === 1 ? (z > 0 ? z : 0) : 1 / (1 + Math.exp(-z));
+          out[j] = z;
         }
+        if (l === L - 1) break;
+        if (actId === 0) squashAll(out, nOut);
+        else if (actId === 2) sigmoidAll(out, nOut);
+        else for (let j = 0; j < nOut; j++) if (!(out[j] > 0)) out[j] = 0;
       }
     };
 
     net.backward = function (y) {
-      D[L][0] = 1 / (1 + Math.exp(-A[L][0])) - y;
+      one[0] = A[L][0];
+      sigmoidAll(one, 1);
+      D[L][0] = one[0] - y;
       for (let l = L - 1; l >= 0; l--) {
         const a = A[l], d = D[l + 1], w = W[l], gw = gW[l], gb = gB[l], nIn = sizes[l], nOut = sizes[l + 1];
         for (let j = 0, k = 0; j < nOut; j++) {
@@ -144,16 +225,36 @@
       }
     };
 
-    net.applyGrads = function (count, lr, decay) {
+    // Adam as in Kingma and Ba (2015), with the weight decay applied to the weight itself (the AdamW way),
+    // so "discourage big weights" means the same shrink-by-rate-times-decay under both learning rules.
+    net.applyGrads = function (count, lr, decay, adam) {
       const keep = 1 - lr * decay, step = lr / count;
+      if (adam) {
+        fade[0] *= 0.9;
+        fade[1] *= 0.999;
+      }
+      const fix1 = 1 - fade[0], fix2 = 1 - fade[1];
       for (let l = 0; l < L; l++) {
-        const w = W[l], gw = gW[l], b = B[l], gb = gB[l];
-        for (let k = 0; k < w.length; k++) { w[k] = w[k] * keep - step * gw[k]; gw[k] = 0; }
-        for (let j = 0; j < b.length; j++) { b[j] -= step * gb[j]; gb[j] = 0; }
+        const w = W[l], gw = gW[l], b = B[l], gb = gB[l], mw = mW[l], vw = vW[l], mb = mB[l], vb = vB[l];
+        if (!adam) {
+          for (let k = 0; k < w.length; k++) { w[k] = w[k] * keep - step * gw[k]; gw[k] = 0; }
+          for (let j = 0; j < b.length; j++) { b[j] -= step * gb[j]; gb[j] = 0; }
+          continue;
+        }
+        for (let k = 0; k < w.length; k++) {
+          const g = gw[k] / count, m = mw[k] = 0.9 * mw[k] + 0.1 * g, v = vw[k] = 0.999 * vw[k] + 0.001 * g * g;
+          w[k] = w[k] * keep - lr * (m / fix1) / (Math.sqrt(v / fix2) + 1e-8);
+          gw[k] = 0;
+        }
+        for (let j = 0; j < b.length; j++) {
+          const g = gb[j] / count, m = mb[j] = 0.9 * mb[j] + 0.1 * g, v = vb[j] = 0.999 * vb[j] + 0.001 * g * g;
+          b[j] -= lr * (m / fix1) / (Math.sqrt(v / fix2) + 1e-8);
+          gb[j] = 0;
+        }
       }
     };
 
-    net.trainEpoch = function (set, order, lr, batch, decay) {
+    net.trainEpoch = function (set, order, lr, batch, decay, adam) {
       const n = set.n, size = batch > 0 ? Math.min(batch, n) : n;
       // roll() is written out in place because a call that returns a fraction allocates, and training must not.
       let a = dice[0];
@@ -172,23 +273,28 @@
         net.forward(set.x, 2 * p);
         net.backward(set.y[p]);
         if (++pending === size || i === n - 1) {
-          net.applyGrads(pending, lr, decay);
+          net.applyGrads(pending, lr, decay, adam);
           pending = 0;
         }
       }
     };
 
     net.evaluate = function (set) {
-      const out = A[L];
+      const out = A[L], n = set.n;
       let right = 0, loss = 0;
-      for (let p = 0; p < set.n; p++) {
+      for (let p = 0; p < n; p++) {
         net.forward(set.x, 2 * p);
         const z = out[0], y = set.y[p];
         if ((z > 0) === (y === 1)) right++;
-        loss += Math.log1p(Math.exp(-Math.abs(z))) + (z > 0 ? z : 0) - y * z;
+        loss += (z > 0 ? z : 0) - y * z;
+        terms[p] = z < 0 ? z : -z;
       }
+      expm1All(terms, n);
+      for (let p = 0; p < n; p++) terms[p] += 2;
+      lnAll(terms, n);
+      for (let p = 0; p < n; p++) loss += terms[p];
       net.right = right;
-      net.loss = set.n ? loss / set.n : 0.5;
+      net.loss = n ? loss / n : 0.5;
     };
 
     net.count = function () {
@@ -221,7 +327,7 @@
     } else {
       parts.push('noise=' + s.noise, 'dots=' + s.dots, 'dseed=' + s.dseed);
     }
-    parts.push('layers=' + (s.hidden.length ? s.hidden.join('-') : 'none'), 'act=' + s.act, 'lr=' + s.lr,
+    parts.push('layers=' + (s.hidden.length ? s.hidden.join('-') : 'none'), 'act=' + s.act, 'rule=' + s.rule, 'lr=' + s.lr,
       'batch=' + (s.batch || 'all'), 'decay=' + s.decay, 'seed=' + s.seed);
     return '#' + parts.join('&');
   }
@@ -236,6 +342,7 @@
     const s = Object.assign({}, DEFAULTS, { count: 0 });
     if (KINDS.includes(q.get('data'))) s.kind = q.get('data');
     if (ACTS.includes(q.get('act'))) s.act = q.get('act');
+    if (RULES.includes(q.get('rule'))) s.rule = q.get('rule');
     s.noise = Math.max(0, Math.min(MAX_NOISE, Math.round(num('noise', s.noise))));
     s.dots = nearest(DOTS, num('dots', s.dots));
     s.lr = nearest(LRS, num('lr', s.lr));
@@ -301,7 +408,14 @@
 
   // Whole-number arguments only: a fraction passed into a function costs an allocation, and this runs per pixel.
   function shade(data, at, lut, l, j) {
-    const a = net.A[l][j], v = l === 0 ? a / RANGE : l === net.L ? Math.tanh(a / 2) : a;
+    let v = net.A[l][j];
+    if (l === 0) {
+      v /= RANGE;
+    } else if (l === net.L) {
+      one[0] = v / 2;
+      squashAll(one, 1);
+      v = one[0];
+    }
     const i = 3 * (v >= 1 ? 255 : v <= -1 ? 0 : ((v + 1) * 127.5) | 0);
     data[at] = lut[i];
     data[at + 1] = lut[i + 1];
@@ -619,7 +733,7 @@
   }
 
   function trainOne() {
-    net.trainEpoch(train, order, state.lr, state.batch, state.decay);
+    net.trainEpoch(train, order, state.lr, state.batch, state.decay, state.rule === 'adam');
     epoch++;
     if (net.exploded()) {
       broken = true;
@@ -702,6 +816,7 @@
     const drawing = state.kind === 'draw';
     mark('pg-kinds', 'kind', state.kind);
     mark('pg-act', 'act', state.act);
+    mark('pg-rule', 'rule', state.rule);
     mark('pg-speed', 'speed', speed);
     mark('pg-brush', 'brush', brush);
     mark('pg-chartmode', 'mode', chartMode);
@@ -840,6 +955,18 @@
     const b = e.target.closest('[data-act]');
     if (!b) return;
     state.act = b.dataset.act;
+    syncControls();
+    restart(false);
+  });
+  $('pg-rule').addEventListener('click', e => {
+    const b = e.target.closest('[data-rule]');
+    if (!b || b.dataset.rule === state.rule) return;
+    state.rule = b.dataset.rule;
+    const adam = state.rule === 'adam';
+    if (adam ? state.lr > 0.03 : state.lr < 0.03) {
+      state.lr = adam ? 0.01 : 0.1;
+      Book.toast(adam ? 'Adam takes bigger steps, so the learning rate is now 0.01.' : 'The plain rule takes smaller steps, so the learning rate is now 0.1.');
+    }
     syncControls();
     restart(false);
   });

@@ -97,12 +97,18 @@
 
     <section class="pg-panel pg-knobs" aria-labelledby="pg-h-knobs">
       <h4 id="pg-h-knobs">Training knobs</h4>
+      <div class="pg-rule-row">
+        <span id="pg-rule-label">learning rule</span>
+        <div class="pg-seg" id="pg-rule" role="group" aria-labelledby="pg-rule-label">
+          <button type="button" data-rule="plain">plain gradient descent</button><button type="button" data-rule="adam">Adam</button>
+        </div>
+      </div>
       <div class="pg-knob-grid">
         <div class="slider-row"><label for="pg-lr">learning rate</label><span class="value" id="pg-lr-v">0.1</span><input type="range" id="pg-lr" min="0" max="8" step="1" value="4"></div>
         <div class="slider-row"><label for="pg-batch">batch size</label><span class="value" id="pg-batch-v">16</span><input type="range" id="pg-batch" min="0" max="6" step="1" value="4"></div>
         <div class="slider-row"><label for="pg-decay">discourage big weights</label><span class="value" id="pg-decay-v">off</span><input type="range" id="pg-decay" min="0" max="7" step="1" value="0"></div>
       </div>
-      <p class="pg-legend">You can move these while it trains. In the diagram, squares are neurons and lines are weights: <span class="pg-o">orange</span> for positive, <span class="pg-b">blue</span> for negative, thicker for bigger.</p>
+      <p class="pg-legend">You can move the sliders while it trains. In the diagram, squares are neurons and lines are weights: <span class="pg-o">orange</span> for positive, <span class="pg-b">blue</span> for negative, thicker for bigger.</p>
     </section>
 
     <section class="pg-panel pg-score" aria-labelledby="pg-h-score">
@@ -117,102 +123,110 @@
   </div>
 </div>
 
-
 <h3>Reading the lab</h3>
 <ul>
   <li><strong>The big map</strong> is the graph paper from {{ch:tables-dots}}. Each dot is one example: its position (two numbers, x and y) is the input, and its color is the right answer. The background shows what the network would answer at every point on the paper.</li>
   <li><strong>The diagram</strong> is the network itself. Each square is one neuron, drawn as a tiny copy of the map that shows where that neuron's output is positive or negative. Squares in the first hidden layer are always split by a straight line. Squares further along are bent, because they are built out of the squares before them. Point at a square to enlarge it, and click it to pin it to the big map.</li>
   <li><strong>The two scores.</strong> The training score is the share of the training dots the network gets right. The test score uses 200 more dots from the same pattern that it never trains on. Tick "show the test dots" to see them.</li>
   <li><strong>The buttons.</strong> One <em>step</em> is one epoch: one pass through all the training dots. <em>Reset</em> goes back to epoch 0 with the same starting weights. <em>New start</em> rolls new random ones.</li>
-  <li><strong>The knobs.</strong> The learning rate is the step size from {{ch:descent}}. <strong>Batch size</strong> is how many dots the network looks at before each nudge of its weights. The shape of the network, meaning how many layers it has and how many neurons are in each, is called its <strong>architecture</strong>, and the lab shows how many stored numbers that shape needs.</li>
+  <li><strong>The knobs.</strong> The learning rule is the recipe for nudging the weights: plain gradient descent, or Adam, the version with a memory from {{ch:descent}}. The learning rate is the step size. <strong>Batch size</strong> is how many dots the network looks at before each nudge. The shape of the network, meaning how many layers it has and how many neurons are in each, is called its <strong>architecture</strong>, and the lab shows how many stored numbers that shape needs.</li>
 </ul>
-<p style="font-size: 15px; color: var(--muted);">Honesty note, in two parts. First, the noise slider gives some <em>training</em> dots the wrong color and draws a black ring around each one. The test dots always keep their true color, so the test score tells you how well the network knows the real pattern. That is the same choice {{ch:overfitting}} made, and real test sets are not so tidy. Second, the lab learns by plain mini-batch gradient descent, with none of the extras that PyTorch's Adam adds in {{ch:pytorch}}. That makes it slower and fussier than a professional setup, but it means every knob does exactly what its chapter said it does.</p>
+<p style="font-size: 15px; color: var(--muted);">Honesty note, in two parts. First, the noise slider gives some <em>training</em> dots the wrong color and draws a black ring around each one. The test dots always keep their true color, so the test score tells you how well the network knows the real pattern. That is the same choice {{ch:overfitting}} made, and real test sets are not so tidy. Second, the lab opens on plain mini-batch gradient descent, with no extras, so that every knob does exactly what its chapter said it does. That makes it slower and fussier than the Adam that {{ch:depth}} and {{ch:pytorch}} use. Adam is one click away, and mission 6 compares the two.</p>
 
 <h3>Lab notebook</h3>
-<p>Nine missions, each tied to a chapter you have read. Every one has a button that sets the lab up for you and a box to tick when you have cracked it. Your ticks are remembered on this device: <span class="pg-tally" id="pg-tally">0 of 9</span> done.</p>
-<p>Under each mission is a note of what we found when we ran it. Try it yourself before you open the note. Our numbers come from the exact setup behind each button, and that setup always starts from the same random weights, so if you press play without changing anything you should see the same numbers. (Different browsers round the last digit of their arithmetic differently, and over a thousand epochs that can move a result by a few epochs.) Press <em>new start</em> and your numbers will differ more. How much that matters is the lesson of mission 7.</p>
+<p>Ten missions, each tied to a chapter you have read. Every one has a button that sets the lab up for you and a box to tick when you have cracked it. Your ticks are remembered on this device: <span class="pg-tally" id="pg-tally">0 of 10</span> done.</p>
+<p>Under each mission is a note of what we found when we ran it. Try it yourself before you open the note. Our numbers come from the exact setup behind each button, and that setup always starts from the same random weights, so if you press play without changing anything you should see exactly our numbers. That takes some care. Browsers disagree in the last digit of functions like tanh, and training magnifies tiny differences into big ones, so the lab does that arithmetic itself, the same way everywhere. Press <em>new start</em> and your numbers will differ. How much that matters is the lesson of mission 8.</p>
 
 <ol class="pg-notebook">
   <li>
     <h4>The lonely neuron</h4>
     <p>Take away every hidden layer and you are left with the single straight-line neuron from {{ch:tables-dots}}. Which of the five sets of dots can it solve, and what do those have that the others lack?</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=blobs&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=none&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=blobs&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=none&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="lonely"> done</label>
     </div>
-    <details><summary>What we found</summary><p>Only the two blobs: 100% within 2 epochs. On the two moons its test score stalled at about 92%. After 300 epochs it was at 43% on the ring, 49% on the XOR corners and 58% on the spirals. Its line keeps swinging about on those three, but it never does reliably better than a coin flip. The blobs are the only set where one straight line can separate the colors. That is what <em>linearly separable</em> means. With no hidden layers the lab draws the neuron's line as a dashed line, so you can watch it swing into place.</p></details>
+    <details><summary>What we found</summary><p>Only the two blobs: 100% within 2 epochs. On the two moons its test score stalled at 92%. After 300 epochs it was at 43% on the ring, 49% on the XOR corners and 57% on the spirals. Its line keeps swinging about on those three, but it never does reliably better than a coin flip. The blobs are the only set where one straight line can separate the colors. That is what <em>linearly separable</em> means. With no hidden layers the lab draws the neuron's line as a dashed line, so you can watch it swing into place.</p></details>
   </li>
   <li>
     <h4>XOR on a budget</h4>
     <p>{{Ch:hidden}} solved a four-dot XOR with a small hidden layer. This XOR has 200 dots. Starting from one hidden neuron and adding one at a time, what is the smallest hidden layer that gets the test score to 95%?</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=xor&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=1&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=xor&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=1&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="xor"> done</label>
     </div>
-    <details><summary>What we found</summary><p>Three. One neuron scored 67% on the test. Two drew a diagonal stripe and stopped at about 86%: over ten different random starts, two neurons never got past 90%. Three reached 96% by epoch 300, and got to 95% or better in 7 starts out of 10. Five did it every time. A stripe was enough for four dots sitting on the corners. It is not enough when the dots fill the whole corner regions, because the far ends of each region stick out of the stripe.</p></details>
+    <details><summary>What we found</summary><p>Three. One neuron scored 67% on the test. Two drew a diagonal stripe and stopped at about 86%: over ten different random starts, two neurons never got past 91%. Three reached 96% by epoch 300, and got to 95% or better in 9 starts out of 10. Five did it every time. A stripe was enough for four dots sitting on the corners. It is not enough when the dots fill the whole corner regions, because the far ends of each region stick out of the stripe.</p></details>
   </li>
   <li>
     <h4>Three sides</h4>
     <p>Fence in the orange circle with exactly three hidden neurons, then take one away and train again. Why is three the smallest number that works? The line-drawing rule from {{ch:tables-dots}} is all you need.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=3&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=3&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="ring"> done</label>
     </div>
-    <details><summary>What we found</summary><p>With three neurons the network scored 100% on its training dots by epoch 72, and the orange region is a triangle with rounded corners. With two it stalled at 86% on training and 82% on the test. Each hidden neuron draws one straight line, and you cannot close a fence with fewer than three straight sides. Two lines leave a gap, however you turn them.</p></details>
+    <details><summary>What we found</summary><p>With three neurons the network scored 100% on its training dots by epoch 68, and the orange region is a triangle with rounded corners. With two it stalled at 86% on training and 82% on the test. Each hidden neuron draws one straight line, and you cannot close a fence with fewer than three straight sides. Two lines leave a gap, however you turn them.</p></details>
   </li>
   <li>
     <h4>Cram, then cure</h4>
     <p>This is {{ch:overfitting}} with every control unlocked: the biggest network, only 60 training dots, and 9 of them the wrong color (ringed in black). On <strong>fast</strong>, run it to epoch 1,500 and watch the two lines on the chart, then cure it at least three different ways.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=15&amp;dots=60&amp;dseed=1&amp;layers=16-16-16-16&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=15&amp;dots=60&amp;dseed=1&amp;layers=16-16-16-16&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="overfit"> done</label>
     </div>
-    <details><summary>What we found</summary><p>The test score peaked at 98% at epoch 113. Then the network began bending its boundary around the ringed dots. By epoch 1,500 its training score was 97% and its test score was down to 85%. Four cures, each tried alone from the same setup and scored on the test at epoch 1,500: <strong>more data</strong> (400 training dots: 94%), <strong>a smaller network</strong> (one hidden layer of 8: 93%), <strong>weight decay</strong>, which {{ch:overfitting}} named but did not build (set "discourage big weights" to 0.01: 97%, and you can watch the lines in the diagram stay thin), and <strong>stopping early</strong> (pause at the peak instead of running on: 98%). Push that last slider to 0.03 and you learn something else: the score drops to 50%, because every weight is being squashed toward zero faster than training can grow it.</p></details>
+    <details><summary>What we found</summary><p>The test score climbed to 98% by epoch 92 and never went higher. Then the network began bending its boundary around the ringed dots. By epoch 1,500 its training score was 97% and its test score was down to 85%. Four cures, each tried alone from the same setup and scored on the test at epoch 1,500: <strong>more data</strong> (400 training dots: 94%), <strong>a smaller network</strong> (one hidden layer of 8: 93%), <strong>weight decay</strong>, which {{ch:overfitting}} named but did not build (set "discourage big weights" to 0.01: 97%, and you can watch the lines in the diagram stay thin), and <strong>stopping early</strong> (pause at the peak instead of running on: 98%). Push the weight decay slider to 0.03 and you learn something else: the score drops to 50%, because every weight is being squashed toward zero faster than training can grow it.</p></details>
   </li>
   <li>
     <h4>Too hot, too cold</h4>
     <p>{{Ch:descent}} warned that a learning rate can be too big or too small. On the spirals, find one that makes training fall apart, one that makes it crawl, and the fastest one that still works. Switch the chart to <strong>loss</strong> to see the damage.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button><button type="button" class="secondary" data-setup="#lab&amp;data=xor&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=16-16-16-16&amp;act=relu&amp;lr=10&amp;batch=1&amp;decay=0&amp;seed=1">the exploding one</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button><button type="button" class="secondary" data-setup="#lab&amp;data=xor&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=16-16-16-16&amp;act=relu&amp;rule=plain&amp;lr=10&amp;batch=1&amp;decay=0&amp;seed=1">the exploding one</button>
       <label class="pg-check"><input type="checkbox" data-mission="rate"> done</label>
     </div>
-    <details><summary>What we found</summary><p>With this setup, 0.1 reached 95% on the training dots at epoch 717, and 0.3 got there sooner, at epoch 423. At 1 the network touched 96% at epoch 330 and then lost it again, bouncing between 49% and 98%. At 3 and at 10 it never learned: at 10 the loss, which starts near 0.7, leapt as high as 33. Going the other way, 0.01 had reached only 58% after 2,000 epochs, and at 0.001 the loss crept from 0.671 to 0.669 in 2,000 epochs. That is still learning, just far too slowly to be any use.</p><p>For a real explosion, press "the exploding one" and then play: ReLU, four layers of 16, a batch size of 1 and a learning rate of 10. In ten tries out of ten the weights shot past a billion inside the first epoch, and the lab stops with a warning. Tanh and sigmoid never did this in any run we made. Their outputs cannot go beyond 1, and that keeps every nudge small. A ReLU output has no ceiling, so big weights make big outputs, big outputs make bigger nudges, and bigger nudges make bigger weights.</p></details>
+    <details><summary>What we found</summary><p>With this setup, 0.1 reached 95% on the training dots at epoch 712, and 0.3 got there sooner, at epoch 417. At 1 the network touched 95% at epoch 328 and then lost it again, swinging between 49% and 96%. At 3 and at 10 it never learned: at 10 the loss, which starts near 0.7, leapt as high as 36. Going the other way, 0.01 had reached only 58% after 2,000 epochs, and at 0.001 the loss crept from 0.671 to 0.669 in 2,000 epochs. That is still learning, just far too slowly to be any use.</p><p>For a real explosion, press "the exploding one" and then play: ReLU, four layers of 16, a batch size of 1 and a learning rate of 10. In ten tries out of ten the weights shot past a billion inside the first epoch, and the lab stops with a warning. Tanh and sigmoid never did this in any run we made. Their outputs cannot go beyond 1, and that keeps every nudge small. A ReLU output has no ceiling, so big weights make big outputs, big outputs make bigger nudges, and bigger nudges make bigger weights.</p></details>
+  </li>
+  <li>
+    <h4>Plain against Adam</h4>
+    <p>{{Ch:descent}} gave gradient descent a memory and called the result Adam, and {{ch:pytorch}} reaches for it by default. Solve the spirals with the plain rule, then switch the learning rule to Adam and solve them again: how many epochs does each one need?</p>
+    <div class="pg-mission-row">
+      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">plain rule</button><button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;rule=adam&amp;lr=0.01&amp;batch=16&amp;decay=0&amp;seed=1">the same, with Adam</button>
+      <label class="pg-check"><input type="checkbox" data-mission="adam"> done</label>
+    </div>
+    <details><summary>What we found</summary><p>From these setups the plain rule reached 95% on the training dots at epoch 712 and Adam at epoch 501. Over 12 random starts both solved the spirals every time, and Adam was first every time: about 400 epochs (the middle of its 12 results) against about 900. Look at the learning rate, though. The lab moves it to 0.01 when you pick Adam, because the two rules measure their steps differently. A plain step is the learning rate times the slope. An Adam step is about the size of the learning rate itself, however gentle the slope is. Give Adam the plain rule's 0.1 and it thrashes: in six tries of 4,000 epochs it never reached 95%.</p></details>
   </li>
   <li>
     <h4>Squisher showdown</h4>
     <p>Same spirals, same two layers of 8 neurons, three activations from {{ch:activations}}. Which gets the training score to 95% first: tanh, ReLU or sigmoid? Look closely at the edges of the shapes each one draws.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-8&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="squish"> done</label>
     </div>
-    <details><summary>What we found</summary><p>ReLU got there at epoch 469 and tanh at epoch 717. Sigmoid was still at 60% after 2,000 epochs. Over eight random starts of 1,500 epochs each, tanh solved it 8 times, ReLU 7 times and sigmoid never. ReLU's shapes have straight edges and sharp corners. A ReLU neuron's map is perfectly flat on one side of a straight fold and a steady slope on the other, so everything built from such maps is made of flat pieces. Tanh draws smooth curves. Sigmoid is not broken, only slow: its curve is flatter, so each nudge is smaller. With the learning rate turned up to 1 and 3,000 epochs to work with, it solved the spirals in 3 starts out of 6.</p></details>
+    <details><summary>What we found</summary><p>ReLU got there at epoch 461 and tanh at epoch 712. Sigmoid was still at 60% after 2,000 epochs. Over eight random starts of 1,500 epochs each, tanh and ReLU got there all 8 times and sigmoid never did. ReLU's shapes have straight edges and sharp corners. A ReLU neuron's map is perfectly flat on one side of a straight fold and a steady slope on the other, so everything built from such maps is made of flat pieces. Tanh draws smooth curves. Sigmoid is not broken, only slow: its curve is flatter, so each nudge is smaller. With the learning rate turned up to 1 and 3,000 epochs to work with, it solved the spirals in 4 starts out of 6.</p></details>
   </li>
   <li>
     <h4>Wide against deep</h4>
-    <p>One hidden layer of 16 neurons has 65 stored numbers, and so do two hidden layers of 8 and 4. Race them on the spirals, the showdown from {{ch:depth}}: which reaches 95% on the training dots first?</p>
+    <p>One hidden layer of 16 neurons has 65 stored numbers, and so do two hidden layers of 8 and 4. {{Ch:depth}} found that neither shape simply wins, so run your own race on the spirals, from several random starts and with each learning rule. Which reaches 95% on the training dots first, and how often does each get there at all?</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=16&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=3">one layer of 16</button><button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-4&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=3">two layers, 8 and 4</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=16&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=3">one layer of 16</button><button type="button" class="secondary" data-setup="#lab&amp;data=spiral&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=8-4&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=3">two layers, 8 and 4</button>
       <label class="pg-check"><input type="checkbox" data-mission="depth"> done</label>
     </div>
-    <details><summary>What we found</summary><p>From these two setups, the two-layer network reached 95% at epoch 1,097 and the wide one at epoch 2,783. We repeated the race from 12 different random starts. The two-layer network got there first 11 times, in about 1,300 epochs (the middle result of the 12) against about 2,700. One honest surprise: the wide network is slow, not helpless. Given 4,000 epochs it solved the spirals in 11 starts out of 12.</p></details>
+    <details><summary>What we found</summary><p>From these two buttons, which use the plain rule, the two-layer network reached 95% at epoch 1,061 and the wide one at epoch 2,772. Then we ran 12 random starts of 4,000 epochs under each learning rule. With the plain rule both networks solved the spirals all 12 times, and the two-layer one was first every time: about 1,300 epochs (the middle of its 12 results) against about 2,650. With Adam the two-layer network was first in 10 starts and the wide one in 2. Adam's runs were less dependable as well: inside 4,000 epochs the wide network fell short twice and the two-layer one once, though all three got there when we let them run on to 8,000.</p><p>So in this lab, at this size, two narrow layers usually learn the spirals in fewer epochs, and one wide layer gets there too. That is one small experiment on one set of dots. {{Ch:depth}} ran a bigger one, with 60 starts, and found the wide network the more dependable of the two.</p></details>
   </li>
   <li>
     <h4>One at a time, or all at once</h4>
     <p>The mini-batches of {{ch:descent}} are the batch size slider, and this setup nudges the weights after every single dot. Count the epochs until the ring closes, then press reset, slide batch size to "all" and count again.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=4&amp;act=tanh&amp;lr=0.1&amp;batch=1&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=circle&amp;noise=0&amp;dots=200&amp;dseed=1&amp;layers=4&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=1&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="batch"> done</label>
     </div>
-    <details><summary>What we found</summary><p>With a batch size of 1 the training score passed 95% at epoch 4. With 16 it took 49 epochs, and with all 200 dots in one batch it took 627. An epoch is one pass through the dots either way, but with a batch of 1 that pass contains 200 nudges, and with one big batch it contains exactly one. The price of small batches shows on the chart: each nudge is based on very few dots, so the line wobbles more.</p></details>
+    <details><summary>What we found</summary><p>With a batch size of 1 the training score passed 95% at epoch 4. With 16 it took 47 epochs, and with all 200 dots in one batch it took 615. An epoch is one pass through the dots either way, but with a batch of 1 that pass contains 200 nudges, and with one big batch it contains exactly one. The price of small batches shows on the chart: each nudge is based on very few dots, so the line wobbles more.</p></details>
   </li>
   <li>
     <h4>The unlearnable</h4>
     <p>Draw a set of dots that even the biggest network (four layers of 16) cannot get above 60% on the test. What is your drawing missing that the spirals have? Think of the memorizing in {{ch:overfitting}}.</p>
     <div class="pg-mission-row">
-      <button type="button" class="secondary" data-setup="#lab&amp;data=draw&amp;layers=16-16-16-16&amp;act=tanh&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
+      <button type="button" class="secondary" data-setup="#lab&amp;data=draw&amp;layers=16-16-16-16&amp;act=tanh&amp;rule=plain&amp;lr=0.1&amp;batch=16&amp;decay=0&amp;seed=1">set up the lab</button>
       <label class="pg-check"><input type="checkbox" data-mission="draw"> done</label>
     </div>
-    <details><summary>What we found</summary><p>Confetti works: orange and blue dots scattered with no pattern at all. With 480 dots the network scored between 64% and 79% on the dots it trained on and between 40% and 56% on the held-back ones, which is a coin flip. With only 80 dots it memorized more than 90% of its training dots and still did no better than a coin flip on the test. The spirals are hard, but they follow a rule, so knowing some dots tells you about the others. Confetti has no rule. There is nothing to learn, only answers to memorize. A checkerboard is the in-between case: with 4 squares along each side the test score reached about 90%, and with 8 it fell to about 70%. (To keep this fair we did not draw by hand: a short program scattered our dots and colored them.)</p></details>
+    <details><summary>What we found</summary><p>Confetti works: orange and blue dots scattered with no pattern at all. With 480 dots the network scored between 70% and 81% on the dots it trained on and between 49% and 53% on the held-back ones, which is a coin flip. With only 80 dots it memorized 90% or more of its training dots and still did no better than a coin flip on the test. The spirals are hard, but they follow a rule, so knowing some dots tells you about the others. Confetti has no rule. There is nothing to learn, only answers to memorize. A checkerboard is the in-between case: with 4 squares along each side the test score ended at about 90%, and with 8 it ended between 58% and 73%. (To keep this fair we did not draw by hand: a short program scattered our dots and colored them.)</p></details>
   </li>
 </ol>
 
@@ -224,13 +238,14 @@
   <li><strong>Write down what happened.</strong> The settings, the epoch, both scores. Memory rounds everything toward what you expected. The <em>copy link</em> button stores the whole setup in a web address, which makes it a good thing to paste into your notes.</li>
   <li><strong>Repeat with a different random start before you believe it.</strong> A network begins from random weights, and a computer makes its "random" numbers from a starting number called a <strong>random seed</strong>. A different seed means a different start, and sometimes a different ending.</li>
 </ol>
-<p>Here is how much the fourth habit matters. When we first ran mission 7, the wide network <em>won</em>: it reached 95% at epoch 2,989, ahead of the deep one at epoch 3,281. If we had stopped there, this book would now be telling you that wide beats deep. We ran the race again from eleven more random starts, and the deep network won all eleven. One run is a story. Twelve runs are evidence.</p>
+<p>This book learned the fourth habit the hard way. An early draft of {{ch:depth}} said that a network with one hidden layer stays stuck near a coin flip on the spirals, and that making the layer wider barely helps. That came from a single run, from a single random start. Run again from 60 different starts, with Adam as the learning rule, one hidden layer of 16 solved the spirals 60 times out of 60, and the chapter had to be rewritten.</p>
+<p>Mission 8 has a smaller example. With Adam, the wide network won 2 of our 12 races and the two-layer one won 10. Watch only one of those two races and you would walk away believing the opposite of what the other ten say. One run is a story. Twelve runs are evidence.</p>
 
-<div class="bigidea"><p>A network's behavior comes from a handful of choices: the data, the shape, the activation, the learning rate. You understand a choice once you have changed it, guessed what would happen, and watched.</p></div>
+<div class="bigidea"><p>A network's behavior comes from a handful of choices: the data, the shape, the activation, the learning rule and its rate. You understand a choice once you have changed it, guessed what would happen, and watched.</p></div>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Build the smallest network you can (fewest stored numbers) that gets the test score on the two spirals to 95%. We managed it with 43 stored numbers, though it needed about 2,000 epochs. When you beat that, press "copy link to this setup" and send the link to a friend with a dare attached. The link rebuilds your exact dots, network and starting weights on their screen.</p>
+  <p>Build the smallest network you can (fewest stored numbers) that gets the test score on the two spirals to 95%. We managed it with 30 stored numbers, though it took Adam, nearly 4,000 epochs and several random starts. When you beat that, press "copy link to this setup" and send the link to a friend with a dare attached. The link rebuilds your exact dots, network and starting weights on their screen.</p>
 </div>
 
 <div class="quiz">
@@ -253,9 +268,9 @@
     <button data-opt="a">Nothing. A fair race has a winner</button>
     <button data-opt="b">Press "new start" and run the race several more times</button>
     <button data-opt="c">Raise the learning rate until the deep one wins</button>
-    <p class="why">Each run begins from different random weights, and a single run can go either way. That happened to us: the wide network won our first race and lost the next eleven. Changing the learning rate until you get the answer you wanted is not an experiment at all.</p>
+    <p class="why">Each run begins from different random weights, and a single run can go either way. In our 12 races with Adam the two-layer network won 10 and the wide one won 2, so one race could easily have shown you either result. Changing the learning rate until you get the answer you wanted is not an experiment at all.</p>
   </div>
 </div>
 
 <p style="font-size: 15px; color: var(--muted);">A lab like this was not our idea. It was made famous in 2016 by <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Playground</a>, built by Daniel Smilkov and Shan Carter. Ours is written from scratch for this book, with the book's own colors, missions and held-back test dots, but if you have enjoyed this one, go and play with the original too.</p>
-<p>When you have had enough of dots, {{ch:frontier}} looks at what the very biggest networks are doing right now.</p>
+<p>When you have had enough of dots, {{ch:timeline}} steps back to show where everything you have just been playing with came from.</p>

@@ -215,6 +215,7 @@
 #pg-chart { display: block; background: #fff; border-radius: 12px; box-shadow: 0 0 0 1.5px var(--pg-edge); }
 
 .pg-knob-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2px 26px; }
+.pg-rule-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 12px; font-size: 14px; color: #3b4157; }
 
 .pg-notebook { list-style: none; margin: 20px 0; padding: 0; counter-reset: mission; display: grid; gap: 14px; }
 .chapter-body .pg-notebook { padding-left: 0; }
