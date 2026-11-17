@@ -150,6 +150,20 @@ window.Book = (function () {
       ctx.fillStyle = '#5c6274';
       ctx.fillText(opts.xLabel, (left + w - right) / 2, h - 10);
     }
+    const markers = opts.markers || [];
+    const markerTop = opts.series.some(s => s.label) ? top + 16 : top;
+    for (const mk of markers) {
+      const x = X(mk.x);
+      ctx.save();
+      ctx.strokeStyle = mk.color || '#5c6274';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, markerTop);
+      ctx.lineTo(x, h - bottom);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     for (const s of series) {
@@ -176,6 +190,19 @@ window.Book = (function () {
       ctx.fillStyle = '#3b4157';
       ctx.fillText(s.label, lx + 17, top + 4);
       lx += 17 + ctx.measureText(s.label).width + 16;
+    }
+    for (const mk of markers) {
+      if (!mk.label) continue;
+      ctx.save();
+      ctx.font = '600 12px ' + bodyFont;
+      const width = ctx.measureText(mk.label).width;
+      const labelX = Math.max(left + 4, Math.min(X(mk.x) + 7, w - right - width - 4));
+      const labelY = h - bottom - 12;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(labelX - 4, labelY - 8, width + 8, 16);
+      ctx.fillStyle = mk.color || '#3b4157';
+      ctx.fillText(mk.label, labelX, labelY);
+      ctx.restore();
     }
     return { ctx, w, h, left, right, top, bottom, X, Y };
   }

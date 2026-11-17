@@ -255,8 +255,9 @@ tr:last-child > :last-child { border-bottom-right-radius: 11px; }
 
 .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 .toggle {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
+  align-content: center;
+  text-align: center;
   min-height: 40px;
   padding: 8px 16px;
   border: 1.5px solid var(--border-strong);
