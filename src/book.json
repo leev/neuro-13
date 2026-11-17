@@ -30,7 +30,7 @@
         {"slug": "backprop", "title": "Backpropagation: passing the blame backwards", "hook": "The one algorithm that trains every network, stepped through with real numbers."},
         {"slug": "real-data", "title": "Training on a real dataset", "hook": "150 real flowers and the four habits of honest training."},
         {"slug": "overfitting", "title": "Learning vs. memorizing", "hook": "Watch a network ace the homework and fail the test."},
-        {"slug": "depth", "title": "Stacking hidden layers", "hook": "Why deep beats wide: the spiral showdown."},
+        {"slug": "depth", "title": "Stacking hidden layers", "hook": "What a second layer adds, and what it doesn't: the spiral showdown."},
         {"slug": "scale", "title": "Scaling this up", "hook": "What changes between 9 weights and 9 billion."},
         {"slug": "recap-learning", "title": "Checkpoint: learning", "hook": "What to remember, a mixed quiz, and a project with your own data."}
       ]
