@@ -1,0 +1,309 @@
+<p>Before streaming, a TV pulled its picture out of the air with an antenna. Tune it to a channel where nothing was being broadcast and the screen filled with a hissing blizzard of flickering specks. People called it static: a picture made of pure randomness, with no pattern in it at all.</p>
+<p>Here is a strange fact about AI image generators. Ask one for a fox in a spacesuit and it does not start with a blank page. It starts with a screen full of static and cleans it, a little at a time, until what is left is a fox in a spacesuit. Nobody drew that fox, and it was not hiding in the static either.</p>
+<p>The method is called diffusion. In this chapter you will run a real <strong>diffusion model</strong>, a network that makes pictures by removing static step by step, and it is small enough that you can watch every step.</p>
+
+<h3>Pictures made of dots</h3>
+<p>A phone photo is millions of numbers, three for every pixel. That is too many to watch. So our pictures are simpler: each one is a cloud of 2,000 dots that draws a shape, and each dot is only two numbers, how far across it sits (x) and how far up (y).</p>
+<p>There are five pictures: a smiley, a heart, a spiral, a star and the word HI. Everything a real image generator does to pixels, we are going to do to dots.</p>
+
+<h3>Ruining a picture is easy</h3>
+<p>Take the heart. Give every dot a tiny random kick, a different kick for each dot. Now do it again. And again. With each round the dots drift further from where they began, and the picture forgets a little more of itself.</p>
+<p>Scientists call randomness like this <strong>noise</strong>, even when there is nothing to hear. In this chapter "noise" and "static" mean the same thing. We will do 50 rounds and call the round number the <strong>noise level</strong>: level 0 is the clean picture and level 50 is as ruined as it gets.</p>
+
+<div class="predict" data-answer="b">
+  <p>You are about to ruin five different pictures in exactly the same way. At noise level 50, will you be able to tell which one was the heart and which was the star?</p>
+  <button data-opt="a">Yes. A faint ghost of the shape always survives</button>
+  <button data-opt="b">No. All five end up as the same round blob</button>
+  <p class="why">By level 50 only 3% of each dot's real position is left; the rest is static. Every picture ends as the same shapeless blob. Hold on to that, because it means one screen of static could become <em>any</em> picture.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Ruin a picture</h3>
+  <p>Drag the slider, or press <em>ruin it</em>. Every step gives each of the 2,000 dots a small random kick. Find the level where you can no longer tell what the picture was. Then leave the slider at 50 and switch pictures.</p>
+  <div class="df-rig">
+    <div class="df-screen"><span class="df-tag">2,000 dots</span><canvas id="df-ruin-canvas" width="400" height="400" role="img" aria-label="A picture made of 2,000 dots, shown at the chosen noise level"></canvas></div>
+    <div class="df-side">
+      <div class="df-label">picture</div>
+      <div class="df-chips" id="df-ruin-shapes">
+        <button type="button" data-shape="smiley" disabled>smiley</button>
+        <button type="button" data-shape="heart" disabled>heart</button>
+        <button type="button" data-shape="spiral" disabled>spiral</button>
+        <button type="button" data-shape="star" disabled>star</button>
+        <button type="button" data-shape="hi" disabled>HI</button>
+      </div>
+      <div class="slider-row"><label for="df-ruin-level">noise level</label><input type="range" id="df-ruin-level" min="0" max="50" step="1" value="0" disabled><span class="value" id="df-ruin-level-v">0</span></div>
+      <button type="button" id="df-ruin-play" disabled>▶ ruin it</button>
+      <button type="button" class="secondary" id="df-ruin-reset" disabled>start over</button>
+      <p class="df-recipe">each dot = <b id="df-ruin-keep">1.00</b> × its real position + <b id="df-ruin-noise">0.00</b> × static</p>
+      <p class="df-status">loading the trained network…</p>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>Each step did two small things to every dot: it pulled the dot a tiny bit toward the middle of the screen, then gave it a random kick. The pull is there so the cloud does not swell up. It stays the same size while its shape drains away.</p>
+<p>The orange line under the buttons keeps score. At level 0 a dot is 1.00 × its real position and 0.00 × static. At level 50 it is 0.03 × its real position and 1.00 × static, which for all practical purposes is pure static. (The two numbers are not supposed to add up to 1. They are chosen so that the cloud keeps its size.)</p>
+<p>That line is also a shortcut. Fifty small random kicks add up to one big random kick, so nobody has to walk through the levels one at a time. Pick any level, look up its two numbers, and mix:</p>
+<pre>noisy dot = keep × real position + noise × static</pre>
+<p>Training is about to use that recipe many thousands of times a second.</p>
+
+<h3>Un-ruining it is the real skill</h3>
+<p>Anyone can scribble over a drawing. Getting the drawing back is another matter. Once a picture has dissolved into the blob, the exact spot each dot came from is gone for good. Nothing can recover those particular 2,000 dots.</p>
+<p>But you could make <em>a</em> heart again, if you knew what hearts look like. That knowledge is what we are going to train into a network. It will not store the dots. It will learn where the dots of a heart tend to be.</p>
+
+<h3>The training game: guess the static</h3>
+<p>Here is the whole game. It is played one dot at a time.</p>
+<ol>
+  <li>Pick a real dot from one of the five pictures.</li>
+  <li>Pick a noise level from 1 to 50.</li>
+  <li>Make some static and mix it into the dot with the recipe. We made the static ourselves, so we know exactly what it was.</li>
+  <li>Show the network the ruined dot, its noise level and which picture it came from. Ask one question: <em>what static did I mix in?</em></li>
+  <li>The network answers with two numbers. The distance between its answer and the real static, squared, is the loss. Backpropagation from {{ch:backprop}} works out how to nudge every weight so that the distance shrinks.</li>
+</ol>
+
+<figure class="df-figure">
+  <svg viewBox="0 0 480 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the training game. A real dot and some random static are mixed into a ruined dot. The network is given the ruined dot, its noise level and which shape it came from, and outputs its guess of the static. The guess is compared with the real static, and the gap between them is the loss.">
+    <defs>
+      <marker id="df-arr" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 z" fill="#6b7280"/></marker>
+      <marker id="df-arr-red" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto-start-reverse"><path d="M0,0 L0,8 L8,4 z" fill="#dc2626"/></marker>
+    </defs>
+    <rect x="30" y="12" width="170" height="46" rx="10" fill="#fff" stroke="#9ca3af" stroke-width="1.5"/>
+    <text x="115" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2937">a real dot</text>
+    <text x="115" y="49" text-anchor="middle" font-size="12" fill="#6b7280">from a training picture</text>
+    <rect x="280" y="12" width="170" height="46" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="365" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#9a3412">random static</text>
+    <text x="365" y="49" text-anchor="middle" font-size="12" fill="#9a3412">we made it, so we know it</text>
+    <line x1="150" y1="58" x2="226" y2="84" stroke="#6b7280" stroke-width="1.5"/>
+    <line x1="330" y1="58" x2="254" y2="84" stroke="#6b7280" stroke-width="1.5"/>
+    <circle cx="240" cy="92" r="15" fill="#fff" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="240" y="98" text-anchor="middle" font-size="18" font-weight="700" fill="#374151">+</text>
+    <line x1="240" y1="107" x2="240" y2="126" stroke="#6b7280" stroke-width="1.5" marker-end="url(#df-arr)"/>
+    <rect x="160" y="130" width="160" height="40" rx="10" fill="#fff" stroke="#9ca3af" stroke-width="1.5"/>
+    <text x="240" y="155" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2937">the ruined dot</text>
+    <rect x="14" y="134" width="124" height="32" rx="16" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+    <text x="76" y="155" text-anchor="middle" font-size="13" fill="#374151">its noise level</text>
+    <rect x="342" y="134" width="124" height="32" rx="16" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+    <text x="404" y="155" text-anchor="middle" font-size="13" fill="#374151">which shape</text>
+    <line x1="240" y1="170" x2="240" y2="208" stroke="#6b7280" stroke-width="1.5" marker-end="url(#df-arr)"/>
+    <line x1="76" y1="166" x2="172" y2="208" stroke="#6b7280" stroke-width="1.5" marker-end="url(#df-arr)"/>
+    <line x1="404" y1="166" x2="308" y2="208" stroke="#6b7280" stroke-width="1.5" marker-end="url(#df-arr)"/>
+    <rect x="150" y="212" width="180" height="50" rx="12" fill="#ea580c"/>
+    <text x="240" y="234" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">the network</text>
+    <text x="240" y="251" text-anchor="middle" font-size="12" fill="#ffedd5">what static was mixed in?</text>
+    <line x1="240" y1="262" x2="240" y2="292" stroke="#6b7280" stroke-width="1.5" marker-end="url(#df-arr)"/>
+    <rect x="130" y="296" width="220" height="42" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="240" y="322" text-anchor="middle" font-size="14" font-weight="700" fill="#9a3412">its guess of the static</text>
+    <path d="M454,35 H468 V317 H354" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4" marker-start="url(#df-arr-red)" marker-end="url(#df-arr-red)"/>
+    <text x="400" y="232" text-anchor="middle" font-size="12.5" font-weight="700" fill="#dc2626">compare:</text>
+    <text x="400" y="248" text-anchor="middle" font-size="12.5" fill="#dc2626">the gap is the loss</text>
+  </svg>
+  <figcaption>One turn of the training game.</figcaption>
+</figure>
+
+<p>Play that game 30,000 times, with 1,024 dots in every turn, and the network becomes a very good noise-spotter.</p>
+<p><strong>Why ask for the static and not for the clean dot?</strong> Two reasons. First, the right answer is free. We created the static, so every turn comes with a perfect answer key and no person ever has to label anything. A language model gets its answers the same way: the next word is already sitting there in the text ({{ch:chatbots}}).</p>
+<p>Second, the two questions are really one. Look at the recipe: if you know the noisy dot and the static, a little arithmetic gives you the clean dot, and the other way around. The researchers who first made this work well tried both and got better pictures when the network was asked for the noise.</p>
+<p>The network itself contains nothing you have not met. It has 25 inputs, three hidden layers of 128 ReLU neurons like the ones in {{ch:depth}}, and 2 outputs: 36,610 weights in all. The inputs are:</p>
+<ul>
+  <li>the dot's x and y;</li>
+  <li>the same x and y passed through sine and cosine waves at four zoom levels, 16 more numbers (a common trick that helps a small network draw thin, sharp lines);</li>
+  <li>the two numbers from the recipe, which tell it how noisy things are;</li>
+  <li>five on/off switches that say which picture the dot belongs to, one-hot like the answers in {{ch:multi}}.</li>
+</ul>
+
+<div class="callout">This network was trained ahead of time, by the Python script at the end of this chapter. Your browser downloaded its 36,610 finished weights and is <em>running</em> the network, not training it. Every dot you see move below is moved by real arithmetic on those weights, live.</div>
+
+<h3>Making a picture</h3>
+<p>Now play the game backwards.</p>
+<ol>
+  <li>Start with 2,000 dots of pure static. No picture went into them.</li>
+  <li>Tell the network "this is noise level 50" and ask what static is in each dot.</li>
+  <li>Take out a little of the static it guessed, just enough to bring the dots down to level 49.</li>
+  <li>Ask again at level 49. Then 48. Keep going until you reach 0.</li>
+</ol>
+
+<div class="predict" data-answer="b">
+  <p>Before you try it: the network's weights never change, and no dice are rolled during the 50 steps. If you run it twice, starting from two different screens of static, what do you get?</p>
+  <button data-opt="a">The identical heart, dot for dot, both times</button>
+  <button data-opt="b">A heart both times, but drawn with different dots</button>
+  <button data-opt="c">A heart the first time and some other shape the second</button>
+  <p class="why">Different static in, different dots out. But every dot still lands on the heart, because the heart is the thing the network learned.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Un-ruin it</h3>
+  <p>These 2,000 dots are pure static. Press <em>un-ruin it</em> and the network cleans them, one noise level at a time. When it has finished, drag the slider to scrub back and forth through the steps. Then press <em>again</em> a few times and compare the hearts.</p>
+  <div class="df-rig">
+    <div class="df-screen"><span class="df-tag" id="df-gen-tag">asked for: heart</span><canvas id="df-gen-canvas" width="400" height="400" role="img" aria-label="2,000 dots of static being turned into a heart by the network"></canvas></div>
+    <div class="df-side">
+      <button type="button" id="df-gen-run" disabled>▶ un-ruin it</button>
+      <button type="button" class="secondary" id="df-gen-again" disabled>again, with new static</button>
+      <div class="slider-row"><label for="df-gen-step">steps done</label><input type="range" id="df-gen-step" min="0" max="50" step="1" value="0" disabled><span class="value" id="df-gen-step-v">0</span></div>
+      <div class="df-chips">
+        <button type="button" id="df-gen-train" aria-pressed="false" disabled><span class="df-swatch"></span>show the 2,000 training dots</button>
+        <button type="button" id="df-gen-zoom" aria-pressed="false" disabled>zoom in on the tip</button>
+      </div>
+      <div class="stat-row">
+        <span>noise level now: <strong id="df-gen-level">50</strong></span>
+        <span>times the network has run: <strong id="df-gen-runs">0</strong></span>
+        <span>computing time on your device: <strong id="df-gen-time">—</strong></span>
+      </div>
+      <p class="df-status">loading the trained network…</p>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p><strong>The network did all of it.</strong> While the dots were moving, nothing on this page looked at a drawing of a heart. Each step, every dot was handed to the network on its own, and the network answered "here is the static I think is in you". 2,000 dots times 50 steps is 100,000 runs of the network for one picture.</p>
+<p><strong>The picture arrives in stages.</strong> Scrub slowly through the steps. For the first ten or so the cloud hardly seems to change. Then it turns lumpy, a hazy heart shows up around step 30, and the last ten steps pull the haze into a sharp line. Rough decisions come first ("this dot belongs on the left side") and fine ones last ("exactly here on the curve").</p>
+<p><strong>The variety comes from the static.</strong> Press <em>again</em> and you get a heart every time, but never the same heart. The weights were the same on every run and so were the 50 steps. The only thing that changed was the static you started with.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: many image generators also stir a pinch of fresh static back in after each step, so they roll dice all the way through. Ours uses a version of the method that does not, which is why here the starting static decides everything.</p>
+<p><strong>It learned the pattern, not the dots.</strong> Switch on <em>show the 2,000 training dots</em>, then <em>zoom in on the tip</em>. The blue dots are the ones the network was trained on. The orange ones are not copies of them: they are new dots scattered along the same line. Press <em>again</em> while you are zoomed in and the orange dots land somewhere new, while the blue ones never move.</p>
+<p>We measured it, too. A generated dot lands, on average, 0.013 away from the nearest training dot, on a heart about 3.4 wide. Brand-new real dots, sprinkled along the heart the same way the training dots were, land 0.014 away. The network's dots are as new as new real dots would be.</p>
+
+<h3>Why not one big step?</h3>
+<p>Fifty steps means running the network fifty times per dot. If the network knows what static is in a dot, why not remove all of it at once?</p>
+
+<div class="predict" data-answer="b">
+  <p>Suppose we skip the patience: from pure static, ask the network once and remove <em>all</em> the static it guesses in a single giant step. What comes out?</p>
+  <button data-opt="a">The same sharp heart, just sooner</button>
+  <button data-opt="b">A shapeless mess</button>
+  <button data-opt="c">A sharp picture, but of the wrong shape</button>
+  <p class="why">Try it below and see. The explanation follows the widget.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>How many steps does it need?</h3>
+  <p>Same network, same starting static every time. The only thing you change is how many steps the trip from level 50 down to level 0 is cut into. Start with 1 and work your way up.</p>
+  <div class="df-rig">
+    <div class="df-screen"><span class="df-tag">asked for: heart</span><canvas id="df-steps-canvas" width="400" height="400" role="img" aria-label="What the network makes of the same static in the chosen number of steps"></canvas></div>
+    <div class="df-side">
+      <div class="df-label">cut the trip into</div>
+      <div class="df-chips" id="df-steps-chips">
+        <button type="button" data-steps="1" disabled>1 step</button>
+        <button type="button" data-steps="2" disabled>2 steps</button>
+        <button type="button" data-steps="5" disabled>5 steps</button>
+        <button type="button" data-steps="10" disabled>10 steps</button>
+        <button type="button" data-steps="50" disabled>50 steps</button>
+      </div>
+      <div class="stat-row">
+        <span>steps: <strong id="df-steps-n">—</strong></span>
+        <span>times the network runs: <strong id="df-steps-runs">—</strong></span>
+      </div>
+      <p class="df-status">loading the trained network…</p>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>One step gives a scattered mess. Two steps give a smudge. Five give a blurry heart, ten are close, and fifty are sharp.</p>
+<p>Think about what the network is being asked at noise level 50. The dot it is shown is nearly pure static, so that dot could belong almost anywhere on the heart. Forced to give a single answer, the best the network can do is a kind of average over every place the dot might belong, and the average of all the points on a heart's outline is somewhere in the empty middle. A giant step sends every dot toward a bad guess. (In a single step, small mistakes in the guess also get hugely magnified. That is the scatter you saw.)</p>
+<p>Small steps avoid the trap. The first guess is vague, so you trust it only a little: remove a sliver of static and stop. Now the dots are slightly less noisy, and the same question has a slightly sharper answer. Fifty slivers later the answers have gone from "somewhere around the middle" to "right here, on the left curve".</p>
+
+<h3>The prompt</h3>
+<p>So far every run made a heart, because we always set the "heart" switch. Time to use the other four.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Same static, different prompt</h3>
+  <p>Pick a prompt and watch what the static turns into. Then pick another one. Every run starts from the same static, the one in the small screen on the right. Only the prompt changes.</p>
+  <div class="df-rig">
+    <div class="df-screen"><canvas id="df-prompt-canvas" width="400" height="400" role="img" aria-label="2,000 dots of static being turned into the shape named by the prompt"></canvas></div>
+    <div class="df-side">
+      <div class="df-label">prompt</div>
+      <div class="df-chips" id="df-prompt-chips">
+        <button type="button" data-shape="smiley" disabled>smiley</button>
+        <button type="button" data-shape="heart" disabled>heart</button>
+        <button type="button" data-shape="spiral" disabled>spiral</button>
+        <button type="button" data-shape="star" disabled>star</button>
+        <button type="button" data-shape="hi" disabled>HI</button>
+      </div>
+      <div class="df-label">every run starts from this static</div>
+      <div class="df-start">
+        <div class="df-screen df-mini"><canvas id="df-prompt-static" width="110" height="110" role="img" aria-label="The static every run starts from"></canvas></div>
+        <button type="button" class="secondary" id="df-prompt-new" disabled>new static</button>
+      </div>
+      <div class="stat-row">
+        <span>the prompt says: <strong id="df-prompt-said">nothing yet</strong></span>
+      </div>
+      <p class="df-status">loading the trained network…</p>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>Remember the first widget: every picture ruins into the same blob. So the static cannot be what decides the picture. Here, the same 2,000 specks became a star or a spiral depending on one thing: which of the five switches was on.</p>
+<p>Giving a network extra information to steer what it makes is called <strong>conditioning</strong>. Our network learned what each switch means the ordinary way. During training every ruined dot arrived with a label saying which picture it came from, so the network learned five different answers to "what static is in this dot?", one per label.</p>
+<p>And notice that it is one network. A single set of 36,610 weights holds all five pictures.</p>
+
+<h3>From dots to pixels</h3>
+<p><strong>Millions of numbers at once.</strong> Our network looked at one dot at a time, and a dot is two numbers. It never needed to know where the other dots were. So each dot was really its own tiny two-number "picture", and the heart is what you see when 2,000 of them are made side by side. A real image is the other way around: it is a <em>single</em> "dot" made of millions of numbers. A 1,024 × 1,024 color picture has 3,145,728 of them, a red, a green and a blue value for every pixel. The network has to guess the noise in all of them together, because pixels depend on each other: the left eye has to match the right one. That takes a far larger network, with hundreds of millions to billions of weights, built from parts you have met: the convolutions of {{ch:convolution}} and the attention of {{ch:attention}}.</p>
+<p><strong>A compressed picture.</strong> Guessing the noise in three million numbers, dozens of times over, is slow. So most generators do not work on pixels directly. A separate network first learns to squeeze a picture into a much smaller grid of numbers, called a <strong>latent</strong>, and to un-squeeze it again. All the ruining and un-ruining happens on the small grid, and the result is un-squeezed into pixels once at the very end. The first Stable Diffusion squeezed a 512 × 512 picture, 786,432 numbers, into 16,384 numbers: 48 times fewer.</p>
+<p><strong>A prompt made of words.</strong> Our prompt was one of five switches. A real prompt is a sentence, and there is no end to the sentences people can write, so switches will not do. Instead the sentence goes through a language network, a relative of the ones in {{ch:chatbots}}, which turns it into lists of numbers that capture its meaning, like the embeddings in {{ch:tokens}}. Those numbers are fed to the noise-guessing network at every step, right where our switches went. To learn what they mean, the generator plays the same training game on hundreds of millions of pictures that come with captions: here is a ruined picture, its noise level and its caption, so what static was mixed in?</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: "diffusion" is now a family of methods, not one recipe. Newer generators mix in the noise differently, take far fewer steps, or use a close cousin called flow matching. A few build a picture piece by piece instead, the way a chatbot writes. Start from noise and clean it up, steered by a prompt, is the idea that set off the boom in AI pictures, and it is still at work in many of today's image and video generators.</p>
+
+<h3>Where the idea came from</h3>
+<p><strong>2015.</strong> Jascha Sohl-Dickstein and three colleagues at Stanford and Berkeley published <a href="https://arxiv.org/abs/1503.03585" target="_blank" rel="noopener">the core idea</a>: destroy data slowly with noise, and train a network to undo the destruction. They borrowed it from physics, where <em>diffusion</em> is what a drop of ink does in a glass of water: it spreads until no trace of the drop's shape is left. The method worked, but its pictures were small and fuzzy, and for a few years it stayed in the background.</p>
+<p><strong>2020.</strong> Jonathan Ho, Ajay Jain and Pieter Abbeel at Berkeley showed how to make it work well. <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">Their paper</a> trained the network with the plain guess-the-noise game you just read about, and its pictures rivaled the best that any method could make at the time.</p>
+<p><strong>2022.</strong> Three ingredients came together: the 2020 recipe, steering with text, and the squeeze-it-first trick, <a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">published</a> by researchers in Germany at the end of 2021. Within a few months the systems most people have heard of appeared: DALL·E 2 from OpenAI in April, Imagen from Google in May, and Stable Diffusion in August, with its weights released so that anyone with a decent gaming computer could run it at home. Midjourney opened to the public that July as well, though its makers have not published how it works inside.</p>
+
+<h3>Two things worth thinking about</h3>
+<p><strong>Whose pictures did it learn from?</strong> Our network learned from 10,000 dots that we made ourselves. The big generators learned from enormous collections of photographs, paintings and drawings made by people, mostly gathered from the internet without asking those people first. (A few companies say they train only on pictures they own or have paid to use.) Like our network, a generator mostly learns patterns instead of storing pictures, though researchers have <a href="https://arxiv.org/abs/2301.13188" target="_blank" rel="noopener">shown</a> that it can sometimes reproduce a training image almost exactly. Whether artists and photographers should have a say in this, get credit, or be paid is being argued over right now in courtrooms and parliaments. Thoughtful people disagree, and it is worth working out what you think is fair.</p>
+<p><strong>Can you still believe a picture?</strong> A convincing photo of something that never happened used to take real skill to fake. Now it takes a sentence. That does not mean every picture is fake. It means a picture, on its own, is no longer proof. The habits from {{ch:mistakes}} apply to pictures too: ask where it came from, who is showing it to you and why, and whether anyone you trust can confirm it.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Train a diffusion model yourself</h3>
+  <p>This is <code>diffusion.py</code>, the script that trained the network on this page. It needs only numpy. Press run and it trains right here, printing its pictures as text: first a training picture, then the same picture being ruined, then pictures it generates from pure static once training is done.</p>
+  <p>Python inside a web page is slow, so here the script switches itself to a quick setting: two shapes (a heart and a star) instead of five, a smaller network, and 4,000 small training steps. That took 16 seconds on the laptop this chapter was written on, and a slower machine will need longer. Expect rougher pictures than the ones above. On your own computer the script does the full job, 30,000 bigger steps, in a few minutes and writes <code>diffusion-weights.json</code>, the file this page loaded.</p>
+  <div class="run-note">On your own computer: <code>python3 diffusion.py</code> (the full run) or <code>python3 diffusion.py --quick</code></div>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">diffusion.py</span>
+      <span class="code-status" id="py-status-diffusion">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-diffusion" spellcheck="false" rows="30" data-src="diffusion.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="diffusion">▶ run</button>
+    <button class="secondary" data-py-reset="diffusion">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-diffusion"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<p>Two things to look for in the output. First, the loss. Guessing "no static at all" every time would score 1.0. The network gets down to about 0.5 quickly, then improves only slowly, and it never gets anywhere near 0. That is not a bug. Static that knocks a dot sideways off its line is easy to spot, but static that slides a dot <em>along</em> the line leaves it sitting on the line, looking innocent. No network can guess that part, so some loss always remains.</p>
+<p>Second, after each generated picture the script prints how far its dots are from the nearest training dots. That is the check we quoted earlier: a copy would score 0. The quick run scores higher than the full one because its pictures are fuzzier, not because its dots are newer.</p>
+
+<div class="bigidea"><p>A diffusion model learns one small skill: look at something noisy and say what the noise is. Use that skill over and over on pure static and a picture appears that never existed before. The training data decides what is possible, the prompt decides what you get, and the static decides the details.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p>Teach it a shape of your own. In the script, find <code>PEN_STROKES</code> and add a line such as <code>"bolt": [[(0.3, 1), (-0.5, 0), (0.2, 0), (-0.3, -1)]],</code> which is a single pen stroke through four corners. Then change <code>["heart", "star"]</code> near the top to <code>["heart", "bolt"]</code> and run it. Does a lightning bolt come out of the static? Now design a shape that needs two strokes.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>During training, what is the network asked to do?</p>
+    <button data-opt="a">Draw the whole picture from a blank screen</button>
+    <button data-opt="b">Look at a noisy version and guess the noise that was mixed in</button>
+    <button data-opt="c">Decide whether a picture is real or fake</button>
+    <p class="why">We ruin real data with noise we made ourselves, then ask the network what that noise was. Since we made the noise, the right answer is always known.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>Two people type exactly the same prompt into an image generator and get two different pictures. What is the main reason?</p>
+    <button data-opt="a">The network was retrained in between</button>
+    <button data-opt="b">The generator looked up two different pictures in its training collection</button>
+    <button data-opt="c">Each run started from different random static</button>
+    <p class="why">Same weights, same prompt, different starting static. The prompt decides the subject and the static decides the details.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>Why does a diffusion model remove the noise in many small steps instead of one big one?</p>
+    <button data-opt="a">From heavy noise its best single guess is a blurry average, and each small step makes the next guess easier</button>
+    <button data-opt="b">The network learns a little more about the picture on every step</button>
+    <button data-opt="c">A single step would only produce a copy of a training picture</button>
+    <p class="why">The weights never change while a picture is being made. What changes is the question: with a little less noise each time, the possible answers narrow until only a sharp picture fits.</p>
+  </div>
+</div>

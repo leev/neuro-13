@@ -21,8 +21,10 @@ check:
 	@for f in py/*.py; do python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" $$f && echo "$$f OK"; done
 
 # Runs every exercise that needs only numpy / scikit-learn (skips the PyTorch ones).
+# diffusion.py gets --quick: its full run takes minutes and rewrites the shipped weights.
 run-all:
 	@cd py && for f in *.py; do \
 		if grep -q "^import torch\|^from torch" $$f; then echo "--- $$f (skipped: needs PyTorch) ---"; continue; fi; \
-		echo "--- $$f ---"; python3 $$f || exit 1; echo; \
+		args=""; if [ $$f = diffusion.py ]; then args="--quick"; fi; \
+		echo "--- $$f $$args ---"; python3 $$f $$args || exit 1; echo; \
 	done

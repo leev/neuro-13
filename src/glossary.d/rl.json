@@ -1,0 +1,18 @@
+{
+  "reinforcement learning": "Learning by trial and error. An agent tries actions, gets rewards, and gradually works out which actions lead to more reward. Nobody shows it the right answer.",
+  "agent": "The one doing the acting. In reinforcement learning it is the learner: it looks at its situation, picks an action and collects the reward.",
+  "state (in reinforcement learning)": "The situation an agent is in right now, as far as it can tell. In the maze it is the cell the creature is standing on.",
+  "action": "One of the things an agent can choose to do. In the maze there are four: up, right, down and left.",
+  "reward": "The number an agent gets back right after an action: points gained or lost. In reinforcement learning it is the only feedback there is.",
+  "episode": "One complete attempt in reinforcement learning, from the starting position until the goal is reached or time runs out.",
+  "policy": "An agent’s rule for which action to take in every state. In the maze it is the map of arrows.",
+  "Q-learning": "A reinforcement learning method that keeps a value for every action in every state and corrects one value after each move, using the reward and the best value of the state it landed in.",
+  "Q-value": "An agent’s current estimate of the total reward that one action, taken from one state, will lead to in the end.",
+  "Q-table": "The table a Q-learning agent fills in: one Q-value for every action in every state.",
+  "exploration": "Trying an action you are not sure about, to find out what happens.",
+  "exploitation": "Taking the action you currently believe is best, instead of trying something new.",
+  "discount factor": "A number between 0 and 1, written γ, that says how much a reward one step in the future is worth compared with the same reward right now.",
+  "deep Q-network": "A neural network that does the job of a Q-table: the state goes in and an estimated value for each action comes out. Often shortened to DQN.",
+  "self-play": "Training a game-playing agent by having it play against copies of itself.",
+  "reward hacking": "When an agent finds a way to collect lots of reward that is not what its designers meant."
+}

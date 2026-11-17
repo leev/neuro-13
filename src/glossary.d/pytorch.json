@@ -1,0 +1,9 @@
+{
+  "framework": "A toolkit for building and training neural networks. Its main trick is working out every gradient automatically.",
+  "PyTorch": "The framework most AI researchers use to build and train neural networks, written mostly for Python.",
+  "automatic differentiation": "Getting gradients without working out formulas by hand: the computer keeps notes during the forward pass and reads them backwards.",
+  "computation graph": "The web of notes a framework keeps during the forward pass: every number, which numbers it was made from, and how.",
+  "tensor": "A grid of numbers (a list, a table, or a stack of tables) that a framework does math on, and keeps notes on, as one unit.",
+  "optimizer": "The part of a framework that nudges the weights once their gradients are known. Adam is the usual choice.",
+  "parameter": "Any number that training is allowed to change: every weight and every bias."
+}

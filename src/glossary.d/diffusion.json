@@ -1,0 +1,8 @@
+{
+  "diffusion model": "A network that makes a picture by starting from pure noise and removing a little of it at a time. The idea behind the AI image generators that appeared in 2022.",
+  "noise": "Randomness with no pattern in it, like the static on an old TV tuned to no channel.",
+  "noise level": "How much noise has been mixed into a picture. In this book's demo, level 0 is the clean picture and level 50 is almost nothing but noise.",
+  "conditioning": "Giving a network extra information, such as a label or a text prompt, to steer what it makes.",
+  "prompt": "What you give a generative model to tell it what you want: a question for a chatbot, a description for an image generator.",
+  "latent": "A compressed version of a picture: a much smaller grid of numbers that a network can turn back into pixels."
+}

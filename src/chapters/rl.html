@@ -1,0 +1,268 @@
+<p>Think back to learning to ride a bike. Nobody handed you a list of the correct lean angle for every moment. You wobbled, tipped over and tried again. Staying up felt great. Hitting the pavement did not. From nothing more than that, your body worked out what to do.</p>
+<p>Now compare that with every network in this book so far. They all learned like a student getting homework back from a teacher: here is the question, here is the right answer, here is how far off you were. The flower sorter had labels. The name model was told which letter really came next. Even the picture maker in {{ch:diffusion}} was told exactly which static it should have guessed.</p>
+<p>This chapter is about the other way to learn, the bike way. It is called <strong>reinforcement learning</strong>: learning what to do by trying things and seeing how many points you get, with nobody ever showing you the right answer.</p>
+<p>Two things make it harder than marked homework.</p>
+<ul>
+  <li><strong>You get a score, not a correction.</strong> A teacher's red pen says "the answer was 7". A score only says "that went well" or "that went badly". It never says what you should have done instead.</li>
+  <li><strong>The score arrives late.</strong> {{Ch:backprop}} had a soccer team that lost 3–2 and asked whose fault it was. This is the same puzzle stretched out over time. When the ball finally goes in, which of the last fifty passes deserves the credit?</li>
+</ul>
+
+<h3>A creature, a maze and nothing else</h3>
+<p>Just below is a 7 × 7 maze with a small orange creature in the bottom-left corner. Here is everything the creature can sense: which cell it is standing on. That's all. It can't see the walls, the lava or the star. It has no map.</p>
+<p>And here are all the rules of its world:</p>
+<ul>
+  <li>Each turn it picks one of four moves: up, right, down or left. If it walks into a wall or the edge, it stays where it is.</li>
+  <li>Landing on the star is worth <strong>+10 points</strong> and ends the attempt.</li>
+  <li>Stepping into lava costs <strong>10 points</strong>. It can climb back out.</li>
+  <li>Every other move is worth 0.</li>
+  <li>If it hasn't found the star after 200 moves, we pick it up and put it back at the start.</li>
+</ul>
+<p>One attempt, from the start until the star or the 200th move, is called an <strong>episode</strong>.</p>
+<p>All the creature keeps from one episode to the next is a small table of numbers. For every cell it has four numbers, one for each move. Each is its current guess at one question: <em>if I make this move from here, how many points will it lead to in the end?</em> We'll call that number the move's <em>value</em>. At the beginning every value is 0, because it knows nothing.</p>
+
+<div class="predict" data-answer="b">
+  <p>After a lot of wandering, the creature stumbles onto the star and gets its +10. In the next episode it starts from the same corner again. What happens?</p>
+  <button data-opt="a">It walks straight back to the star, because it remembers the path it took</button>
+  <button data-opt="b">It wanders about as badly as before, because it only learned that its very last move was a good one</button>
+  <button data-opt="c">It starts from nothing, because it forgets everything between episodes</button>
+  <p class="why">It keeps its table, so it hasn't forgotten. But it has no memory of its path at all. When the +10 arrived, the only number it changed was the one for the move it had just made. One cell, right beside the star, now knows something. The other 34 are still blank. Watch for that single green cell.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Teach a creature a maze</h3>
+  <p>Take it in four steps. <strong>1.</strong> Press <em>one move</em> a few times and read the panel under the maze: it shows the sum the creature does after every move. <strong>2.</strong> Press <em>▶ watch</em> and follow it for an episode or two. <strong>3.</strong> Press <em>▶▶ fast</em>, which plays a whole episode in a blink and draws where it went. Watch for the first green cell, then watch the green spread. <strong>4.</strong> When the scribble has turned into one clean line, press <em>1,000 episodes</em>.</p>
+  <div class="rl-buttons">
+    <button type="button" class="secondary" id="rl-step">one move</button>
+    <button type="button" class="secondary" id="rl-finish">finish episode</button>
+    <button type="button" id="rl-watch">▶ watch</button>
+    <button type="button" id="rl-fast">▶▶ fast</button>
+    <button type="button" id="rl-burst">1,000 episodes</button>
+  </div>
+  <div class="rl-stage">
+    <canvas id="rl-maze" width="444" height="442" role="img" aria-label="A 7 by 7 maze. The creature starts in the bottom-left corner. The star it is looking for is in the middle, behind a wall with a gap filled with lava."></canvas>
+    <div class="rl-side">
+      <dl class="rl-facts">
+        <div><dt>episode</dt><dd id="rl-episode">1</dd></div>
+        <div><dt>moves so far</dt><dd id="rl-moves">0</dd></div>
+        <div><dt>points so far</dt><dd id="rl-points">0</dd></div>
+        <div><dt>its plan from the start</dt><dd id="rl-plan">none yet</dd></div>
+        <div><dt>shortest lava-free route</dt><dd id="rl-safe">12 moves</dd></div>
+        <div><dt>average moves, last 20</dt><dd id="rl-recent-moves">—</dd></div>
+        <div><dt>average points, last 20</dt><dd id="rl-recent-points">—</dd></div>
+      </dl>
+      <div class="rl-knob">
+        <label for="rl-eps">exploring (ε)</label><span class="value" id="rl-eps-v">10%</span>
+        <input type="range" id="rl-eps" min="0" max="1" step="0.05" value="0.1">
+        <p id="rl-eps-say"></p>
+      </div>
+      <div class="rl-knob">
+        <label for="rl-alpha">learning rate (α)</label><span class="value" id="rl-alpha-v">0.50</span>
+        <input type="range" id="rl-alpha" min="0.05" max="1" step="0.05" value="0.5">
+        <p id="rl-alpha-say"></p>
+      </div>
+      <div class="rl-knob">
+        <label for="rl-gamma">future counts (γ)</label><span class="value" id="rl-gamma-v">0.90</span>
+        <input type="range" id="rl-gamma" min="0" max="1" step="0.05" value="0.9">
+        <p id="rl-gamma-say"></p>
+      </div>
+    </div>
+  </div>
+  <div class="rl-tools" id="rl-tools">
+    <span class="rl-label">change the maze</span>
+    <button type="button" class="rl-tool on" data-tool="look">hands off</button>
+    <button type="button" class="rl-tool" data-tool="wall">wall</button>
+    <button type="button" class="rl-tool" data-tool="empty">empty</button>
+    <button type="button" class="rl-tool" data-tool="lava">lava −10</button>
+    <button type="button" class="rl-tool" data-tool="snack">snack +1</button>
+    <button type="button" class="rl-tool" data-tool="start">move start</button>
+    <button type="button" class="rl-tool" data-tool="goal">move goal</button>
+  </div>
+  <div class="rl-buttons">
+    <button type="button" class="secondary" id="rl-erase">erase its memory</button>
+    <button type="button" class="secondary" id="rl-reset">reset everything</button>
+  </div>
+
+  <div class="math-panel">
+    <h4>What its last move taught it</h4>
+    <p class="rl-math" id="rl-math"></p>
+  </div>
+  <p class="rl-key"><b>Arrow:</b> the move it currently rates best in that cell. Black arrows are its whole plan from the start. <b>Number and green:</b> the points it expects from that cell onward. <b>Red bar:</b> a move it has learned costs points. <b>Orange line:</b> where it went this episode.</p>
+
+  <canvas class="rl-chart" id="rl-chart" width="680" height="210"></canvas>
+  <p class="rl-key">How many moves each episode took. <span style="color: #ea580c; font-weight: 600;">Light orange</span> is every single episode, <span style="color: #c2410c; font-weight: 600;">dark orange</span> is the average of the last 20, and <span style="color: #64748b; font-weight: 600;">gray</span> is the shortest route that avoids lava. An episode that runs out of time counts as 200, which is off the top.</p>
+
+  <button type="button" class="secondary" id="rl-dump-toggle">show its whole memory</button>
+  <pre class="model-dump" id="rl-dump" hidden></pre>
+</div>
+
+<h3>What just happened</h3>
+<p>The page starts with its dice set the same way every time. So if you pressed nothing but the run buttons, your creature's story went exactly like this:</p>
+<ul>
+  <li><strong>Episode 1: stumbling.</strong> 200 moves of wandering, three of them into lava, and no star. It finishes on −30 points without a single green cell. All it has learned is three things that hurt: the red bars.</li>
+  <li><strong>Episode 2: luck.</strong> On move 86 it blunders onto the star. One cell turns green: D5, right beside the star, now says 5.00.</li>
+  <li><strong>Episode 3.</strong> It needs 130 moves, but it gets there again. D5 rises to 7.50, and its neighbor E5 gets 2.25.</li>
+  <li><strong>Episodes 4 to 16: mostly failing.</strong> Ten of these thirteen episodes run out of time. But each success drags the green a cell or two further from the star: along row 5, then down column G.</li>
+  <li><strong>Episode 17 onward: it never fails again.</strong> Once it wanders into the green, it just follows the arrows home.</li>
+  <li><strong>Episode 25: the route locks in.</strong> The green reaches the start cell, and "its plan from the start" reads 12 moves for the first time. That took 3,125 moves of experience.</li>
+</ul>
+<p>After that the chart goes flat at around 13 moves. The plan is 12 moves, the shortest route there is without touching lava. The extra move or so comes from the creature still trying something random now and then, which we'll get to.</p>
+<p>Notice what it did <em>not</em> learn. After 1,000 episodes, 18 of the 35 cells it could stand on are still blank. It never needed the top of the maze, so it never worked it out.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: after <em>erase its memory</em> the dice are different every time, so the story changes. Of 1,000 fresh creatures we ran, half had a plan by episode 28 and nine in ten by episode 39. For 983 it was the 12-move route. The other 17 stumbled on the long way round the top first, 16 moves, and never found the shorter one. If your plan says 16, that happened to you.</p>
+
+<h3>The four pieces</h3>
+<p>You have now watched every part of reinforcement learning. The parts have names, and the names are the same for a creature in a maze and a program playing chess.</p>
+<ul>
+  <li>The <strong>agent</strong> is the learner, the one making the choices. Here that's the creature.</li>
+  <li>The <strong>state</strong> is the situation the agent is in right now, as far as it can tell. Here that's the cell it is standing on, such as D5.</li>
+  <li>An <strong>action</strong> is one of the things the agent can choose to do. Here there are four: up, right, down, left.</li>
+  <li>The <strong>reward</strong> is the number that comes back right after an action: +10, −10 or 0. It is the only feedback the agent ever gets.</li>
+</ul>
+<p>Together they make a loop: look at the state, choose an action, receive a reward and a new state, repeat. The agent isn't after a big reward on its next move. It wants as much reward as it can get over the whole episode.</p>
+<p>The map of arrows has a name too: a rule that says which action to take in every state is a <strong>policy</strong>. Nobody wrote the creature's policy. It fell out of the numbers.</p>
+
+<h3>How one move changes one number</h3>
+<p>The creature never looks back over its whole trip. After every single move it fixes one number, the value of the move it just made, by asking: <em>did that go better or worse than I expected?</em></p>
+<ul>
+  <li><strong>What it expected:</strong> the value already in its table for that move.</li>
+  <li><strong>What it got:</strong> the reward, plus the best value in the cell it has just landed on. Landing somewhere promising is nearly as good as being paid.</li>
+</ul>
+<p>The gap between those two is its surprise. It then moves the old value part of the way toward what it got:</p>
+<pre>surprise  = reward + γ × (best value where it landed) − old value
+new value = old value + α × surprise</pre>
+<p>The Greek letters are two of the sliders. With α (alpha) at 0.5 it moves halfway. With γ (gamma) at 0.9, whatever comes next counts for 90% of its face value.</p>
+<p>Here is the real arithmetic from the run above. In episode 2, on move 86, the creature was on D5 and tried "left". The old value of that move was 0. The reward was +10. It landed on the star, the episode was over, and so nothing came next.</p>
+<pre>surprise  = 10 + 0.9 × 0 − 0 = 10
+new value = 0 + 0.5 × 10     = 5.00</pre>
+<p>That is the one green cell. Now the important one. In episode 3 it wandered onto E5 and tried "left", which took it to D5. The reward was 0. Nothing happened. But the best value on D5 was now 5.00.</p>
+<pre>surprise  = 0 + 0.9 × 5.00 − 0 = 4.50
+new value = 0 + 0.5 × 4.50     = 2.25</pre>
+<p>E5 earned 2.25 for a move that paid nothing at all. It got credit for leading to a cell that leads to the star. One move later the creature stepped from D5 onto the star again, and D5 went from 5.00 to 7.50, halfway to 10.</p>
+<p style="font-size: 14px; color: var(--muted);">Check it yourself: press <em>reset everything</em>, then <em>finish episode</em> three times, reading "what its last move taught it" each time.</p>
+
+<h3>Credit, passed backwards through time</h3>
+<p>That small sum explains everything you watched. The +10 itself only ever touches D5. But once D5 has a value, stepping onto D5 is worth something, so E5 gains a value. Then F5. Then G5. Every visit can hand the value back one more cell, until it has seeped the whole way to the start. The creature in the corner, 12 moves from the star, ends up knowing that "right" is worth 3.14 points, though no reward has ever been paid anywhere near that corner.</p>
+<p>You have seen this shape before. In {{ch:backprop}} the blame for a wrong answer started at the output and was handed backwards, layer by layer, until every weight had its share. Here the credit for a reward starts at the goal and is handed backwards, move by move, until every step of the route has its share. Backprop passes blame back through the layers of a network. This passes credit back through time. Both are answers to the same puzzle of credit assignment.</p>
+<p>The method is called <strong>Q-learning</strong>. The numbers in the table are <strong>Q-values</strong> and the table is a <strong>Q-table</strong>. A British researcher, Chris Watkins, described it in his PhD thesis in 1989.</p>
+
+<h3>Try something new, or do what works?</h3>
+<p>Now the first slider. Most of the time the creature takes the move its table rates highest. That is <strong>exploitation</strong>: using what you already know. But with the slider at 10%, one move in ten it ignores the table and picks a move at random. That is <strong>exploration</strong>: trying something to find out what happens. The slider's Greek letter is ε (epsilon).</p>
+<p>Exploring has a price. The trained creature's plan should score 10 points in 12 moves every time, but a random move now and then sends it into a wall, or into the lava. We trained 1,000 creatures at each setting and averaged their last 100 episodes:</p>
+<table>
+  <tr><th>exploring</th><th>moves per episode</th><th>points per episode</th></tr>
+  <tr><td>0%</td><td>12.1</td><td>10.0</td></tr>
+  <tr><td>10%</td><td>13.3</td><td>9.2</td></tr>
+  <tr><td>30%</td><td>17.1</td><td>6.9</td></tr>
+  <tr><td>100%</td><td>152</td><td>−73</td></tr>
+</table>
+<p>So why not train it, then set exploring to 0% and enjoy the perfect score forever?</p>
+
+<div class="predict" data-answer="b">
+  <p>Suppose you train the creature for 1,000 episodes, and then the lava at D6 dries up. The star is now only 6 moves from the start, straight through where the lava used to be. You set exploring to 0% and run another 1,000 episodes. What does the creature do?</p>
+  <button data-opt="a">It notices the shortcut within a few episodes and switches to it</button>
+  <button data-opt="b">It keeps walking the 12-move route, every single time</button>
+  <button data-opt="c">It gets confused and has to learn the maze again from scratch</button>
+  <p class="why">It walks the long way round forever. We tried this 500 times and it never once took the shortcut. Its table still says that "up from D7" is worth about −1.9, a number it wrote down back when D6 was lava. A creature that only does what it believes is best never tests whether a belief is still true.</p>
+</div>
+
+<p>See it for yourself. Press <em>reset everything</em>, then <em>1,000 episodes</em>. Choose <em>empty</em> and click D6 to dry up the lava. "Shortest lava-free route" drops to 6. Set exploring to 0%, press <em>1,000 episodes</em> again, and its plan stays stuck on 12.</p>
+<p>Now give it back some curiosity: slide exploring up to 10% and press <em>1,000 episodes</em> once more. Sooner or later a random move takes it up from D7. No lava. It corrects the number, and after a few more accidents the shortcut is worth more than the old route. The black arrows snap over and the chart drops from 12 to 6. In our 500 tries a 10% explorer made the switch in 499, usually after about 70 episodes. A 30% explorer needed about 18.</p>
+<p>That is the trade you are always making. Exploring costs points today. Not exploring can cost you a better route forever.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: you might expect a creature set to 0% from the very beginning to learn nothing. Try it. It learns fine, and the reason is how it breaks ties. With an empty table all four moves are worth 0, a four-way tie, and it settles ties at random. A creature that knows nothing explores without being told to. Exploring on purpose only starts to matter once it believes something, because beliefs can be out of date.</p>
+
+<h3>Pull the rug out</h3>
+<p>The creature has no idea that you can change its world. So change it. Leave exploring at 10% and use <em>▶▶ fast</em> to watch.</p>
+<ul>
+  <li><strong>Block its route.</strong> Press <em>reset everything</em>, train it, then choose <em>wall</em> and click F7. It marches to E7 and walks into the new wall, again and again. Every bump is a small disappointment, so the value drains a little each time and the green fades back along row 7. Eventually it finds the other way: up the left side, across row 3 and down the right, 16 moves. In 500 tries it settled on that route in 499, usually within about 80 episodes.</li>
+  <li><strong>Move the star.</strong> Train a fresh creature, choose <em>move goal</em> and click G1, the top-right corner. It trots to where the star used to be and dithers there while its old values leak away. In 500 tries it always found the new shortest route, usually within about 35 episodes.</li>
+</ul>
+<p>How fast it changes its mind is the job of α, the learning rate, the same idea as in {{ch:training}}. With α = 0.1 the blocked route took about 280 episodes to recover from. With α = 1, where each experience simply replaces the old value, it took about 60. That only works so well because nothing in the maze is left to chance. In a world with luck in it, like a slippery floor or an opponent, one experience can mislead, and a smaller α averages over many.</p>
+
+<h3>How much the future counts</h3>
+<p>The third slider, γ, is the <strong>discount factor</strong>: how much a reward one move in the future is worth compared with the same reward right now.</p>
+<p>Press <em>reset everything</em>, train the creature, and read the numbers along its route, starting beside the star and walking back to the corner:</p>
+<pre>10.00  9.00  8.10  7.29  6.56  5.90  5.31  4.78  4.30  3.87  3.49  3.14</pre>
+<p>Each one is 0.9 times the one before. A prize twelve moves away is worth 10 × 0.9 × 0.9 × … eleven times over, which is 3.14.</p>
+<p>This is the only thing that makes the creature hurry. Nothing in the rules charges it for dawdling: a 12-move trip and a 40-move trip both pay exactly 10 points. But a prize that is further off is worth less <em>now</em>, so the arrows always point down the quickest road. When the lava dried up, the corner cell's value could rise from 3.14 to 5.90, and that is why it switched.</p>
+<p>Push the slider to either end and the creature breaks. Press <em>erase its memory</em> before each one.</p>
+<ul>
+  <li><strong>γ = 0: only the next move counts.</strong> D5 learns that "left" pays 10, and no other cell ever gets a value, because nothing that comes later counts. In 500 runs, not one creature ever formed a plan.</li>
+  <li><strong>γ = 1: later is exactly as good as now.</strong> Press <em>1,000 episodes</em> three times. At first it usually looks fine. But every move that avoids lava is creeping toward a value of exactly 10, and once they are all 10 there is no reason to prefer the move that gets there sooner. By 3,000 episodes the plan had dissolved into circles in all 300 of our runs.</li>
+</ul>
+<p>Real systems usually pick a γ just under 1, such as 0.99: patient, but not infinitely patient.</p>
+
+<h3>From a table to a network</h3>
+<div class="callout">Be clear about what you just trained. It is not a neural network. It has no neurons, no weights and no backprop. Press "show its whole memory" and you are looking at all of it: 35 cells × 4 moves = 140 numbers in a table.</div>
+<p>So what is this chapter doing in a book about neural networks? A table only works when you can list every state the agent could ever be in. The maze has 49 cells. That's easy.</p>
+<p>Now think about a video game. In the early 2010s, researchers at a London company called DeepMind wanted an agent to learn old Atari games straight from the screen. An Atari screen is 210 × 160 pixels and each pixel can be any of 128 colors. The number of different pictures it could show is over 70,000 digits long. A real game shows only a tiny fraction of them, and even that is far too many for a table. The board game Go is just as hopeless: its 19 × 19 board has about 2 followed by 170 zeros legal positions, and the universe we can see holds only about 1 followed by 80 zeros atoms.</p>
+<p>The way out is to stop storing the values and start <em>estimating</em> them. Replace the table with a neural network. The state goes in, as the pixels of the screen, and out come the values, one for each action: exactly what one row of the creature's table holds. Then train it with the rule you already know. After each move, work out "reward + γ × best next value" and use backprop to nudge the weights so the network's answer moves a little toward it.</p>
+<p>A network also does something no table can. Remember the 18 blank cells? A table has nothing to say about a state until the agent has been there. A network shares its weights across all states, so what it learns in one situation carries over to similar ones it has never seen: the difference {{ch:overfitting}} drew between learning a rule and memorizing the homework.</p>
+<p>DeepMind called their version a <strong>deep Q-network</strong>, or DQN. In 2013 they showed it learning seven Atari games from nothing but the screen and the score. In 2015, in the journal <em>Nature</em>, the same network with the same settings was set loose on 49 different games. On 29 of them it reached at least three-quarters of the score of a professional human games tester. Nobody told it the rules of any of them.</p>
+<p>In March 2016, in Seoul, DeepMind's Go program AlphaGo beat Lee Sedol, one of the best players in the world, by four games to one. Many experts had expected that to take at least another ten years.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: AlphaGo was more than Q-learning with a big network. Its networks first learned to copy moves from strong human players, which is marked-homework learning. Then they improved by reinforcement learning, playing millions of games against copies of itself, and during a real game the program also searched ahead through possible moves. A year later its successor, AlphaGo Zero, skipped the human games completely. It learned by <strong>self-play</strong> alone and beat the version that had beaten Lee Sedol by 100 games to 0.</p>
+
+<h3>The same loop inside a chatbot</h3>
+<p>Remember the third stage of a chatbot's training in {{ch:chatbots}}? The model writes answers, a judge trained on people's preferences scores them, and the weights are nudged toward the kind of answer that scores well.</p>
+<p>That is reinforcement learning, and you can now name its parts. The agent is the language model. The state is the conversation so far. The action is the answer it writes. The reward is the judge's score. Nobody shows the model the one right answer. Like the creature, it only finds out how well each attempt went.</p>
+
+<h3>Be careful what you reward</h3>
+<div class="predict" data-answer="c">
+  <p>Suppose you want to encourage a trained creature, so you put a snack on B7, the first cell of its route. A snack is worth 1 point and grows back every time. The star is still worth 10. After another 1,000 episodes, what is the creature doing?</p>
+  <button data-opt="a">It eats the snack on its way to the star, for 11 points</button>
+  <button data-opt="b">It ignores the snack. 10 is more than 1</button>
+  <button data-opt="c">It steps on and off the snack forever and never visits the star again</button>
+  <p class="why">It never goes near the star again. That happened in all 500 of our tries. Count the points and it makes perfect sense. The star pays 10, once, and then the episode is over. The snack pays 1 every second move for as long as you like: 100 points in a 200-move episode.</p>
+</div>
+<p>Try it: <em>reset everything</em>, <em>1,000 episodes</em>, choose <em>snack +1</em>, click B7, and press <em>1,000 episodes</em> again. Then set exploring to 0% and watch one episode. It scores exactly 100.</p>
+<p>The creature didn't malfunction. It found the best possible strategy for the reward we actually wrote down. We <em>meant</em> "go to the star, and here's a treat on the way". We <em>said</em> "collect points". An agent does what earns reward, which is not always what you had in mind.</p>
+<p>This happens to real researchers. In 2016 a team at OpenAI trained an agent on a boat-racing video game called CoastRunners. The game gives points for hitting targets along the course, not for finishing. The agent found a lagoon where three targets kept reappearing and drove in circles there forever, crashing and catching fire, without finishing a single race. It scored about 20% more than human players did. People call this <strong>reward hacking</strong>.</p>
+<p>It matters for chatbots too. Researchers at Anthropic looked at what people's ratings actually reward, and found that answers agreeing with the person's own opinion tend to be preferred. Train on those ratings and you can get a model that tells you what you want to hear. As {{ch:mistakes}} put it, a model learns whatever its score rewards, which isn't always what you meant. Writing a reward that says exactly what you mean is one of the hard, unsolved parts of building AI.</p>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the maze in Python</h3>
+  <p>This is <code>maze.py</code>: the same maze and the same learning rule in plain Python, with nothing extra to install. It prints how each of the first few episodes went, then how many moves episodes took on average in blocks of 50, then a map of arrows and the route it settled on. Its dice are different from the widget's, so the story is different too, but it ends at the same 12 moves.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">maze.py</span>
+      <span class="code-status" id="py-status-maze">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-maze" spellcheck="false" rows="30" data-src="maze.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="maze">▶ run</button>
+    <button class="secondary" data-py-reset="maze">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-maze"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<div class="bigidea"><p>In reinforcement learning nobody marks the homework. An agent acts, collects rewards, and passes the credit backwards through time, one step per visit, until even its first move knows where it leads. It will chase exactly the reward you wrote, so write it carefully.</p></div>
+
+<div class="challenge">
+  <strong>Challenge</strong>
+  <p><strong>1.</strong> Set exploring to 100%, erase its memory and press <em>1,000 episodes</em>. The chart is terrible. Now look at the arrows, then set exploring to 0% and press <em>▶ watch</em>. How did it learn the route without ever once following it? <strong>2.</strong> Reset, train, and put a snack on E5. It eats it and carries on to the star. Now slide γ up to 0.95 and train again. Why does a creature that cares <em>more</em> about the future stop finishing? <strong>3.</strong> In <code>maze.py</code>, set <code>STEP_REWARD</code> to <code>-1</code> so that every ordinary move costs a point, and set <code>GAMMA = 1</code>. It still finds the 12-move route. What is making it hurry now?</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>What is the main difference between reinforcement learning and the way the other networks in this book were trained?</p>
+    <button data-opt="a">Reinforcement learning needs far more examples</button>
+    <button data-opt="b">Nobody supplies the right answer. The learner only finds out how well things went, often long after the move that mattered</button>
+    <button data-opt="c">Reinforcement learning can't use neural networks</button>
+    <p class="why">Every other model in the book was shown the right answer for each example. An agent only gets rewards, and has to work out for itself which of its earlier moves earned them.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>The creature starts 12 moves from the star. Why does it take many episodes before the start cell has any value at all?</p>
+    <button data-opt="a">The learning rate is too small to reach that far</button>
+    <button data-opt="b">It has to visit every cell in the maze first</button>
+    <button data-opt="c">Each update only looks one move ahead, so value travels back from the star about one cell per visit</button>
+    <p class="why">A move's value is updated from the reward plus the value of the very next cell. So the cell beside the star learns first, then its neighbor, and so on back along the route.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>A robot vacuum is given +1 for every bit of dirt it sucks up. It learns to tip its dirt back onto the floor and suck it up again. What went wrong?</p>
+    <button data-opt="a">Nothing in the robot. It is doing exactly what the reward pays for, which isn't what its designers meant</button>
+    <button data-opt="b">It did not explore enough</button>
+    <button data-opt="c">Its discount factor was set too low</button>
+    <p class="why">The reward said "pick up dirt", not "leave the floor clean". Like the creature and its snack, the robot found the best strategy for the reward as written.</p>
+  </div>
+</div>

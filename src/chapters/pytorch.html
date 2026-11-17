@@ -1,59 +1,419 @@
-<p>So far you've written every line yourself: <code>x @ w1 + b1</code>, sigmoid, manual gradients, weight updates. That's the right way to learn. But nobody works that way in real life. They use a framework called <a href="https://pytorch.org/" target="_blank" rel="noopener"><strong>PyTorch</strong></a> (or its cousin <a href="https://www.tensorflow.org/" target="_blank" rel="noopener">TensorFlow</a>; for production work on Google hardware, also <a href="https://jax.readthedocs.io/" target="_blank" rel="noopener">JAX</a>). The framework does the bookkeeping. You just describe the network shape.</p>
+<p>Count the backward passes you have met so far. <code>d_o</code> and <code>d_h</code> for the secret door in {{ch:hidden}}. A different pair for the snack picker in {{ch:multi}}. Nine separate blames, worked out one multiplication at a time, in {{ch:backprop}}. Another set for the headline model in {{ch:decide}}, with a special line just for its embedding table. Every time the network changed shape, somebody had to work out the blame formulas again by hand. One slip, and you get a network that runs without complaint and quietly learns nothing.</p>
+<p>People who build networks for a living don't do this. They use a <strong>framework</strong>: a toolkit whose main trick is working out the blame automatically, for any network you can write down. The one most AI researchers use is called <a href="https://pytorch.org/" target="_blank" rel="noopener"><strong>PyTorch</strong></a>.</p>
+<p>A framework can look like magic. It isn't, and the best way to be sure is to build the heart of one yourself. That takes 60 lines of Python. Then you'll read real PyTorch and find you can recognize every line.</p>
 
-<p>The whole iris training loop in PyTorch looks like this:</p>
+<h3>What if every number kept notes?</h3>
+<p>Think back to how blame moved in {{ch:backprop}}. At every step the recipe was the same: take the blame that arrived, multiply it by a slope, pass it on. The recipe never changed. Only the <em>shape</em> of the network decided which numbers got multiplied by which.</p>
+<p>So here is the idea. While the computer does the forward pass, make every number jot down two things: which numbers it was made from, and how sensitive it is to each of them. With those notes, one small function can walk <em>any</em> calculation backwards and hand out the blame. Nobody has to work out a formula ever again.</p>
+<p>The official name is <strong>automatic differentiation</strong> ("differentiation" is the math word for finding slopes). The web of notes is called a <strong>computation graph</strong>.</p>
 
-<pre>hidden = 16
-model = nn.Sequential(
-nn.Linear(4, hidden),
-nn.ReLU(),
-nn.Linear(hidden, 3),
-)
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+<h3>Build it, piece by piece</h3>
+<p>The whole engine is one Python class called <code>Value</code>. You can run it further down. First, here it is in five pieces.</p>
 
-for epoch in range(200):
-for xb, yb in batches:
-    logits = model(xb)
-    loss = loss_fn(logits, yb)
+<div class="ag-build">
+<div class="ag-piece">
+<pre>class Value:
+    def __init__(self, data):
+        self.data = data
+        self.grad = 0.0
+        self.parents = ()
+        self.slopes = ()
+        self.op = ""</pre>
+<div>
+<p><strong>1. A number with a memory.</strong> A <code>Value</code> wraps one number, <code>data</code>. The other four lines are its notebook. <code>parents</code> will hold the Values it was calculated from, <code>slopes</code> one slope for each parent, and <code>op</code> the name of the calculation.</p>
+<p><code>grad</code> is where the blame goes. PyTorch calls blame "grad", short for gradient, so we use its spelling. It starts at 0 because nobody has been blamed yet.</p>
+</div>
+</div>
 
-    optimizer.zero_grad()
-    loss.backward()       # autograd computes every gradient
-    optimizer.step()      # applies them</pre>
+<div class="ag-piece">
+<pre>    def __add__(self, other):
+        if not isinstance(other, Value):
+            other = Value(other)
+        out = Value(self.data + other.data)
+        out.parents = (self, other)
+        out.slopes = (1.0, 1.0)
+        out.op = "+"
+        return out</pre>
+<div>
+<p><strong>2. Adding.</strong> Python runs <code>__add__</code> whenever it sees <code>a + b</code> and <code>a</code> is a Value. It makes a new Value holding the sum, then writes the notes: my parents are <code>a</code> and <code>b</code>.</p>
+<p>Both slopes are 1. Push <code>a</code> up by 0.001 and the sum goes up by exactly 0.001. The first two lines let you add a plain number, as in <code>a + 3</code>, by wrapping the 3 first.</p>
+</div>
+</div>
 
-<p>Every piece replaces something you wrote by hand:</p>
+<div class="ag-piece">
+<pre>    def __mul__(self, other):
+        if not isinstance(other, Value):
+            other = Value(other)
+        out = Value(self.data * other.data)
+        out.parents = (self, other)
+        out.slopes = (other.data, self.data)
+        out.op = "*"
+        return out
 
+    __radd__ = __add__
+    __rmul__ = __mul__</pre>
+<div>
+<p><strong>3. Multiplying.</strong> The same again for <code>a * b</code>, with one twist in the slopes. Say <code>a</code> is 2 and <code>b</code> is −3. Push <code>a</code> up by 0.001 and the product moves by −3 × 0.001. So the slope for <code>a</code> is <code>b</code>'s value, and the slope for <code>b</code> is <code>a</code>'s value. Each one's slope is <em>the other one</em>, just like the wires in {{ch:backprop}}.</p>
+<p>The last two lines make <code>3 * a</code> work as well as <code>a * 3</code>.</p>
+</div>
+</div>
+
+<div class="ag-piece">
+<pre>    def sigmoid(self):
+        s = 1 / (1 + math.exp(-self.data))
+        out = Value(s)
+        out.parents = (self,)
+        out.slopes = (s * (1 - s),)
+        out.op = "sigmoid"
+        return out</pre>
+<div>
+<p><strong>4. Squishing.</strong> Sigmoid, the squish from {{ch:neuron}}, has one parent. Its slope is the one you dragged along the curve in {{ch:activations}}: output × (1 − output), written here as <code>s * (1 - s)</code>. That is 0.25 in the middle of the curve and nearly 0 out at the flat ends.</p>
+</div>
+</div>
+
+<div class="ag-piece">
+<pre>    def history(self):
+        """Me and my ancestors, oldest first."""
+        order, seen = [], set()
+
+        def visit(value):
+            if value not in seen:
+                seen.add(value)
+                for parent in value.parents:
+                    visit(parent)
+                order.append(value)
+
+        visit(self)
+        return order
+
+    def backward(self):
+        self.grad = 1.0
+        for item in reversed(self.history()):
+            notes = zip(item.parents, item.slopes)
+            for parent, slope in notes:
+                parent.grad += slope * item.grad</pre>
+<div>
+<p><strong>5. Reading the notes backwards.</strong> <code>history()</code> follows the parent notes all the way back and lists every Value that went into this one. A Value only joins the list after all of its parents have, so parents always come first.</p>
+<p><code>backward()</code> is the whole trick. The final answer gets blame 1: move the answer by a tiny bit and the answer moves by exactly that bit. Then it goes through the history <em>backwards</em>, and every Value pays each parent that parent's slope times its own blame.</p>
+<p>Multiplying slopes along a chain of notes is the chain rule from {{ch:backprop}}. And look at the <code>+=</code>. It is there for a reason you are about to see.</p>
+</div>
+</div>
+</div>
+
+<p>That is all of it, apart from two lines at the end that let <code>print()</code> show a Value neatly. There is no formula in there for any particular network. There are three tiny slope rules, for adding, multiplying and squishing, and one loop that reads notes.</p>
+
+<div class="predict" data-answer="b">
+  <p>In <code>f = (a * b + c) * a</code>, the Value <code>a</code> is used twice. When the blame comes back, what should <code>a</code> end up with?</p>
+  <button data-opt="a">Only the blame from the last place it was used</button>
+  <button data-opt="b">The blame from both places, added together</button>
+  <button data-opt="c">The blame from both places, multiplied together</button>
+  <p class="why">Added. Pushing <code>a</code> changes <code>f</code> along two wires at once, and the two effects pile up. That is what the <code>+=</code> in <code>backward()</code> is for. Watch it happen on the last step of the warm-up below.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ try it</div>
+  <h3>Watch the blame flow through the notes</h3>
+  <p>Every box is a Value: its number in <span style="color: var(--accent); font-weight: 600;">blue</span>, its blame in <span style="color: #c2410c; font-weight: 600;">orange</span>. Every wire is a parent note. Press <strong>step</strong>. The forward pass fills in the numbers from left to right and tags each wire with its slope. Then the backward pass sends the blame from right to left. Read the line under the buttons each time: it shows that step's arithmetic. Start with the warm-up, then switch to the neuron.</p>
+  <div class="toggle-row" id="ag-presets">
+    <div class="toggle on" data-preset="warm" role="button" tabindex="0" aria-pressed="true"><label>warm-up: (a × b + c) × a</label></div>
+    <div class="toggle" data-preset="neuron" role="button" tabindex="0" aria-pressed="false"><label>one neuron and its loss</label></div>
+  </div>
+  <div class="ag-scroll"><svg id="ag-graph" viewBox="0 0 600 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A computation graph. Each box is a Value with its number and its blame. Wires join each Value to the Values it was made from."></svg></div>
+  <div class="ag-controls">
+    <button type="button" id="ag-step">step ▸</button>
+    <button type="button" class="secondary" id="ag-back">◂ back</button>
+    <button type="button" class="secondary" id="ag-play">▶ play</button>
+    <button type="button" class="secondary" id="ag-reset">start over</button>
+    <span class="ag-progress" id="ag-progress"></span>
+  </div>
+  <div class="ag-caption" id="ag-caption" aria-live="polite"></div>
+  <p class="ag-key">The small tag on a wire is its note: the slope. A circled × or + is the calculation that made the box, and the little S-curve means squish. The sliders work at any time, including after the backward pass has finished.</p>
+  <div id="ag-inputs"></div>
+  <div class="math-panel">
+    <h4>Check a blame by wiggling</h4>
+    <div id="ag-wiggle-buttons"></div>
+    <p id="ag-wiggle-out"></p>
+  </div>
+  <div class="math-panel" id="ag-train" hidden>
+    <h4>Use the blame: one training step</h4>
+    <button type="button" id="ag-nudge">nudge w and b</button>
+    <div class="stat-row">
+      <span>nudges so far: <strong id="ag-nudges">0</strong></span>
+      <span>loss before any nudge: <strong id="ag-loss-start">?</strong></span>
+      <span>loss now: <strong id="ag-loss">?</strong></span>
+      <span>learning rate: <strong>1</strong></span>
+    </div>
+  </div>
+</div>
+
+<h3>What just happened</h3>
+<p>The forward pass did two jobs at once. It worked out the numbers, and it left a note on every wire. The backward pass never looked at the formula <code>(a × b + c) × a</code>. It only read notes.</p>
+<p>On the last step of the warm-up, <code>a</code> was paid twice. It got 4 along the wire into <code>f</code>, then −6 along the wire into <code>d</code>, and 4 + −6 = −2. That −2 is a real prediction about the world: push <code>a</code> up a little and <code>f</code> goes <em>down</em> about twice as far. The wiggle button checks it. Pushing <code>a</code> from 2 to 2.001 moves <code>f</code> by −0.002003, which is −2.003 for every 1 of push.</p>
+<p>Why −2.003 and not −2 exactly? Because 0.001 is small, not endlessly small. A wiggle is an estimate. The backward pass gives the exact slope.</p>
+<p>Now the neuron. That graph is the single neuron from {{ch:training}}, with its loss attached. When the backward pass finishes, <code>w</code> and <code>b</code> each hold a blame, and a blame says which way to nudge. Every press of <strong>nudge w and b</strong> is one complete round of training: forward, backward, nudge. With the starting numbers, one press takes the loss from 0.25 to 0.0496, and twelve presses take it to 0.0047.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: {{ch:backprop}} used <em>half</em> of the miss squared as its loss, which keeps arithmetic done by hand tidy. An engine doesn't mind untidy, so here the loss is just the miss times itself. Every blame comes out twice as big, and every nudge still points the same way.</p>
+
+<h3>Run your engine</h3>
+<p>Here is the real thing: the 60-line engine, then two tests of it.</p>
+<p><strong>Part 1</strong> builds the same two graphs as the widget, prints the notes the engine kept, and checks every blame against a wiggle. This wiggle is a millionth, much smaller than the widget's.</p>
+<p><strong>Part 2</strong> is the payoff. It builds the secret-door network from {{ch:hidden}} out of Values: 2 inputs, 4 hidden neurons, 1 output, 17 numbers to learn. Then it trains it.</p>
+
+<div class="predict" data-answer="c">
+  <p>Before you run it, scroll to the training loop at the bottom of the script. How many lines of blame formulas, like <code>d_h = ...</code>, does a 17-number network need now?</p>
+  <button data-opt="a">Seventeen: one for each number</button>
+  <button data-opt="b">Two: one for each layer</button>
+  <button data-opt="c">None</button>
+  <p class="why">None. The loop says <code>loss.backward()</code> and that is the entire backward pass. You could change the network to 2-8-8-1 and that line would not change.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run real python</div>
+  <h3>Run the engine</h3>
+  <p>This is <code>autograd.py</code>. In Part 1, compare the two columns. In Part 2, watch the loss fall and read the four answers at the end. It uses nothing but plain Python: no numpy this time.</p>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">autograd.py</span>
+      <span class="code-status" id="py-status-autograd">Python loads on first run</span>
+    </div>
+    <textarea class="code-editor" id="py-code-autograd" spellcheck="false" rows="30" data-src="autograd.py"></textarea>
+  </div>
+  <div style="margin: 10px 0;">
+    <button data-py="autograd">▶ run</button>
+    <button class="secondary" data-py-reset="autograd">reset code</button>
+  </div>
+  <div class="terminal" id="py-out-autograd"><span class="dim">(click "run" to execute)</span></div>
+</div>
+
+<p>In Part 1 the two columns agree to five decimal places: <code>backward()</code> says −2.000000 for <code>a</code>, and the wiggle says −2.000003. A smaller wiggle gives a closer estimate. Change <code>WIGGLE</code> to <code>0.001</code>, the size {{ch:backprop}} used, and the same line reads −2.003000.</p>
+<p>In Part 2 the loss starts at 1.0414 and ends at 0.0029 after 500 steps. The four answers come out as 0.025, 0.968, 0.979 and 0.028: the secret door, solved. On each step the engine made 182 Values, wrote a note on every one, and read them all back.</p>
+<p>The script always starts from the same random weights, so you will see those same numbers. Change <code>random.seed(13)</code> to another number for a different start. We tried 100 different seeds. All 100 solved the puzzle, with a final loss between 0.0022 and 0.0077.</p>
+<p>Remember why {{ch:backprop}} gave up on wiggling as a way to train: it needs a whole forward pass for every single number. The backward pass gets every blame in one sweep. With 17 numbers that is a nice saving. With billions, it is the only thing that makes training possible.</p>
+<p style="font-size: 14px; color: var(--muted);">Honesty note: this engine is a teaching toy. It keeps a separate note for every single number, in plain Python, which is far too slow for a network of any real size. And the design is not our invention. The math is called reverse-mode automatic differentiation, and the Finnish mathematician Seppo Linnainmaa worked it out in 1970. Tiny teaching engines like this one were made popular by Andrej Karpathy's <a href="https://github.com/karpathy/micrograd" target="_blank" rel="noopener">micrograd</a>. Ours was written from scratch for this book and keeps its notes in a different way, but the idea is the same.</p>
+
+<div class="bigidea"><p>A framework is not magic. Its main trick is the one you just built: keep notes during the forward pass, then read them backwards to get the blame for every number, in any network you can write down.</p></div>
+
+<h3>Now read the real thing</h3>
+<p>PyTorch is that engine, grown up. Three things are different.</p>
+<ul>
+  <li><strong>It works on whole grids of numbers at once.</strong> A PyTorch <strong>tensor</strong> is a grid of numbers: a list, a table, or a stack of tables. A tensor keeps notes the way a Value does, but one note covers the whole grid. "Multiply this grid by that one" is a single note, where our engine would write thousands.</li>
+  <li><strong>It is fast.</strong> The grid math is done by carefully tuned code, and on a graphics chip if you have one.</li>
+  <li><strong>It knows hundreds of calculations</strong>, each with its slope rule built in. Ours knows three.</li>
+</ul>
+<p>Here is the neuron from the widget again, written in real PyTorch:</p>
+<pre>import torch
+
+x = torch.tensor(2.0, requires_grad=True)
+w = torch.tensor(0.5, requires_grad=True)
+b = torch.tensor(-1.0, requires_grad=True)
+
+prediction = torch.sigmoid(w * x + b)
+miss = prediction - 1.0
+loss = miss * miss
+
+loss.backward()
+print(x.grad, w.grad, b.grad)</pre>
+<p>On our laptop that prints <code>tensor(-0.1250) tensor(-0.5000) tensor(-0.2500)</code>. Those are the same three blames your engine found. <code>requires_grad=True</code> means "keep notes for this one". You can even peek at a note: <code>print(loss.grad_fn)</code> shows <code>&lt;MulBackward0 ...&gt;</code>, which is PyTorch's way of saying "this was made by a multiply".</p>
+<p>A PyTorch training loop has the same moves as yours, with new names. Here they are side by side:</p>
 <table>
-  <tr><th>Hand-rolled</th><th>PyTorch</th></tr>
-  <tr><td><code>np.maximum(0, x)</code></td><td><code>nn.ReLU()</code></td></tr>
-  <tr><td>softmax + cross-entropy by hand</td><td><code>nn.CrossEntropyLoss()</code></td></tr>
-  <tr><td>Manual forward (<code>h = ...</code>, <code>o = ...</code>)</td><td><code>model(x)</code></td></tr>
-  <tr><td>Manual backward (<code>d_o</code>, <code>d_h</code>)</td><td><code>loss.backward()</code> (autograd)</td></tr>
-  <tr><td><code>w -= lr * grad</code></td><td><code>optimizer.step()</code></td></tr>
-  <tr><td>Plain SGD</td><td><code>torch.optim.Adam</code> (smarter)</td></tr>
+  <tr><th>The move</th><th>In your engine</th><th>In PyTorch</th></tr>
+  <tr><td>A number that keeps notes</td><td><code>Value(2.0)</code></td><td><code>torch.tensor(2.0, requires_grad=True)</code></td></tr>
+  <tr><td>Forward pass</td><td><code>predict(left, right)</code></td><td><code>model(x)</code></td></tr>
+  <tr><td>Score the mistake</td><td><code>miss * miss</code>, added up</td><td><code>loss_fn(scores, labels)</code></td></tr>
+  <tr><td>Clear the old blame</td><td><code>p.grad = 0.0</code></td><td><code>optimizer.zero_grad()</code></td></tr>
+  <tr><td>Pass the blame back</td><td><code>loss.backward()</code></td><td><code>loss.backward()</code></td></tr>
+  <tr><td>Nudge every number</td><td><code>p.data -= LEARNING_RATE * p.grad</code></td><td><code>optimizer.step()</code></td></tr>
 </table>
+<p>The <strong>optimizer</strong> is PyTorch's name for the part that does the nudging. The numbers it nudges, every weight and every bias, are called <strong>parameters</strong>. That is why the list in <code>autograd.py</code> has that name.</p>
 
-<p><strong>Autograd</strong> is the powerful bookkeeping part. PyTorch tracks every operation you do during the forward pass. When you call <code>loss.backward()</code>, it walks the chain backward and computes <em>every single gradient</em>, exactly as you did by hand in {{ch:hidden}}. You never write a chain-rule expression again.</p>
+<h3>Why clear the old blame?</h3>
+<p>Because of the <code>+=</code>. New blame lands on top of whatever was already there, and PyTorch works the same way. Left alone, the blame from every earlier step would still be sitting in <code>grad</code> when the next step arrives.</p>
+<div class="predict" data-answer="c">
+  <p>Go back to <code>autograd.py</code>. Delete the two lines <code>for p in parameters:</code> and <code>p.grad = 0.0</code> just above <code>loss.backward()</code>, and change <code>STEPS = 500</code> to <code>STEPS = 1000</code>. What will the run do?</p>
+  <button data-opt="a">Exactly the same as before: <code>backward()</code> overwrites the old blame anyway</button>
+  <button data-opt="b">Learn more slowly, because the old blame gets in the way</button>
+  <button data-opt="c">Look better at first, then go badly wrong</button>
+  <p class="why">Try it. At step 100 the loss already reads 0.0004, far ahead of the normal run's 0.1054. But every step is now shoving the weights with the pile of <em>all</em> the blame so far, and the pile never empties. Long after the answers are right, the weights keep growing. In a normal run the biggest weight ends up near 10. Here one of them passes 500, and a little after step 650 sigmoid has to work out a number too big for Python. The script stops with <code>OverflowError: math range error</code>. Leaving out <code>optimizer.zero_grad()</code> is a classic PyTorch bug for the same reason. Press "reset code" to get the lines back.</p>
+</div>
 
-<p><a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener"><strong>Adam</strong></a> is the optimizer used in almost every modern model. It's gradient descent with two upgrades: <em>momentum</em> (keep moving in directions that worked recently) and <em>per-weight learning rates</em> (slow down weights that bounce around, speed up ones that crawl). For training transformers specifically, people now usually use a tweaked version called <strong>AdamW</strong> (the W stands for "weight decay") — but it's still recognizably the same algorithm.</p>
-
-<p>Run <code>neuro8.py</code> locally (after <code>pip install torch</code>) to see this exact loop train iris in seconds. The <a href="https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html" target="_blank" rel="noopener">official PyTorch 60-minute blitz</a> is the most-recommended next tutorial. After that, the natural next step for everyone reading this book is Andrej Karpathy's <a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">"Neural Networks: Zero to Hero"</a> YouTube series — he rebuilds backprop, micrograd, and a working GPT from scratch in real code. It's basically a more advanced version of this book.</p>
+<h3>Your iris network, in PyTorch</h3>
+<p>In {{ch:real-data}} you trained on 150 real flowers with every gradient written out by hand. That was <code>neuro7.py</code>. Here is the same network on the same flowers with the same train and test split, in PyTorch.</p>
+<p>PyTorch cannot run inside this page. It is a large program built to talk directly to your computer's processor and graphics chip. On our laptop the installed folder is 339 MB. So the two scripts in the rest of this chapter are for reading here and running on your own computer. You can get every script in the book in <a href="neuro13-code.zip">one zip file</a>.</p>
 
 <div class="interactive">
   <div class="interactive-title">▸ run locally</div>
-  <h3>Run the PyTorch version</h3>
-  <p>This is <code>neuro8.py</code>. PyTorch is too large for this single-file browser runner, so this panel keeps the code synced and gives the exact local command.</p>
+  <h3>Iris in PyTorch</h3>
+  <p>This is <code>neuro8.py</code>. Read it top to bottom and tick off the moves from the table: the forward pass, the loss, then <code>zero_grad</code>, <code>backward</code>, <code>step</code>. To run it, unzip the book's scripts, open a terminal in the <code>neuro13</code> folder that comes out, and type these two lines. On Windows, type <code>python</code> in place of <code>python3</code>.</p>
   <div class="run-note"><code>pip install torch scikit-learn</code><br><code>python3 neuro8.py</code></div>
   <div class="code-editor-wrap">
     <div class="code-header">
       <span class="code-filename">neuro8.py</span>
       <span class="code-status ready" id="py-status-8">local Python script</span>
     </div>
-    <textarea class="code-editor" id="py-code-8" spellcheck="false" rows="30" data-src="neuro8.py"></textarea>
+    <textarea class="code-editor" id="py-code-8" spellcheck="false" rows="30" data-src="neuro8.py" readonly></textarea>
   </div>
-  <div class="terminal" id="py-out-8"><span class="dim">Run locally with: python3 neuro8.py</span></div>
+  <p class="ag-recorded-note">What it printed on our laptop. This is a recording of a real run, not a live one:</p>
+  <pre class="terminal ag-recorded" id="py-out-8">131 numbers to learn
+epoch   0: train accuracy 0.825   test accuracy 0.700
+epoch  20: train accuracy 0.967   test accuracy 0.967
+epoch  40: train accuracy 0.975   test accuracy 0.967
+epoch  60: train accuracy 0.983   test accuracy 1.000
+epoch  80: train accuracy 0.983   test accuracy 0.967
+epoch 100: train accuracy 0.983   test accuracy 0.967
+epoch 120: train accuracy 0.983   test accuracy 0.967
+epoch 140: train accuracy 0.992   test accuracy 0.967
+epoch 160: train accuracy 0.983   test accuracy 0.967
+epoch 180: train accuracy 0.983   test accuracy 0.967
+
+final train accuracy: 0.983
+final test  accuracy: 0.967</pre>
 </div>
+
+<p>A test accuracy of 0.967 is 29 of the 30 test flowers. Your hand-written <code>neuro7.py</code> scores 29 of 30 as well. Same data, same shape of network, same result, and not one gradient formula in the file.</p>
+<p>We ran it with 20 different random starts. Eighteen runs got 29 of 30, and two got all 30. With only 30 test flowers, one flower is worth more than three points, so don't read much into the difference.</p>
+
+<h3>Reading a real script, chunk by chunk</h3>
+<p>The second script, <code>neuro9.py</code>, reads handwritten digits like the network your browser trained in {{ch:digits}}. This time it uses all of MNIST: 60,000 pictures to learn from and 10,000 held back for the test. Here it is in six chunks. Each one is something you have already done by hand.</p>
+
+<div class="ag-chunk">
+<pre>device = (
+    "cuda" if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available()
+    else "cpu"
+)</pre>
+<p><strong>Where to do the math.</strong> <code>cuda</code> is a graphics chip made by Nvidia, <code>mps</code> is the graphics chip in an Apple computer, and <code>cpu</code> is the ordinary processor every computer has. {{Ch:scale}} explained why graphics chips suit this work. Later, <code>.to(device)</code> moves the model and each batch of pictures onto whichever one was found.</p>
+</div>
+
+<div class="ag-chunk">
+<pre>prepare = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,)),
+])
+train_set = datasets.MNIST(root=DATA, train=True, download=True, transform=prepare)
+test_set = datasets.MNIST(root=DATA, train=False, download=True, transform=prepare)
+train_batches = DataLoader(train_set, batch_size=BATCH, shuffle=True)
+test_batches = DataLoader(test_set, batch_size=512)</pre>
+<p><strong>The data.</strong> Three habits from {{ch:real-data}}, one line each. <code>Normalize</code> is feature scaling: subtract the average pixel, 0.1307, and divide by the spread, 0.3081. <code>train=True</code> and <code>train=False</code> are the train and test split, which MNIST comes with ready-made. <code>DataLoader</code> shuffles the pictures and deals them out in mini-batches of 128.</p>
+</div>
+
+<div class="ag-chunk">
+<pre>model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(784, 128),
+    nn.ReLU(),
+    nn.Linear(128, 64),
+    nn.ReLU(),
+    nn.Linear(64, 10),
+).to(device)</pre>
+<p><strong>The network.</strong> <code>nn.Flatten</code> unrolls each 28 × 28 picture into a list of 784 numbers, as in {{ch:digits}}. <code>nn.Linear(784, 128)</code> is a whole layer of 128 neurons: it is <code>x @ w + b</code>, and it makes its own weights and biases and gives them random starting values. <code>nn.ReLU()</code> is <code>np.maximum(0, x)</code> from {{ch:activations}}. Two hidden layers make it a deep network, as in {{ch:depth}}, and the ten outputs are one score for each digit, as in {{ch:multi}}. In all there are 109,386 numbers to learn.</p>
+</div>
+
+<div class="ag-chunk">
+<pre>loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)</pre>
+<p><strong>The loss and the nudger.</strong> <code>CrossEntropyLoss</code> is the softmax and the "how surprised was the model?" score from {{ch:multi}}, done in one go. That is why the network above has no softmax layer of its own. <code>model.parameters()</code> hands the optimizer every number it is allowed to change. Adam is a smarter nudger than plain gradient descent. There is more about it below.</p>
+</div>
+
+<div class="ag-chunk">
+<pre>    for pictures, labels in train_batches:
+        pictures, labels = pictures.to(device), labels.to(device)
+
+        scores = model(pictures)
+        loss = loss_fn(scores, labels)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()</pre>
+<p><strong>The loop.</strong> The last five lines now read like a sentence. Run the batch forward. Score the mistake. Clear the old blame. Pass the new blame back through the notes. Nudge every number. Put it next to the loop at the bottom of <code>autograd.py</code>: it is the same loop.</p>
+</div>
+
+<div class="ag-chunk">
+<pre>def accuracy(batches):
+    right = 0
+    with torch.no_grad():
+        for pictures, labels in batches:
+            pictures, labels = pictures.to(device), labels.to(device)
+            right += (model(pictures).argmax(dim=1) == labels).sum().item()
+    return right / len(batches.dataset)</pre>
+<p><strong>The honest test.</strong> <code>torch.no_grad()</code> means "don't keep notes". Testing only needs the forward pass, and notes cost time and memory. <code>argmax</code> picks the digit with the highest score, and the function counts how often that pick was right.</p>
+</div>
+
+<div class="interactive">
+  <div class="interactive-title">▸ run locally</div>
+  <h3>Handwritten digits in PyTorch</h3>
+  <p>This is <code>neuro9.py</code>, whole. The first run downloads MNIST, about 12 MB, into a folder called <code>data</code> next to the folder the script is in.</p>
+  <div class="run-note"><code>pip install torch torchvision</code><br><code>python3 neuro9.py</code></div>
+  <div class="code-editor-wrap">
+    <div class="code-header">
+      <span class="code-filename">neuro9.py</span>
+      <span class="code-status ready" id="py-status-9">local Python script</span>
+    </div>
+    <textarea class="code-editor" id="py-code-9" spellcheck="false" rows="30" data-src="neuro9.py" readonly></textarea>
+  </div>
+  <p class="ag-recorded-note">What it printed on our laptop. This is a recording of a real run, not a live one:</p>
+  <pre class="terminal ag-recorded" id="py-out-9">doing the math on: mps
+60000 training pictures, 10000 test pictures
+109,386 numbers to learn
+
+epoch 1: loss 0.3212   train accuracy 0.9542   test accuracy 0.9502
+epoch 2: loss 0.1291   train accuracy 0.9730   test accuracy 0.9655
+epoch 3: loss 0.0898   train accuracy 0.9790   test accuracy 0.9707
+epoch 4: loss 0.0704   train accuracy 0.9844   test accuracy 0.9719
+epoch 5: loss 0.0551   train accuracy 0.9871   test accuracy 0.9763
+
+the first ten test pictures:
+  really a 7, network says 7   ok
+  really a 2, network says 2   ok
+  really a 1, network says 1   ok
+  really a 0, network says 0   ok
+  really a 4, network says 4   ok
+  really a 1, network says 1   ok
+  really a 4, network says 4   ok
+  really a 9, network says 9   ok
+  really a 5, network says 5   ok
+  really a 9, network says 9   ok</pre>
+</div>
+
+<p>After five trips through the 60,000 training pictures, the network read 9,763 of the 10,000 test pictures correctly. Your number will be close to ours but probably not identical: four runs from four different random starts scored between 0.9731 and 0.9764.</p>
+<p>Compare the two accuracy columns. After the first epoch they were 0.0040 apart. After the fifth, training accuracy is 0.9871 and test accuracy is 0.9763, which is 0.0108 apart. That widening gap is the memorizing from {{ch:overfitting}}.</p>
+<p>Now think about what <code>loss.backward()</code> did in there. This network has 109,386 numbers. Finding their blame by wiggling would take 109,386 extra forward passes for every single nudge. The backward pass found all of it in one sweep, 469 times per epoch.</p>
+
+<h3>What else a framework gives you</h3>
+<p>Automatic blame is the main trick. A framework also hands you a lot of other things you would otherwise build yourself.</p>
+<ul>
+  <li><strong>Graphics chips.</strong> One line, <code>.to(device)</code>, moves the math onto a GPU, where thousands of small sums happen at the same time. You never write a line of code for the chip itself. It pays off for big networks. For the small one in <code>neuro9.py</code>, the graphics chip in our laptop was no faster than its ordinary processor, and a run took a few minutes either way.</li>
+  <li><strong>Ready-made layers.</strong> <code>nn.Linear</code> is a layer of ordinary neurons. <code>nn.Conv2d</code> is the sliding filters from {{ch:convolution}}. <code>nn.Embedding</code> is the lookup table from {{ch:tokens}}. Each one knows its own shapes and its own slope rules.</li>
+  <li><strong>Optimizers.</strong> Plain gradient descent nudges every number by learning rate × blame. <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener">Adam</a>, the usual choice, keeps a running average of each number's recent blame and steps along that, which smooths out the zigzags. It also takes bigger steps for numbers whose blame has been small and smaller steps for numbers whose blame has been large. In PyTorch that is one line.</li>
+  <li><strong>Data loading.</strong> Shuffling, cutting into mini-batches and preparing each picture is one <code>DataLoader</code>.</li>
+</ul>
+<p>PyTorch is not the only framework. The other two you are most likely to hear about are <a href="https://github.com/jax-ml/jax" target="_blank" rel="noopener">JAX</a> and <a href="https://www.tensorflow.org/" target="_blank" rel="noopener">TensorFlow</a>, both from Google. The spelling differs. The main trick is the same one.</p>
 
 <div class="challenge">
   <strong>Challenge</strong>
-  <p>Change the hidden layer from 16 neurons to 4. Does PyTorch still train fast? Then try 64 and compare train accuracy to test accuracy.</p>
+  <p>Teach your engine something new. It cannot subtract yet: <code>prediction - 1</code> is an error, which is why the script has to write <code>prediction + (-TARGET)</code>. Add a <code>__sub__</code> method to <code>Value</code>, modeled on <code>__add__</code>. The only real decision is the two slopes: if <code>b</code> goes up a little, which way does <code>a - b</code> move? Then prove it works. Change <code>warm_up</code> in Part 1 to use a subtraction and check that the two columns still agree.</p>
+  <p style="margin-top: 10px;">Harder: add <code>__pow__</code> so that <code>miss ** 2</code> works. It has one parent, and the slope of "a squared" is 2 × a. Then rewrite the loss in <code>total_loss</code> as <code>(predict(left, right) - target) ** 2</code> and run Part 2 again. The loss should fall exactly as it did before.</p>
+  <p style="margin-top: 10px;">And one to break: set <code>LEARNING_RATE</code> to <code>0.1</code>, then to <code>30.0</code>. One crawls and one slams into a wall. Read the four answers at the end of each run to see which is which.</p>
+</div>
+
+<div class="quiz">
+  <div class="q" data-answer="b">
+    <p>During the forward pass, what does the engine write down for each new Value?</p>
+    <button data-opt="a">Only the number, to save memory</button>
+    <button data-opt="b">The number, which Values it was made from, and a slope for each of them</button>
+    <button data-opt="c">The blame, so the backward pass has nothing left to do</button>
+    <p class="why">The number plus its notes: parents and slopes. The blame cannot be written yet, because it depends on everything that happens <em>later</em> in the calculation. That is why there has to be a backward pass at all.</p>
+  </div>
+  <div class="q" data-answer="c">
+    <p>In a PyTorch training loop, what does <code>loss.backward()</code> do?</p>
+    <button data-opt="a">It changes every weight a little so the loss gets smaller</button>
+    <button data-opt="b">It runs the network in reverse, turning an answer back into an input</button>
+    <button data-opt="c">It fills in the blame for every weight, using the notes from the forward pass</button>
+    <p class="why">It only works out the blame. Nothing changes until <code>optimizer.step()</code> does the nudging. They are two separate moves, just as <code>loss.backward()</code> and <code>p.data -= ...</code> are two separate lines in your engine.</p>
+  </div>
+  <div class="q" data-answer="a">
+    <p>You invent a brand-new shape of network that nobody has built before. What do you have to work out by hand before a framework can train it?</p>
+    <button data-opt="a">Nothing extra. If you can write the forward pass, the notes take care of the backward pass</button>
+    <button data-opt="b">The blame formula for each new layer</button>
+    <button data-opt="c">The blame formula for the whole network, written as one long line</button>
+    <p class="why">Nothing extra. Each small calculation already carries its own slope rule, and the backward pass only reads notes. That is the reason frameworks exist, and it is why people can try a new idea for a network in an afternoon.</p>
+  </div>
 </div>

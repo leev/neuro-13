@@ -33,6 +33,7 @@ onmessage = async e => {
     postMessage({ type: 'status', text: 'Python ready', ready: true });
   } catch (err) {
     postMessage({ type: 'err', text: String((err && err.message) || err) + '\n' });
+    postMessage({ type: 'status', text: 'stopped with an error' });
   }
   postMessage({ type: 'done' });
 };

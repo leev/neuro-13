@@ -1,107 +1,83 @@
 """
-Step 8: same iris problem as neuro7.py, rewritten in PyTorch.
+Step 8: the iris network from neuro7.py again, this time in PyTorch.
 
-Goal: see what a framework hides. Every line below replaces something
-you wrote by hand in neuro7.py.
+Every line here replaces something neuro7.py spelled out by hand:
 
-  numpy version (neuro7.py)            PyTorch version (this file)
-  ---------------------------          -----------------------------
-  np.maximum(0, x)                ->   nn.ReLU
-  softmax + cross-entropy by hand ->   nn.CrossEntropyLoss
-  manual forward (h = ..., o = ..)->   model(x)
-  manual backward (d_o, d_h)      ->   loss.backward()    (autograd)
-  manual weight updates           ->   optimizer.step()
-  plain SGD                       ->   torch.optim.Adam   (smarter)
-  CPU only                        ->   model.to('cuda') if available
+    neuro7.py (numpy, by hand)            neuro8.py (PyTorch)
+    x @ w1 + b1                           nn.Linear(4, 16)
+    np.maximum(0, x)                      nn.ReLU()
+    softmax, then cross-entropy           nn.CrossEntropyLoss()
+    h = ..., o = ...     (forward)        model(x)
+    d_o = ..., d_h = ... (backward)       loss.backward()
+    w -= lr * gradient                    optimizer.step()
+    plain gradient descent                torch.optim.Adam
 
-The math is identical. PyTorch just stops you typing it.
+One line has no partner in neuro7.py: optimizer.zero_grad(). PyTorch adds
+new blame on top of old blame, exactly like the += in autograd.py, so the
+old blame has to be cleared before every backward pass.
 
-Run:
+PyTorch does not run in the browser. On your own computer:
+
     pip install torch scikit-learn
     python3 neuro8.py
 """
-
-import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
-# ---- data ----
+HIDDEN = 16
+EPOCHS = 200
+BATCH = 16
+LEARNING_RATE = 0.01
+
+torch.manual_seed(1)
+
 iris = load_iris()
-x_raw = iris.data           # (150, 4)
-y_raw = iris.target         # (150,)  integer labels 0/1/2
-
 x_train, x_test, y_train, y_test = train_test_split(
-    x_raw, y_raw, test_size=0.2, random_state=1, stratify=y_raw,
+    iris.data, iris.target, test_size=0.2, random_state=1, stratify=iris.target,
 )
 
-# Standardize features using train stats only.
-mean = x_train.mean(axis=0)
-std  = x_train.std(axis=0)
-x_train = (x_train - mean) / std
-x_test  = (x_test  - mean) / std
+# The average and spread come from the training flowers only, so nothing
+# about the test flowers leaks into training.
+mean, std = x_train.mean(axis=0), x_train.std(axis=0)
+x_train = torch.tensor((x_train - mean) / std, dtype=torch.float32)
+x_test = torch.tensor((x_test - mean) / std, dtype=torch.float32)
+# CrossEntropyLoss wants each label as a class number (0, 1 or 2), not one-hot.
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
 
-# Convert numpy arrays to torch tensors.
-# Note: CrossEntropyLoss expects integer class labels, NOT one-hot.
-x_train_t = torch.tensor(x_train, dtype=torch.float32)
-y_train_t = torch.tensor(y_train, dtype=torch.long)
-x_test_t  = torch.tensor(x_test,  dtype=torch.float32)
-y_test_t  = torch.tensor(y_test,  dtype=torch.long)
-
-# ---- model ----
-# nn.Sequential = stack of layers, runs them in order.
-# nn.Linear(in, out) = weights w (in, out) + bias b (out). Same as
-# `x @ w + b` you wrote by hand.
-hidden = 16   # try 16, then 4, then 64
 model = nn.Sequential(
-    nn.Linear(4, hidden),
+    nn.Linear(4, HIDDEN),
     nn.ReLU(),
-    nn.Linear(hidden, 3),
+    nn.Linear(HIDDEN, 3),
 )
-
-# CrossEntropyLoss applies log-softmax internally, then computes
-# cross-entropy. Don't put a softmax in the model. Tensors fed in are
-# raw scores ("logits"), labels are integer class indices.
+# There is no softmax layer in the model: CrossEntropyLoss does the softmax itself.
 loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+print(f"{sum(p.numel() for p in model.parameters())} numbers to learn")
 
-# Adam = SGD with momentum + per-parameter learning rate. Almost
-# always the default for new projects.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-# ---- training ----
-batch_size = 16
-epochs = 200
-n = x_train_t.shape[0]
+def accuracy(x, y):
+    with torch.no_grad():
+        return (model(x).argmax(dim=1) == y).float().mean().item()
 
-for epoch in range(epochs):
-    # Shuffle indices each epoch.
-    idx = torch.randperm(n)
-    for start in range(0, n, batch_size):
-        batch = idx[start:start+batch_size]
-        xb = x_train_t[batch]
-        yb = y_train_t[batch]
 
-        logits = model(xb)            # forward
-        loss = loss_fn(logits, yb)
+for epoch in range(EPOCHS):
+    order = torch.randperm(len(x_train))
+    for start in range(0, len(x_train), BATCH):
+        batch = order[start:start + BATCH]
 
-        optimizer.zero_grad()         # clear leftover grads
-        loss.backward()               # autograd: compute every gradient
-        optimizer.step()              # apply gradients
+        scores = model(x_train[batch])
+        loss = loss_fn(scores, y_train[batch])
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
     if epoch % 20 == 0:
-        with torch.no_grad():
-            train_pred = model(x_train_t).argmax(dim=1)
-            test_pred  = model(x_test_t).argmax(dim=1)
-            train_acc = (train_pred == y_train_t).float().mean().item()
-            test_acc  = (test_pred  == y_test_t).float().mean().item()
-            print(f"epoch {epoch:3d}: train_acc {train_acc:.3f}  test_acc {test_acc:.3f}")
-
-# ---- final eval ----
-with torch.no_grad():
-    train_acc = (model(x_train_t).argmax(dim=1) == y_train_t).float().mean().item()
-    test_acc  = (model(x_test_t ).argmax(dim=1) == y_test_t ).float().mean().item()
+        print(f"epoch {epoch:3d}: train accuracy {accuracy(x_train, y_train):.3f}   test accuracy {accuracy(x_test, y_test):.3f}")
 
 print()
-print(f"final train accuracy: {train_acc:.3f}")
-print(f"final test  accuracy: {test_acc:.3f}")
+print(f"final train accuracy: {accuracy(x_train, y_train):.3f}")
+print(f"final test  accuracy: {accuracy(x_test, y_test):.3f}")
