@@ -46,12 +46,12 @@
 </div>
 
 <h3>What layer 2 actually does</h3>
-<p>Each network begins from the same fixed set of "random" starting weights every time you select it, so your numbers should match these. (We measured them in Chrome. Browsers can differ in the last digit of their arithmetic, and training can magnify that, so in another browser a number may be a point or two off.)</p>
+<p>Each network begins from the same fixed set of "random" starting weights every time you select it, so your numbers should match these.</p>
 <table>
   <tr><th>network</th><th>stored numbers</th><th>after 2,000 epochs</th><th>after 4,000 epochs</th></tr>
   <tr><td>1 layer × 8</td><td>33</td><td>75%</td><td>79%</td></tr>
   <tr><td>2 layers × 4 + 4</td><td>37</td><td>84%</td><td>97%</td></tr>
-  <tr><td>1 layer × 16</td><td>65</td><td>98%</td><td>99%</td></tr>
+  <tr><td>1 layer × 16</td><td>65</td><td>97%</td><td>98%</td></tr>
   <tr><td>2 layers × 8 + 8</td><td>105</td><td>98%</td><td>99%</td></tr>
 </table>
 <p>Look at the first two rows. Both networks have 8 hidden neurons and nearly the same number of stored numbers. The one-layer network stalls, and more training barely helps: it is still at 83% after 8,000 epochs. The two-layer network finds the spiral.</p>
@@ -61,10 +61,10 @@
 <p>One result in that table should surprise you: a <em>single</em> layer of 16 neurons solves the spiral too. That is a famous result called the <strong>universal approximation theorem</strong> at work: one hidden layer can fit almost any shape, as long as it is wide enough.</p>
 <p>And one run proves little, because the starting weights matter. Press "new random start" and train again, and the same network can end up somewhere different. So we ran each network from 60 random starts, for 8,000 epochs each:</p>
 <ul>
-  <li><strong>1 layer × 8</strong> never reached 95%. Its best run got to 92%.</li>
-  <li><strong>2 layers × 4 + 4</strong> reached 95% in 25 of its 60 starts.</li>
+  <li><strong>1 layer × 8</strong> never reached 95%. Its best run got to 93%.</li>
+  <li><strong>2 layers × 4 + 4</strong> reached 95% in 29 of its 60 starts.</li>
   <li><strong>1 layer × 16</strong> reached 95% every single time.</li>
-  <li><strong>2 layers × 8 + 8</strong> reached 95% in 53 of its 60 starts. Most of the others got stuck near a coin flip and stayed there.</li>
+  <li><strong>2 layers × 8 + 8</strong> reached 95% in 49 of its 60 starts. The other 11 got stuck near a coin flip and stayed there.</li>
 </ul>
 <p>Two things are true at once. Stacking lets the same eight neurons do something they could not do side by side. And deep networks are touchier: they are the only ones here that ever got properly stuck. A good share of modern deep learning (ReLU from {{ch:activations}}, and the tricks you will meet in {{ch:scale}}) exists to make deep networks train reliably.</p>
 

@@ -10,6 +10,7 @@ Live at https://neuro-13.leev.net (deployed from `main` by GitHub Actions to a C
 make build     build the site into public/
 make serve     build, then serve it at http://localhost:8000
 make smoke     build, then load every page in headless Chrome and report JavaScript errors
+make browsers  build, then press every widget button in Chromium, Firefox and WebKit and compare what they show
 make run-all   run every Python exercise that needs only numpy / scikit-learn
 make deploy    build and deploy (needs wrangler login)
 ```
@@ -92,11 +93,12 @@ Quiz questions test the idea, not recall of a number. Wrong options should be th
 
 ### Widgets
 
-`src/widgets/<slug>.js` is loaded after `shell.js` and `shared.js` on that chapter's page only.
+`src/widgets/<slug>.js` is loaded after `shell.js`, `pmath.js` and `shared.js` on that chapter's page only.
 
 - One named IIFE per widget: `(function nameWidget() { … })();`. No globals. Prefix every element id with a short tag unique to the widget (`dm-…`).
 - Train for real, in the browser, from random weights. Keep a run under about 15 seconds on a laptop, and yield to the page between epochs (`await new Promise(r => setTimeout(r, 0))`) so the display updates and the tab never freezes.
 - Use `Book.rng(seed)` when a demo must reproduce exactly; plain `Math.random()` when variety between runs is part of the lesson.
+- `pmath.js` replaces `Math.exp`, `expm1`, `tanh`, `log`, `sin` and `cos` on widget pages with versions that give the same bits in every browser, so a seeded demo shows the numbers the prose quotes in Chrome, Firefox and Safari alike. Avoid `Math.pow`, `**` with a non-integer power, `Math.hypot` and `Math.atan2` inside training code: those are not pinned.
 - Canvases: declare logical size with `width`/`height` attributes, then `const { ctx, w, h } = Book.hidpi(canvas)` and draw in those logical units. Map pointer events with `Book.pointer(canvas, event)`.
 - Line charts: `Book.lineChart(canvas, { series: [{ label, color, data }], xMax, yMin, yMax, yFormat, xLabel })`. It returns `{ ctx, w, h, left, right, top, bottom, X, Y }` so you can draw markers on top without copying its margins.
 - `Book.toast(text)` for a brief message. `shared.js` provides `sigmoid`, `makeModelDump`, `makeSingleTrainer`, `makeSeparator`.
@@ -143,6 +145,8 @@ Underlines are added to prose automatically, including text a widget writes at r
 ```
 python3 build.py --draft --out /tmp/site && tools/smoke.sh /tmp/site
 ```
+
+If the prose quotes numbers from a seeded demo, also run `make browsers` (about 20 minutes for the whole book; `node tools/crossbrowser.js public --only <slug>` checks one chapter). It needs Playwright once: `npm i --no-save playwright-core && npx playwright-core install`.
 
 Then open the page and use every control. A chapter is not finished until its widget has been watched doing what the prose says it does.
 

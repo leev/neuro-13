@@ -128,7 +128,7 @@ def main():
 
     if out.exists():
         shutil.rmtree(out)
-    skip = shutil.ignore_patterns('__pycache__', '.DS_Store')
+    skip = shutil.ignore_patterns('__pycache__', '.*')
     shutil.copytree(SRC / 'assets', out / 'assets', ignore=skip)
     shutil.copytree(SRC / 'widgets', out / 'assets' / 'widgets', ignore=skip)
     shutil.copytree(PY, out / 'py', ignore=skip)
@@ -207,7 +207,7 @@ def main():
         if (SRC / 'widgets' / f'{slug}.css').exists():
             extra_head.append(css(f'assets/widgets/{slug}.css'))
         if (SRC / 'widgets' / f'{slug}.js').exists():
-            scripts += [script('assets/shared.js'), script(f'assets/widgets/{slug}.js')]
+            scripts += [script('assets/pmath.js'), script('assets/shared.js'), script(f'assets/widgets/{slug}.js')]
         if 'class="code-editor"' in body:
             extra_head += [f'<link rel="stylesheet" href="{CODEMIRROR}codemirror.min.css">',
                            f'<link rel="stylesheet" href="{CODEMIRROR}theme/material-darker.min.css">']

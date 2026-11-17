@@ -1,4 +1,4 @@
-.PHONY: build pages serve smoke check run-all deploy
+.PHONY: build pages serve smoke browsers check run-all deploy
 
 build:
 	python3 build.py
@@ -11,6 +11,9 @@ serve: build
 
 smoke: build
 	tools/smoke.sh public
+
+browsers: build
+	node tools/crossbrowser.js public
 
 # Deploy public/ to Cloudflare as a Worker with the Assets binding (see wrangler.toml).
 # The Worker is bound to the custom domain only: no *.workers.dev or *.pages.dev URL.

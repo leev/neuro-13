@@ -86,7 +86,8 @@
     }
     epoch++;
     const m = data.length;
-    const fix1 = 1 - Math.pow(BETA1, epoch), fix2 = 1 - Math.pow(BETA2, epoch);
+    // Math.pow is not one of the functions pmath.js pins, so it could differ between browsers.
+    const fix1 = 1 - Math.exp(epoch * Math.log(BETA1)), fix2 = 1 - Math.exp(epoch * Math.log(BETA2));
     function adamStep(mean, spread, k, g) {
       mean[k] = BETA1 * mean[k] + (1 - BETA1) * g;
       spread[k] = BETA2 * spread[k] + (1 - BETA2) * g * g;
