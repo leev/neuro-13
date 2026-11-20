@@ -456,7 +456,9 @@ button[data-opt].wrong::before { content: "✕"; background: var(--bad); color: 
 .hero-art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero-panel { max-width: 540px; margin: 0 auto; }
 .hero-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 40px; }
-.hero-readout .chip { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line-strong); font: 700 13.5px/1.2 var(--font-body); color: var(--ink); white-space: nowrap; }
+.hero-readout .chip { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line-strong); font: 700 13.5px/1.2 var(--font-body); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hero-readout .chip .num { display: inline-block; min-width: 3ch; }
+.hero-readout .chip .pct { text-align: right; }
 .hero-readout .chip.solved { border-color: var(--good); color: var(--good); }
 .hero-readout .gap { flex: 1; }
 .hero-caption { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }

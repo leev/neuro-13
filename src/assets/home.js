@@ -201,12 +201,15 @@
       return true;
     }
 
+    const shown = { round: '', score: '' };
+
     function readout() {
       if (!ui.round) return;
-      const round = solvedAt > 0 ? `Solved in ${solvedAt} rounds` : `Round ${steps}`;
-      const score = `${Math.round(100 * shownRight / data.n)}% of dots right`;
-      if (ui.round.textContent !== round) ui.round.textContent = round;
-      if (ui.score.textContent !== score) ui.score.textContent = score;
+      const round = solvedAt > 0 ? `Solved in ${solvedAt} rounds` : `Round <span class="num">${steps}</span>`;
+      const pct = shownRight === data.n ? 100 : Math.min(99, Math.round(100 * shownRight / data.n));
+      const score = `<span class="num pct">${pct}</span>% of dots right`;
+      if (shown.round !== round) ui.round.innerHTML = shown.round = round;
+      if (shown.score !== score) ui.score.innerHTML = shown.score = score;
       ui.round.classList.toggle('solved', solvedAt > 0);
     }
 
